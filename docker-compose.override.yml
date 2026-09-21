@@ -1,0 +1,35 @@
+# docker-compose.override.yml
+# Local developer overrides applied automatically on top of docker-compose.yml.
+# NOT committed with secrets — add your own overrides here locally.
+
+services:
+  backend:
+    # Mount source for hot-reload in dev
+    volumes:
+      - ./backend:/app
+      - storage:/app/storage
+    environment:
+      APP_ENV: development
+      APP_DEBUG: "true"
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  celery_worker:
+    volumes:
+      - ./backend:/app
+      - storage:/app/storage
+    environment:
+      APP_ENV: development
+    command: >
+      celery -A app.celery_app worker
+        --loglevel=debug
+        --queues=default,qr_export,qr_batch,scan_analytics
+        --concurrency=2
+        --prefetch-multiplier=1
+
+  frontend:
+    environment:
+      - VITE_API_BASE_URL=/api
