@@ -18,6 +18,9 @@ dependencies = [
     # Authentication
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    # QR code generation
+    "segno>=1.6.1",
+    "pillow>=10.4.0",
     # Task queue
     "celery>=5.4.0",
     "aio-pika>=9.4.0",

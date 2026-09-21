@@ -164,3 +164,4 @@ volumes:
 networks:
   pointqr_network:
     driver: bridge
+

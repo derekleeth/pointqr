@@ -1,3 +1,4 @@
+# pointqr
 # PointQR 📱
 
 A modern, scalable QR Code Generation Platform — create, customize, manage, and track static and dynamic QR codes.

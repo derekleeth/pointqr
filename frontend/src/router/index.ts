@@ -27,6 +27,19 @@ const router = createRouter({
       component: () => import('@/views/DashboardView.vue'),
       meta: { requiresAuth: true },
     },
+    // Phase 2: QR Editor
+    {
+      path: '/editor',
+      name: 'editor-new',
+      component: () => import('@/views/QREditorView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/editor/:id',
+      name: 'editor-edit',
+      component: () => import('@/views/QREditorView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

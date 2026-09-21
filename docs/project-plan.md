@@ -142,3 +142,4 @@ Marketing professionals, businesses, event organizers, and individual creators r
 - **Performance:** Scan redirection latency under 15ms using indexed database lookups and in-memory routing; client-side preview re-render under 50ms.
 - **Security:** Privacy-compliant IP anonymization (one-way cryptographic hashing), CORS policies, and strict input validation against SSRF for target URLs.
 - **Scalability:** Stateless FastAPI containers and horizontally scalable Celery worker nodes.
+

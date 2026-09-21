@@ -25,3 +25,4 @@ Dockerfile* text eol=lf
 *.svg binary
 *.pdf binary
 *.zip binary
+
