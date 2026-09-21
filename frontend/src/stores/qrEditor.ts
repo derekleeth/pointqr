@@ -115,3 +115,4 @@ export const useQREditorStore = defineStore('qrEditor', () => {
     save,
   }
 })
+

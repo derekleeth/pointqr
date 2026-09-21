@@ -191,3 +191,4 @@ async def test_export_svg(client: AsyncClient, auth_headers: dict) -> None:
 async def test_qrcodes_requires_auth(client: AsyncClient) -> None:
     response = await client.get("/v1/qrcodes")
     assert response.status_code == 401
+

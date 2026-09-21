@@ -141,3 +141,4 @@ export const uploadLogo = (id: string, file: File) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
+

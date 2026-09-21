@@ -317,3 +317,4 @@ function removeLogo() {
     </AccordionPanel>
   </Accordion>
 </template>
+

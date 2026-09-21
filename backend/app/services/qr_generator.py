@@ -173,3 +173,4 @@ def generate_eps(design_config: dict) -> bytes:
         border=border,
     )
     return buf.getvalue()
+

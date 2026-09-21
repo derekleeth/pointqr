@@ -300,3 +300,4 @@ async def upload_logo(
     await db.flush()
     await db.refresh(qr)
     return qr
+
