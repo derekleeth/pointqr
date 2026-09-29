@@ -138,3 +138,4 @@ backend/alembic/versions/__pycache__/
 htmlcov/
 .coverage
 
+docs/to-do-list.md
