@@ -21,6 +21,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    // Allow any hostname on the local network (VM names, custom hostnames, etc.)
+    // Vite 5+ blocks non-localhost hostnames by default as a DNS rebinding guard.
+    allowedHosts: 'all',
     // Proxy API requests to FastAPI when running Vite outside Docker
     proxy: {
       '/api': {
