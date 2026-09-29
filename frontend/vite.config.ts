@@ -24,6 +24,11 @@ export default defineConfig({
     // Allow any hostname on the local network (VM names, custom hostnames, etc.)
     // Vite 5+ blocks non-localhost hostnames by default as a DNS rebinding guard.
     allowedHosts: 'all',
+    allowedHosts: [
+      'localhost', // Allows localhost
+      '.pointqr.com', // Allows the domain and all its subdomains
+      'all' // Allows any hostname on the local network (VM names, custom hostnames, etc.)
+    ]
     // Proxy API requests to FastAPI when running Vite outside Docker
     proxy: {
       '/api': {
