@@ -105,13 +105,19 @@
 
 ## Bugs 🐛
 
-> _No bugs logged yet._
+| # | Status | Description | Fix |
+|---|--------|-------------|-----|
+| 1 | ✅ Fixed | `invalid input value for enum qrcodetype: "dynamic"` — SQLAlchemy `Enum()` stores Python member **names** (`dynamic`) by default; PostgreSQL enum was created with uppercase **values** (`DYNAMIC`) in migration 001 | Added `values_callable=lambda objs: [e.value for e in objs]` to `QRCode.type` and `BatchJob.status` columns in [`models/qrcode.py`](../backend/app/models/qrcode.py) and [`models/batch_job.py`](../backend/app/models/batch_job.py) |
+| 2 | ✅ Fixed | Frontend `startAsyncExport` / `getExportJob` used hardcoded `/v1/` prefix causing double `/v1/v1/` URL with the Axios base URL | Removed the `/v1` prefix from both functions in `src/api/qrcodes.ts` |
+| 3 | ✅ Fixed | Vite dev server blocked requests from custom hostname (`monkey-v-1`) | Added `allowedHosts: 'all'` to `vite.config.ts` |
 
 ---
 
 ## Feature Requests 💡
 
-> _No feature requests logged yet._
+| # | Status | Description |
+|---|--------|-------------|
+| 1 | ✅ Done | Toast notifications on QR code save success (new codes) and failure — added to `QREditorView.vue` with error detail extracted from Axios response |
 
 ---
 

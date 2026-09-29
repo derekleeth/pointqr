@@ -29,7 +29,12 @@ class QRCode(Base):
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     type: Mapped[QRCodeType] = mapped_column(
-        Enum(QRCodeType, name="qrcodetype"), default=QRCodeType.static, nullable=False
+        # values_callable ensures SQLAlchemy stores the enum VALUE ('STATIC'/'DYNAMIC')
+        # rather than the member name ('static'/'dynamic'). The PostgreSQL enum was
+        # created with uppercase values in migration 001.
+        Enum(QRCodeType, name="qrcodetype", values_callable=lambda objs: [e.value for e in objs]),
+        default=QRCodeType.static,
+        nullable=False,
     )
     # Unique short code for dynamic QR redirect URLs (e.g. /r/{short_code})
     short_code: Mapped[str | None] = mapped_column(

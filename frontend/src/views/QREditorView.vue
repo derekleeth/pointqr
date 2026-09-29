@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import { useQREditorStore } from '@/stores/qrEditor'
 import { getQRCode } from '@/api/qrcodes'
 import QRCanvas from '@/components/editor/QRCanvas.vue'
@@ -10,6 +11,7 @@ import DesignPanel from '@/components/editor/DesignPanel.vue'
 const route = useRoute()
 const router = useRouter()
 const store = useQREditorStore()
+const toast = useToast()
 
 onMounted(async () => {
   const qrId = route.params.id as string | undefined
@@ -30,14 +32,31 @@ onUnmounted(() => {
 })
 
 async function handleSave() {
+  const isNew = !route.params.id
   try {
     const qr = await store.save()
     // Update URL to edit mode without re-mounting the component
-    if (!route.params.id) {
+    if (isNew) {
       router.replace(`/editor/${qr.id}`)
+      toast.add({
+        severity: 'success',
+        summary: 'QR Code Created',
+        detail: `"${qr.title}" was saved successfully.`,
+        life: 3000,
+      })
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Save failed', err)
+    // Extract a human-readable message from the Axios error response if available
+    const detail =
+      (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+      'An unexpected error occurred. Please try again.'
+    toast.add({
+      severity: 'error',
+      summary: 'Save Failed',
+      detail,
+      life: 6000,
+    })
   }
 }
 </script>

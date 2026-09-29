@@ -30,7 +30,9 @@ class BatchJob(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     status: Mapped[BatchJobStatus] = mapped_column(
-        Enum(BatchJobStatus, name="batchjobstatus"),
+        # values_callable ensures SQLAlchemy stores enum VALUES ('PENDING', etc.)
+        # rather than member names ('pending', etc.) — matching migration 001.
+        Enum(BatchJobStatus, name="batchjobstatus", values_callable=lambda objs: [e.value for e in objs]),
         default=BatchJobStatus.pending,
         nullable=False,
         index=True,
