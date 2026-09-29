@@ -209,8 +209,8 @@ function logout() {
   flex-shrink: 0;
 }
 .brand-logo-icon {
-  width: 30px;
-  height: 30px;
+  width: 50px;
+  height: 50px;
   object-fit: cover;
   object-position: left center;
   border-radius: 6px;
