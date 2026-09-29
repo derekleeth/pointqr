@@ -25,3 +25,4 @@ const layout = computed(() => route.meta.layout as string | undefined)
   <!-- Global toast notifications -->
   <Toast position="bottom-right" :pt="{ root: { style: 'z-index: 9999' } }" />
 </template>
+

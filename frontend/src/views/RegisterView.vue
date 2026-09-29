@@ -239,3 +239,4 @@ async function handleRegister() {
 .card-link { color: var(--color-primary); text-decoration: none; font-weight: 500; }
 .card-link:hover { text-decoration: underline; }
 </style>
+

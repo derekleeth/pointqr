@@ -39,3 +39,4 @@ import { useAuthStore } from './stores/auth'
 useAuthStore().initialize()
 
 app.mount('#app')
+

@@ -51,9 +51,10 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchMe()
   }
 
-  async function register(email: string, password: string): Promise<User> {
-    const response = await apiClient.post<User>('/auth/register', { email, password })
-    return response.data
+  async function register(email: string, password: string): Promise<void> {
+    await apiClient.post<User>('/auth/register', { email, password })
+    // Auto-login so the user lands on the dashboard immediately
+    await login(email, password)
   }
 
   async function fetchMe(): Promise<void> {

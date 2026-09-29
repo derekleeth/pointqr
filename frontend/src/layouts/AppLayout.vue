@@ -49,3 +49,4 @@ const collapsed = computed(() => ui.sidebarCollapsed)
   .app-main { padding: 1rem; }
 }
 </style>
+

@@ -19,3 +19,4 @@ export const useUIStore = defineStore('ui', () => {
 
   return { sidebarCollapsed, toggleSidebar, setSidebarCollapsed }
 })
+
