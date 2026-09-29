@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import QRCodeStyling from 'qr-code-styling'
 import { useQREditorStore } from '@/stores/qrEditor'
+import { useThemeStore } from '@/stores/theme'
 import { exportQRCode, startAsyncExport, getExportJob } from '@/api/qrcodes'
 
 const store = useQREditorStore()
+const themeStore = useThemeStore()
+const isDark = computed(() => themeStore.isDark)
 const toast = useToast()
 const canvasRef = ref<HTMLDivElement>()
 const isExporting = ref(false)
@@ -166,12 +169,30 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-6">
-    <!-- Live QR canvas (qr-code-styling mounts here) -->
-    <div
-      ref="canvasRef"
-      class="rounded-xl overflow-hidden shadow-md border border-surface-200 dark:border-surface-700"
-    />
+  <div class="flex flex-col items-center gap-6 w-full">
+    <!-- QR canvas mat — checkerboard in dark mode so the white QR background
+         reads as intentional rather than a bright intrusion into the dark UI -->
+    <div class="flex flex-col items-center gap-3 w-full">
+      <div
+        class="relative rounded-2xl p-4 transition-colors duration-200"
+        :class="isDark
+          ? 'qr-checkerboard ring-1 ring-surface-600'
+          : 'bg-surface-50 ring-1 ring-surface-200'"
+      >
+        <div
+          ref="canvasRef"
+          class="rounded-lg overflow-hidden shadow-sm block"
+        />
+      </div>
+      <!-- Background colour hint in dark mode -->
+      <p class="text-xs text-surface-400 flex items-center gap-1.5">
+        <span
+          class="inline-block w-3 h-3 rounded-sm border border-surface-300 dark:border-surface-600 flex-shrink-0"
+          :style="{ background: store.designConfig.backgroundOptions.color }"
+        />
+        QR background: <code class="text-surface-500">{{ store.designConfig.backgroundOptions.color }}</code>
+      </p>
+    </div>
 
     <!-- Client-side quick download -->
     <div class="flex gap-2 flex-wrap justify-center">
@@ -246,3 +267,19 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
   </div>
 </template>
 
+<style scoped>
+/**
+ * Classic design-tool transparency checkerboard for the dark-mode QR mat.
+ * Two overlapping gradients produce alternating dark squares at 12px pitch.
+ */
+.qr-checkerboard {
+  background-color: #1e1e2e;
+  background-image:
+    linear-gradient(45deg, #2a2a3e 25%, transparent 25%),
+    linear-gradient(-45deg, #2a2a3e 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #2a2a3e 75%),
+    linear-gradient(-45deg, transparent 75%, #2a2a3e 75%);
+  background-size: 24px 24px;
+  background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+}
+</style>
