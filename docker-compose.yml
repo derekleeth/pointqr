@@ -55,6 +55,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      PYTHONPATH: /app
     volumes:
       - storage:/app/storage
     depends_on:
@@ -84,6 +86,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      PYTHONPATH: /app
     volumes:
       - storage:/app/storage
     depends_on:

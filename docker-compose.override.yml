@@ -12,6 +12,7 @@ services:
     environment:
       APP_ENV: development
       APP_DEBUG: "true"
+      PYTHONPATH: /app
     command: >
       sh -c "
         alembic upgrade head &&
