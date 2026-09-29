@@ -92,3 +92,51 @@ body {
   background-clip: text;
 }
 
+/* ============================================================
+   PrimeVue DataTable — dark-mode overrides
+   The Aura preset injects its own background values on table
+   elements. We override them here using our CSS variables so
+   the table always matches the card background in dark mode.
+   ============================================================ */
+
+/* Table root & scroll wrapper */
+.p-datatable,
+.p-datatable-wrapper,
+.p-datatable-table {
+  background: transparent !important;
+}
+
+/* Header cells */
+.p-datatable .p-datatable-thead > tr > th {
+  background-color: var(--bg-elevated) !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Body rows */
+.p-datatable .p-datatable-tbody > tr {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.15s ease;
+}
+
+/* Striped alternate row */
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+  background-color: var(--bg-hover) !important;
+}
+
+/* Row hover */
+.p-datatable .p-datatable-tbody > tr:hover,
+.p-datatable.p-row-hover .p-datatable-tbody > tr:not(.p-highlight):hover {
+  background-color: var(--bg-hover) !important;
+  cursor: pointer;
+}
+
+/* Footer / paginator */
+.p-datatable .p-datatable-tfoot > tr > td,
+.p-datatable .p-paginator {
+  background-color: var(--bg-elevated) !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}

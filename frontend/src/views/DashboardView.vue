@@ -72,22 +72,34 @@ function formatDate(iso: string) {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <div
         v-for="stat in [
-          { label: 'Total QR Codes', value: total },
-          { label: 'Total Scans', value: qrCodes.reduce((s, q) => s + q.scan_count, 0) },
-          { label: 'Active Dynamic', value: qrCodes.filter((q) => q.type === 'DYNAMIC').length },
-          { label: 'Static Codes', value: qrCodes.filter((q) => q.type === 'STATIC').length },
+          { label: 'Total QR Codes', value: total, icon: 'pi-qrcode' },
+          { label: 'Total Scans', value: qrCodes.reduce((s, q) => s + q.scan_count, 0), icon: 'pi-chart-bar' },
+          { label: 'Active Dynamic', value: qrCodes.filter((q) => q.type === 'DYNAMIC').length, icon: 'pi-link' },
+          { label: 'Static Codes', value: qrCodes.filter((q) => q.type === 'STATIC').length, icon: 'pi-lock' },
         ]"
         :key="stat.label"
-        class="p-5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800"
+        class="p-5 rounded-xl border transition-colors duration-200"
+        style="background-color: var(--bg-card); border-color: var(--border);"
       >
-        <p class="text-surface-500 text-sm">{{ stat.label }}</p>
-        <p class="text-3xl font-bold text-surface-900 dark:text-surface-0 mt-1">{{ stat.value }}</p>
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm" style="color: var(--text-secondary)">{{ stat.label }}</p>
+            <p class="text-3xl font-bold mt-1 text-surface-900 dark:text-surface-0">{{ stat.value }}</p>
+          </div>
+          <span
+            class="flex items-center justify-center w-9 h-9 rounded-lg text-primary-500 dark:text-primary-400"
+            style="background-color: var(--color-primary-soft)"
+          >
+            <i :class="`pi ${stat.icon} text-base`" />
+          </span>
+        </div>
       </div>
     </div>
 
     <!-- QR code DataTable -->
     <div
-      class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 overflow-hidden"
+      class="rounded-xl overflow-hidden border transition-colors duration-200"
+      style="background-color: var(--bg-card); border-color: var(--border);"
     >
       <DataTable
         :value="qrCodes"
@@ -95,7 +107,15 @@ function formatDate(iso: string) {
         striped-rows
         row-hover
         responsive-layout="scroll"
-        :pt="{ root: { class: 'w-full' } }"
+        :pt="{
+          root: { style: 'background: transparent' },
+          thead: { style: 'background: transparent' },
+          headerRow: { style: `background-color: var(--bg-elevated); border-bottom: 1px solid var(--border);` },
+          headerCell: { style: 'background: transparent; color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border: none; padding: 0.75rem 1rem;' },
+          bodyRow: { style: 'background: transparent; border-bottom: 1px solid var(--border);' },
+          rowGroupFooter: { style: 'background: transparent' },
+          emptyMessage: { style: 'background: transparent' },
+        }"
       >
         <template #empty>
           <div class="flex flex-col items-center gap-4 py-16 text-center">
@@ -133,7 +153,7 @@ function formatDate(iso: string) {
 
         <Column field="created_at" header="Created" sortable style="width: 130px">
           <template #body="{ data }">
-            <span class="text-surface-500 text-sm">{{ formatDate(data.created_at) }}</span>
+            <span class="text-sm" style="color: var(--text-secondary)">{{ formatDate(data.created_at) }}</span>
           </template>
         </Column>
 
@@ -165,3 +185,4 @@ function formatDate(iso: string) {
     </div>
   </div>
 </template>
+
