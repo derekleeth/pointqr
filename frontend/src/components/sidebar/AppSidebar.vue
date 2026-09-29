@@ -82,10 +82,19 @@ function logout() {
     <!-- ── Header ─────────────────────────── -->
     <div class="sidebar-header">
       <RouterLink to="/dashboard" class="brand">
-        <div class="brand-icon">
-          <i class="pi pi-stop-circle" style="font-size:1rem" />
-        </div>
-        <span class="brand-name" v-show="!collapsed">PointQR</span>
+        <img
+          :src="theme.isDark ? '/PointQR-Dark-v1.jpg' : '/PointQR-Light-v1.png'"
+          alt="PointQR"
+          class="brand-logo"
+          v-show="!collapsed"
+        />
+        <!-- Collapsed: show a small square crop of the logo -->
+        <img
+          :src="theme.isDark ? '/PointQR-Dark-v1.jpg' : '/PointQR-Light-v1.png'"
+          alt="PointQR"
+          class="brand-logo-icon"
+          v-show="collapsed"
+        />
       </RouterLink>
 
       <button class="collapse-btn" @click="ui.toggleSidebar()"
@@ -192,23 +201,20 @@ function logout() {
   min-width: 0;
   overflow: hidden;
 }
-.brand-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.brand-logo {
+  height: 28px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
   flex-shrink: 0;
 }
-.brand-name {
-  font-weight: 700;
-  font-size: 0.9375rem;
-  color: var(--text-primary);
-  white-space: nowrap;
-  letter-spacing: -0.02em;
+.brand-logo-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  object-position: left center;
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .collapse-btn {
