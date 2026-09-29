@@ -157,8 +157,8 @@ const features = [
   letter-spacing: -0.02em;
 }
 .home-brand-icon {
-  width: 28px;
-  height: 28px;
+  width: 90px;
+  height: 90px;
   border-radius: 7px;
   background: var(--color-primary-soft);
   color: var(--color-primary);

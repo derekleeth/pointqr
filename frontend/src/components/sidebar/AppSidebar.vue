@@ -183,7 +183,7 @@ function logout() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 100px;
   padding: 0 0.75rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -202,7 +202,7 @@ function logout() {
   overflow: hidden;
 }
 .brand-logo {
-  height: 28px;
+  height: 90px;
   width: auto;
   max-width: 130px;
   object-fit: contain;
