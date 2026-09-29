@@ -6,9 +6,12 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9
 
-# Copy manifests and install dependencies
+# Copy manifests and install all dependencies.
+# Dev dockerfile intentionally omits --frozen-lockfile so that packages
+# added to package.json (e.g. tailwindcss) are installed even when the
+# lockfile hasn't been regenerated on the host yet.
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile || pnpm install
+RUN pnpm install
 
 # Copy source (overridden by volume mount in dev)
 COPY . .
