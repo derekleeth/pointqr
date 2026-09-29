@@ -27,6 +27,7 @@ export default defineConfig({
     allowedHosts: [
       'localhost', // Allows localhost
       '.pointqr.com', // Allows the domain and all its subdomains
+      'monkey-v-1', // Allows the specific hostname
       'all' // Allows any hostname on the local network (VM names, custom hostnames, etc.)
     ],
     // Proxy API requests to FastAPI when running Vite outside Docker
