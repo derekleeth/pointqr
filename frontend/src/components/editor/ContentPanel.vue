@@ -77,11 +77,15 @@ const isDynamic = computed({
       <p class="text-xs text-surface-400">
         {{ content.length }} characters
       </p>
+      <!-- Helper text for dynamic URL field -->
+      <p v-if="isDynamic" class="text-xs text-primary-600 dark:text-primary-400">
+        Scans will redirect to this URL via PointQR's redirect service.
+      </p>
     </div>
 
     <Message v-if="isDynamic" severity="info" :closable="false" class="text-sm">
-      The QR code encodes a PointQR short link. You can update the destination URL at any time
-      without reprinting — available in Phase 3.
+      <span class="font-semibold">Dynamic QR</span> → Redirect URL will be encoded automatically.
+      You can update the destination URL at any time without reprinting.
     </Message>
   </div>
 </template>

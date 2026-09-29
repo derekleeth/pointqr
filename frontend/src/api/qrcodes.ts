@@ -134,6 +134,32 @@ export const exportQRCode = (id: string, format: 'png' | 'svg' | 'pdf' | 'eps') 
     responseType: 'blob',
   })
 
+// ---------------------------------------------------------------------------
+// Async (Celery) export job types and API functions
+// ---------------------------------------------------------------------------
+
+export interface BatchJobRead {
+  id: string
+  user_id: string
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+  total_items: number
+  processed_items: number
+  result_url: string | null
+  created_at: string
+}
+
+/** Trigger an async server export — returns a BatchJob with a job ID. */
+export function startAsyncExport(qrId: string, format: 'png' | 'svg' | 'pdf' | 'eps') {
+  return apiClient.post<BatchJobRead>(`/qrcodes/${qrId}/export/async`, null, {
+    params: { format },
+  })
+}
+
+/** Poll the status of an async export job. */
+export function getExportJob(jobId: string) {
+  return apiClient.get<BatchJobRead>(`/qrcodes/jobs/${jobId}`)
+}
+
 export const uploadLogo = (id: string, file: File) => {
   const form = new FormData()
   form.append('file', file)

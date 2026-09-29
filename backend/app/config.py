@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     app_debug: bool = False
     frontend_url: str = "http://localhost"
     backend_url: str = "http://localhost/api"
+    redirect_base_url: str = "http://localhost"  # base URL for dynamic QR redirects (e.g. https://qr.domain.com)
     cors_origins: str = "http://localhost,http://localhost:5173"
 
     # ---- Database -----------------------------------------------------------

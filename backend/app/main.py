@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.api.v1.redirect import router as redirect_router
 from app.api.v1.router import api_v1_router
 from app.config import get_settings
 
@@ -60,6 +61,9 @@ def create_app() -> FastAPI:
 
     # API routers – prefix="/v1" is already declared on api_v1_router itself
     application.include_router(api_v1_router)
+
+    # Redirect service – mounted at app root so /r/{short_code} has no API prefix
+    application.include_router(redirect_router)
 
     @application.get("/health", tags=["health"], summary="Health check")
     async def health_check() -> dict:

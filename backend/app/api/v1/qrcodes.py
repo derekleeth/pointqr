@@ -12,7 +12,9 @@ from sqlalchemy import func, select
 
 from app.config import get_settings
 from app.core.dependencies import CurrentUser, DBSession
+from app.models.batch_job import BatchJob, BatchJobStatus
 from app.models.qrcode import QRCode, QRCodeType
+from app.schemas.batch_job import BatchJobRead
 from app.schemas.qrcode import (
     DesignConfig,
     QRCodeCreate,
@@ -133,8 +135,9 @@ async def create_qrcode(
     # For static codes target_url equals the encoded content
     design = payload.design_config.model_dump()
     if payload.type == QRCodeType.dynamic and payload.target_url:
-        # Static short URL will be filled in Phase 3
-        design["content"] = payload.target_url
+        # Encode the redirect service URL so scanners hit /r/{short_code}
+        # which tracks the scan and forwards to the real target_url
+        design["content"] = f"{settings.redirect_base_url}/r/{short_code}"
 
     qr = QRCode(
         user_id=current_user.id,
@@ -301,3 +304,81 @@ async def upload_logo(
     await db.refresh(qr)
     return qr
 
+
+# ---------------------------------------------------------------------------
+# Async export endpoint + job status
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/{qr_id}/export/async",
+    response_model=BatchJobRead,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Queue an async QR code export job",
+)
+async def export_qrcode_async(
+    qr_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DBSession,
+    format: str = Query(default="png", pattern="^(png|svg|pdf|eps)$"),  # noqa: A002
+) -> BatchJob:
+    """Enqueue a background Celery task to export the QR code as a file.
+
+    The endpoint returns immediately with a 202 and a ``BatchJob`` you can poll
+    via ``GET /v1/jobs/{job_id}`` to track progress and retrieve the download URL.
+    """
+    # Verify the QR code exists and belongs to the current user
+    await _get_qr_or_404(qr_id, current_user, db)
+
+    # Create a tracking BatchJob row
+    job = BatchJob(
+        user_id=current_user.id,
+        status=BatchJobStatus.pending,
+        total_items=1,
+        processed_items=0,
+    )
+    db.add(job)
+    await db.flush()
+    await db.refresh(job)
+
+    # Dispatch to the qr_export Celery queue (import here to avoid circular import
+    # at module load time since the task module imports from app.database)
+    from app.tasks.export import export_qr_code  # noqa: PLC0415
+
+    export_qr_code.apply_async(
+        args=[str(qr_id), format, str(job.id)],
+        queue="qr_export",
+    )
+
+    return job
+
+
+@router.get(
+    "/jobs/{job_id}",
+    response_model=BatchJobRead,
+    summary="Get the status of an async export job",
+)
+async def get_export_job(
+    job_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DBSession,
+) -> BatchJob:
+    """Return the current state of a BatchJob.
+
+    The ``result_url`` field is populated once the job reaches ``COMPLETED``
+    status and can be used to download the exported file.
+    """
+    from sqlalchemy import select
+
+    result = await db.execute(
+        select(BatchJob).where(
+            BatchJob.id == job_id,
+            BatchJob.user_id == current_user.id,
+        )
+    )
+    job = result.scalar_one_or_none()
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+    return job

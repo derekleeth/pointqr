@@ -15,6 +15,8 @@ export const useQREditorStore = defineStore('qrEditor', () => {
   const currentQRCode = ref<QRCodeRead | null>(null)
   const isDirty = ref(false)
   const isSaving = ref(false)
+  const exportJobId = ref<string | null>(null)
+  const exportStatus = ref<'idle' | 'pending' | 'processing' | 'completed' | 'failed'>('idle')
 
   // Deep-cloned mutable design config
   const designConfig = ref<DesignConfig>(structuredClone(DEFAULT_DESIGN_CONFIG))
@@ -100,6 +102,8 @@ export const useQREditorStore = defineStore('qrEditor', () => {
     currentQRCode,
     isDirty,
     isSaving,
+    exportJobId,
+    exportStatus,
     designConfig,
     title,
     qrType,

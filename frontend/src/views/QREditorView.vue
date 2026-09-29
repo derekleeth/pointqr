@@ -114,6 +114,14 @@ async function handleSave() {
             Live Preview
             <span class="text-xs font-normal text-surface-400 ml-2">updates in real-time</span>
           </h2>
+          <!-- Dynamic QR notice -->
+          <p
+            v-if="store.qrType === 'DYNAMIC'"
+            class="self-start text-xs text-primary-600 dark:text-primary-400 flex items-center gap-1"
+          >
+            <i class="pi pi-link text-xs" />
+            Dynamic QR — Redirect URL will be encoded automatically
+          </p>
           <QRCanvas />
         </div>
       </div>

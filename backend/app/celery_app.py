@@ -24,9 +24,9 @@ celery_app = Celery(
     backend="rpc://",
     include=[
         # Phase 3+ – task modules will be added here:
-        # "app.tasks.export",
+        "app.tasks.analytics",
+        "app.tasks.export",
         # "app.tasks.batch",
-        # "app.tasks.analytics",
         # "app.tasks.notifications",
     ],
 )

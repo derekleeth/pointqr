@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import QRCodeStyling from 'qr-code-styling'
 import { useQREditorStore } from '@/stores/qrEditor'
-import { exportQRCode } from '@/api/qrcodes'
+import { exportQRCode, startAsyncExport, getExportJob } from '@/api/qrcodes'
 
 const store = useQREditorStore()
+const toast = useToast()
 const canvasRef = ref<HTMLDivElement>()
 const isExporting = ref(false)
+const exportError = ref<string | null>(null)
 
 let qrInstance: QRCodeStyling | null = null
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let pollInterval: ReturnType<typeof setInterval> | null = null
 
 /** Build the options object that qr-code-styling expects. */
 function buildOptions() {
@@ -47,6 +51,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
+  if (pollInterval) clearInterval(pollInterval)
   qrInstance = null
 })
 
@@ -72,20 +77,90 @@ function downloadClient(ext: 'png' | 'svg') {
   qrInstance?.download({ name: store.title || 'qrcode', extension: ext })
 }
 
-/** High-resolution server export (saved QR codes only). */
+/** Stop any active export poll and reset state. */
+function stopPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
+}
+
+/**
+ * High-resolution server export via async Celery job.
+ * - Fires startAsyncExport to get a job ID.
+ * - Polls getExportJob every 2 s (max 30 polls / 60 s).
+ * - On COMPLETED: navigates to result_url for download.
+ * - On FAILED or timeout: shows a toast error.
+ */
 async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
   if (!store.currentQRCode) return
+
+  exportError.value = null
   isExporting.value = true
+  store.exportStatus = 'pending'
+
   try {
-    const { data } = await exportQRCode(store.currentQRCode.id, format)
-    const url = URL.createObjectURL(data as Blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${store.title || 'qrcode'}.${format}`
-    a.click()
-    URL.revokeObjectURL(url)
-  } finally {
+    const { data: job } = await startAsyncExport(store.currentQRCode.id, format)
+    store.exportJobId = job.id
+    store.exportStatus = 'processing'
+
+    let polls = 0
+    const MAX_POLLS = 30 // 30 × 2 s = 60 s timeout
+
+    pollInterval = setInterval(async () => {
+      polls++
+
+      // Timeout guard
+      if (polls > MAX_POLLS) {
+        stopPolling()
+        isExporting.value = false
+        store.exportStatus = 'failed'
+        exportError.value = 'Export timed out after 60 seconds. Please try again.'
+        toast.add({
+          severity: 'error',
+          summary: 'Export timed out',
+          detail: exportError.value,
+          life: 6000,
+        })
+        return
+      }
+
+      try {
+        const { data: status } = await getExportJob(job.id)
+
+        if (status.status === 'COMPLETED' && status.result_url) {
+          stopPolling()
+          isExporting.value = false
+          store.exportStatus = 'completed'
+          // Trigger download by navigating to the pre-signed result URL
+          window.location.href = status.result_url
+        } else if (status.status === 'FAILED') {
+          stopPolling()
+          isExporting.value = false
+          store.exportStatus = 'failed'
+          exportError.value = 'Export failed on the server. Please try again.'
+          toast.add({
+            severity: 'error',
+            summary: 'Export failed',
+            detail: exportError.value,
+            life: 6000,
+          })
+        }
+        // else PENDING / PROCESSING — keep polling
+      } catch {
+        // Network error during poll — keep going until timeout
+      }
+    }, 2000)
+  } catch (err) {
     isExporting.value = false
+    store.exportStatus = 'failed'
+    exportError.value = 'Could not start the export job. Please try again.'
+    toast.add({
+      severity: 'error',
+      summary: 'Export error',
+      detail: exportError.value,
+      life: 6000,
+    })
   }
 }
 </script>
@@ -130,6 +205,7 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
           icon="pi pi-image"
           size="small"
           :loading="isExporting"
+          :disabled="isExporting"
           @click="serverExport('png')"
         />
         <Button
@@ -137,6 +213,7 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
           icon="pi pi-file"
           size="small"
           :loading="isExporting"
+          :disabled="isExporting"
           @click="serverExport('svg')"
         />
         <Button
@@ -144,6 +221,7 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
           icon="pi pi-file-pdf"
           size="small"
           :loading="isExporting"
+          :disabled="isExporting"
           @click="serverExport('pdf')"
         />
         <Button
@@ -151,9 +229,14 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
           icon="pi pi-file"
           size="small"
           :loading="isExporting"
+          :disabled="isExporting"
           @click="serverExport('eps')"
         />
       </div>
+      <!-- Inline error feedback (also surfaced via toast) -->
+      <p v-if="exportError" class="text-xs text-red-500 text-center mt-1">
+        {{ exportError }}
+      </p>
     </template>
     <template v-else>
       <p class="text-xs text-surface-400 text-center">

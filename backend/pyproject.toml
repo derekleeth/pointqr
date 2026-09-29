@@ -28,6 +28,10 @@ dependencies = [
     "python-multipart>=0.0.12",
     # HTTP client (used in tests + SSRF validation later)
     "httpx>=0.27.0",
+    # User-Agent parsing (redirect service – device/OS/browser detection)
+    "user-agents>=2.2.0",
+    # TTLCache for redirect LRU cache
+    "cachetools>=5.5.0",
 ]
 
 [project.optional-dependencies]
