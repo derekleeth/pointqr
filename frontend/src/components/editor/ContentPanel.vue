@@ -35,29 +35,60 @@ const isDynamic = computed({
     <div class="flex flex-col gap-2">
       <label class="text-sm font-medium text-surface-700 dark:text-surface-300">QR Type</label>
       <div class="flex gap-3">
+        <!-- Static card -->
         <div
-          class="flex-1 border rounded-lg p-3 cursor-pointer transition-all"
+          class="flex-1 relative border-2 rounded-lg p-3 cursor-pointer transition-all select-none"
           :class="
             !isDynamic
-              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-              : 'border-surface-200 dark:border-surface-700 hover:border-surface-400'
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 ring-2 ring-primary-300 dark:ring-primary-700'
+              : 'border-surface-200 dark:border-surface-700 hover:border-surface-400 dark:hover:border-surface-500'
           "
           @click="isDynamic = false"
         >
-          <p class="font-semibold text-sm text-surface-900 dark:text-surface-0">Static</p>
-          <p class="text-xs text-surface-500 mt-0.5">Content fixed at creation</p>
+          <!-- Check badge (selected) -->
+          <span
+            v-if="!isDynamic"
+            class="absolute top-2 right-2 flex items-center justify-center w-4 h-4 rounded-full bg-primary-500 text-white"
+          >
+            <i class="pi pi-check" style="font-size: 0.55rem" />
+          </span>
+          <p
+            class="font-semibold text-sm"
+            :class="!isDynamic ? 'text-primary-700 dark:text-primary-300' : 'text-surface-900 dark:text-surface-0'"
+          >
+            Static
+          </p>
+          <p class="text-xs mt-0.5" :class="!isDynamic ? 'text-primary-500 dark:text-primary-400' : 'text-surface-500'">
+            Content fixed at creation
+          </p>
         </div>
+
+        <!-- Dynamic card -->
         <div
-          class="flex-1 border rounded-lg p-3 cursor-pointer transition-all"
+          class="flex-1 relative border-2 rounded-lg p-3 cursor-pointer transition-all select-none"
           :class="
             isDynamic
-              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-              : 'border-surface-200 dark:border-surface-700 hover:border-surface-400'
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 ring-2 ring-primary-300 dark:ring-primary-700'
+              : 'border-surface-200 dark:border-surface-700 hover:border-surface-400 dark:hover:border-surface-500'
           "
           @click="isDynamic = true"
         >
-          <p class="font-semibold text-sm text-surface-900 dark:text-surface-0">Dynamic</p>
-          <p class="text-xs text-surface-500 mt-0.5">Redirect URL editable anytime</p>
+          <!-- Check badge (selected) -->
+          <span
+            v-if="isDynamic"
+            class="absolute top-2 right-2 flex items-center justify-center w-4 h-4 rounded-full bg-primary-500 text-white"
+          >
+            <i class="pi pi-check" style="font-size: 0.55rem" />
+          </span>
+          <p
+            class="font-semibold text-sm"
+            :class="isDynamic ? 'text-primary-700 dark:text-primary-300' : 'text-surface-900 dark:text-surface-0'"
+          >
+            Dynamic
+          </p>
+          <p class="text-xs mt-0.5" :class="isDynamic ? 'text-primary-500 dark:text-primary-400' : 'text-surface-500'">
+            Redirect URL editable anytime
+          </p>
         </div>
       </div>
     </div>
