@@ -105,6 +105,7 @@
 
 ## Bugs 🐛
 
+> _No bugs logged yet._
 | # | Status | Description | Fix |
 |---|--------|-------------|-----|
 | 1 | ✅ Fixed | `invalid input value for enum qrcodetype: "dynamic"` — SQLAlchemy `Enum()` stores Python member **names** (`dynamic`) by default; PostgreSQL enum was created with uppercase **values** (`DYNAMIC`) in migration 001 | Added `values_callable=lambda objs: [e.value for e in objs]` to `QRCode.type` and `BatchJob.status` columns in [`models/qrcode.py`](../backend/app/models/qrcode.py) and [`models/batch_job.py`](../backend/app/models/batch_job.py) |
@@ -115,6 +116,7 @@
 
 ## Feature Requests 💡
 
+> _No feature requests logged yet._
 | # | Status | Description |
 |---|--------|-------------|
 | 1 | ✅ Done | Toast notifications on QR code save success (new codes) and failure — added to `QREditorView.vue` with error detail extracted from Axios response |

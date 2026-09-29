@@ -28,7 +28,11 @@ export const useQREditorStore = defineStore('qrEditor', () => {
   // Getters
   // -------------------------------------------------------------------------
   const isEditing = computed(() => !!currentQRCode.value)
-  const hasContent = computed(() => designConfig.value.content.trim().length > 0)
+  const hasContent = computed(() =>
+    qrType.value === 'DYNAMIC'
+      ? targetUrl.value.trim().length > 0
+      : designConfig.value.content.trim().length > 0,
+  )
 
   // -------------------------------------------------------------------------
   // Actions
@@ -89,8 +93,9 @@ export const useQREditorStore = defineStore('qrEditor', () => {
         result = data
       }
 
-      currentQRCode.value = result
-      isDirty.value = false
+      // Sync local state from server response so designConfig.content reflects
+      // the redirect URL that the backend injected for dynamic QR codes.
+      loadFromQRCode(result)
       return result
     } finally {
       isSaving.value = false

@@ -176,11 +176,20 @@ async def update_qrcode(
         qr.title = payload.title
     if payload.target_url is not None:
         qr.target_url = payload.target_url
+        # For dynamic QRs keep the encoded content pointing at the redirect service
+        if qr.type == QRCodeType.dynamic and qr.short_code:
+            existing_design = dict(qr.design_config or {})
+            existing_design["content"] = f"{settings.redirect_base_url}/r/{qr.short_code}"
+            qr.design_config = existing_design
     if payload.design_config is not None:
         # Merge with existing config so logo src is preserved unless explicitly overwritten
         existing = dict(qr.design_config or {})
         updated = payload.design_config.model_dump()
         existing.update(updated)
+        # For dynamic QRs, always restore the redirect URL – never let the client
+        # overwrite content with the raw destination URL.
+        if qr.type == QRCodeType.dynamic and qr.short_code:
+            existing["content"] = f"{settings.redirect_base_url}/r/{qr.short_code}"
         qr.design_config = existing
     if payload.is_active is not None:
         qr.is_active = payload.is_active

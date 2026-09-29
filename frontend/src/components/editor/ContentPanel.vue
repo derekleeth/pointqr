@@ -4,10 +4,19 @@ import { useQREditorStore } from '@/stores/qrEditor'
 
 const store = useQREditorStore()
 
-// Two-way binding for the QR encoded content
+// For static QRs: bind to designConfig.content (what gets encoded in the QR).
+// For dynamic QRs: bind to targetUrl (the destination — the backend encodes
+// the redirect short-link into designConfig.content automatically).
 const content = computed({
-  get: () => store.designConfig.content,
-  set: (v: string) => store.setContent(v),
+  get: () => (store.qrType === 'DYNAMIC' ? store.targetUrl : store.designConfig.content),
+  set: (v: string) => {
+    if (store.qrType === 'DYNAMIC') {
+      store.targetUrl = v
+      store.isDirty = true
+    } else {
+      store.setContent(v)
+    }
+  },
 })
 
 const isDynamic = computed({
