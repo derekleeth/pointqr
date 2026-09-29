@@ -1,41 +1,39 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
 
 const router = useRouter()
 const auth = useAuthStore()
+const theme = useThemeStore()
 
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+const error = ref('')
 
 async function handleRegister() {
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.'
+  error.value = ''
+  if (!email.value || !password.value) {
+    error.value = 'All fields are required.'
     return
   }
   if (password.value.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters.'
+    error.value = 'Password must be at least 8 characters.'
     return
   }
-
+  if (password.value !== confirmPassword.value) {
+    error.value = 'Passwords do not match.'
+    return
+  }
   loading.value = true
   try {
     await auth.register(email.value, password.value)
-    // Auto-login after registration
-    await auth.login(email.value, password.value)
     router.push('/dashboard')
-  } catch (err: unknown) {
-    const axiosErr = err as { response?: { data?: { detail?: string } } }
-    errorMessage.value =
-      axiosErr.response?.data?.detail ?? 'Registration failed. Please try again.'
+  } catch (e: any) {
+    error.value = e?.response?.data?.detail ?? 'Registration failed. The email may already be in use.'
   } finally {
     loading.value = false
   }
@@ -43,81 +41,201 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="flex justify-center items-center min-h-[70vh]">
-    <div class="w-full max-w-md">
-      <div class="card p-8 rounded-2xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-sm">
-        <div class="text-center mb-8">
-          <span class="text-4xl">🎉</span>
-          <h1 class="text-2xl font-bold mt-2 text-surface-900 dark:text-surface-0">
-            Create your account
-          </h1>
-          <p class="text-surface-500 mt-1">Start generating QR codes for free</p>
+  <div class="login-page">
+    <div class="page-glow" aria-hidden="true" />
+
+    <header class="login-topbar">
+      <RouterLink to="/" class="brand-link">
+        <div class="brand-icon"><i class="pi pi-stop-circle" /></div>
+        <span class="brand-name">PointQR</span>
+      </RouterLink>
+      <button class="theme-btn" @click="theme.toggle()">
+        <i :class="theme.isDark ? 'pi pi-sun' : 'pi pi-moon'" />
+      </button>
+    </header>
+
+    <main class="login-main">
+      <div class="login-card">
+        <div class="card-header">
+          <h1 class="card-title">Create your account</h1>
+          <p class="card-subtitle">Start building better QR codes today</p>
         </div>
 
-        <form class="flex flex-col gap-4" @submit.prevent="handleRegister">
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-surface-700 dark:text-surface-300">Email</label>
+        <div class="error-msg" v-if="error">
+          <i class="pi pi-exclamation-circle" />
+          {{ error }}
+        </div>
+
+        <form @submit.prevent="handleRegister" class="login-form" novalidate>
+          <div class="field">
+            <label for="email" class="field-label">Email address</label>
             <InputText
+              id="email"
               v-model="email"
               type="email"
               placeholder="you@example.com"
+              class="w-full"
               autocomplete="email"
               :disabled="loading"
-              required
-              class="w-full"
             />
           </div>
 
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-surface-700 dark:text-surface-300">Password</label>
+          <div class="field">
+            <label for="password" class="field-label">Password</label>
             <Password
+              id="password"
               v-model="password"
               placeholder="Min. 8 characters"
+              class="w-full"
+              :feedback="true"
               toggle-mask
-              input-class="w-full"
+              :input-style="{ width: '100%' }"
+              autocomplete="new-password"
               :disabled="loading"
-              required
             />
           </div>
 
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-surface-700 dark:text-surface-300">
-              Confirm Password
-            </label>
+          <div class="field">
+            <label for="confirm" class="field-label">Confirm password</label>
             <Password
+              id="confirm"
               v-model="confirmPassword"
-              placeholder="Repeat your password"
+              placeholder="••••••••"
+              class="w-full"
               :feedback="false"
               toggle-mask
-              input-class="w-full"
+              :input-style="{ width: '100%' }"
+              autocomplete="new-password"
               :disabled="loading"
-              required
             />
           </div>
-
-          <Message v-if="errorMessage" severity="error" :closable="false">
-            {{ errorMessage }}
-          </Message>
-          <Message v-if="successMessage" severity="success" :closable="false">
-            {{ successMessage }}
-          </Message>
 
           <Button
             type="submit"
-            label="Create Account"
+            label="Create account"
             icon="pi pi-user-plus"
+            class="w-full"
             :loading="loading"
-            class="w-full mt-2"
           />
         </form>
 
-        <p class="text-center text-sm text-surface-500 mt-6">
+        <p class="card-footer">
           Already have an account?
-          <RouterLink to="/login" class="text-primary-500 hover:underline font-medium">
-            Sign in
-          </RouterLink>
+          <RouterLink to="/login" class="card-link">Sign in →</RouterLink>
         </p>
       </div>
-    </div>
+    </main>
   </div>
 </template>
+
+<style scoped>
+/* Shared with LoginView — identical structure */
+.login-page {
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.page-glow {
+  position: fixed;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: radial-gradient(ellipse at center, var(--color-primary-soft) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.login-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem;
+  position: relative;
+  z-index: 1;
+}
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: -0.02em;
+}
+.brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+.brand-name { color: var(--text-primary); }
+.theme-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.theme-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.login-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.12);
+}
+.card-header { margin-bottom: 1.75rem; }
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin: 0 0 0.375rem;
+}
+.card-subtitle { font-size: 0.9375rem; color: var(--text-secondary); margin: 0; }
+.error-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+.login-form { display: flex; flex-direction: column; gap: 1.125rem; }
+.field { display: flex; flex-direction: column; gap: 0.375rem; }
+.field-label { font-size: 0.875rem; font-weight: 500; color: var(--text-primary); }
+.card-footer { text-align: center; font-size: 0.875rem; color: var(--text-secondary); margin: 1.5rem 0 0; }
+.card-link { color: var(--color-primary); text-decoration: none; font-weight: 500; }
+.card-link:hover { text-decoration: underline; }
+</style>
