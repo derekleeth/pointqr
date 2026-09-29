@@ -4,7 +4,8 @@
 
 services:
   backend:
-    # Mount source for hot-reload in dev
+    # Bind-mount source for hot-reload. The venv lives at /opt/venv (outside /app)
+    # so it is never shadowed by this mount.
     volumes:
       - ./backend:/app
       - storage:/app/storage
@@ -33,4 +34,3 @@ services:
   frontend:
     environment:
       - VITE_API_BASE_URL=/api
-

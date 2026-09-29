@@ -15,20 +15,21 @@ COPY pyproject.toml ./
 # Create a minimal README so uv/pip doesn't complain
 RUN touch README.md
 
-# Sync dependencies into a venv at /build/.venv
-RUN uv venv .venv && \
-    uv pip install --no-cache -r pyproject.toml
+# Sync dependencies into a venv at /opt/venv (outside /app so dev bind mounts can't shadow it)
+RUN uv venv /opt/venv && \
+    uv pip install --no-cache -r pyproject.toml --python /opt/venv/bin/python
 
 # --- Stage 2: Runtime ---
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 
-# Copy only the venv from builder
-COPY --from=builder /build/.venv /app/.venv
+# Copy venv from builder – lives at /opt/venv, safe from any /app bind mounts
+COPY --from=builder /opt/venv /opt/venv
 
 # Make venv the active Python
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/opt/venv/bin:$PATH"
+ENV VIRTUAL_ENV="/opt/venv"
 
 # Copy application source
 COPY . .
