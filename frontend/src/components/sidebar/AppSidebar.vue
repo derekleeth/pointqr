@@ -81,7 +81,11 @@ function logout() {
 
     <!-- ── Header ─────────────────────────── -->
     <div class="sidebar-header">
-      <RouterLink to="/dashboard" class="brand">
+      <RouterLink
+        to="/dashboard"
+        class="brand"
+        v-tooltip.right="collapsed ? 'Dashboard' : undefined"
+      >
         <img
           :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v3.png'"
           alt="PointQR"
@@ -97,8 +101,12 @@ function logout() {
         />
       </RouterLink>
 
-      <button class="collapse-btn" @click="ui.toggleSidebar()"
-        v-tooltip.right="collapsed ? 'Expand sidebar' : undefined">
+      <button
+        class="collapse-btn"
+        @click="ui.toggleSidebar()"
+        v-tooltip.right="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      >
         <i :class="collapsed ? 'pi pi-chevron-right' : 'pi pi-chevron-left'" />
       </button>
     </div>
@@ -189,8 +197,11 @@ function logout() {
   flex-shrink: 0;
 }
 .is-collapsed .sidebar-header {
+  flex-direction: column;
   justify-content: center;
-  padding: 0 0.5rem;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.25rem;
 }
 
 .brand {
@@ -201,6 +212,9 @@ function logout() {
   min-width: 0;
   overflow: hidden;
 }
+.is-collapsed .brand {
+  justify-content: center;
+}
 .brand-logo {
   height: 90px;
   width: auto;
@@ -209,8 +223,8 @@ function logout() {
   flex-shrink: 0;
 }
 .brand-logo-icon {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   object-fit: cover;
   object-position: left center;
   border-radius: 6px;
@@ -218,22 +232,28 @@ function logout() {
 }
 
 .collapse-btn {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 6px;
   background: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.collapse-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.is-collapsed .collapse-btn { display: none; }
+.collapse-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.collapse-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
 
 /* ── Navigation ─────────────────────────────────────── */
 .sidebar-nav {
