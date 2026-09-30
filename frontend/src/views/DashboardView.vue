@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { listQRCodes, deleteQRCode, type QRCodeRead } from '@/api/qrcodes'
+import DownloadModal from '@/components/dashboard/DownloadModal.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -12,6 +13,9 @@ const total = ref(0)
 const loading = ref(false)
 const page = ref(1)
 const perPage = 20
+
+const selectedQRCode = ref<QRCodeRead | null>(null)
+const downloadModalVisible = ref(false)
 
 onMounted(async () => {
   if (!auth.user) await auth.initialize()
@@ -37,6 +41,11 @@ async function handleDelete(qr: QRCodeRead) {
 
 function handleEdit(qr: QRCodeRead) {
   router.push(`/editor/${qr.id}`)
+}
+
+function handleDownload(qr: QRCodeRead) {
+  selectedQRCode.value = qr
+  downloadModalVisible.value = true
 }
 
 function formatDate(iso: string) {
@@ -157,9 +166,19 @@ function formatDate(iso: string) {
           </template>
         </Column>
 
-        <Column header="Actions" style="width: 120px">
+        <Column header="Actions" style="width: 140px">
           <template #body="{ data }">
             <div class="flex gap-1">
+              <Button
+                icon="pi pi-download"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                aria-label="Download"
+                title="Download"
+                @click="handleDownload(data)"
+              />
               <Button
                 icon="pi pi-pencil"
                 severity="secondary"
@@ -167,6 +186,7 @@ function formatDate(iso: string) {
                 rounded
                 size="small"
                 aria-label="Edit"
+                title="Edit"
                 @click="handleEdit(data)"
               />
               <Button
@@ -176,6 +196,7 @@ function formatDate(iso: string) {
                 rounded
                 size="small"
                 aria-label="Delete"
+                title="Delete"
                 @click="handleDelete(data)"
               />
             </div>
@@ -183,6 +204,12 @@ function formatDate(iso: string) {
         </Column>
       </DataTable>
     </div>
+
+    <!-- Download Barcode Modal -->
+    <DownloadModal
+      v-model:visible="downloadModalVisible"
+      :qr-code="selectedQRCode"
+    />
   </div>
 </template>
 
