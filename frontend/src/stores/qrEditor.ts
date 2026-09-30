@@ -44,9 +44,23 @@ export const useQREditorStore = defineStore('qrEditor', () => {
     title.value = qr.title
     qrType.value = qr.type
     targetUrl.value = qr.target_url ?? ''
+
+    const saved = qr.design_config ?? {}
+
+    // Deep-merge: start from a clean clone of defaults, then overlay each
+    // top-level key from the server. For nested objects (labels, imageOptions,
+    // etc.) we merge against their own sub-defaults so missing fields never
+    // cause undefined access.
+    const defaults = structuredClone(DEFAULT_DESIGN_CONFIG)
     designConfig.value = {
-      ...structuredClone(DEFAULT_DESIGN_CONFIG),
-      ...(qr.design_config ?? {}),
+      ...defaults,
+      ...saved,
+      // Explicit sub-object merges so a partially-populated server response
+      // (e.g. old records saved before labels were added) still produces a
+      // fully-valid config object.
+      imageOptions: { ...defaults.imageOptions, ...(saved.imageOptions ?? {}) },
+      labelTop: { ...defaults.labelTop, ...(saved.labelTop ?? {}) },
+      labelBottom: { ...defaults.labelBottom, ...(saved.labelBottom ?? {}) },
     }
     isDirty.value = false
   }

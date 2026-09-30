@@ -45,21 +45,6 @@ class ImageOptions(BaseModel):
     hideBackgroundDots: bool = True
 
 
-class TextLabelOptions(BaseModel):
-    """Text label rendered above or below the QR barcode."""
-
-    enabled: bool = False
-    text: str = ""
-    fontFamily: str = "sans-serif"
-    fontSize: int = Field(default=14, ge=6, le=96)
-    fontWeight: Literal["normal", "bold"] = "normal"
-    fontStyle: Literal["normal", "italic"] = "normal"
-    color: str = "#000000"
-    align: Literal["left", "center", "right"] = "center"
-    letterSpacing: float = 0.0
-    padding: int = Field(default=8, ge=0, le=64)
-
-
 class DesignConfig(BaseModel):
     """Full QR code design configuration.
 
@@ -77,9 +62,6 @@ class DesignConfig(BaseModel):
     cornersSquareOptions: CornersSquareOptions = Field(default_factory=CornersSquareOptions)
     cornersDotOptions: CornersDotOptions = Field(default_factory=CornersDotOptions)
     imageOptions: ImageOptions = Field(default_factory=ImageOptions)
-    labelTop: TextLabelOptions = Field(default_factory=TextLabelOptions)
-    labelBottom: TextLabelOptions = Field(default_factory=TextLabelOptions)
-
 
 
 # ---------------------------------------------------------------------------
