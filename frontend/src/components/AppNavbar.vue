@@ -20,7 +20,7 @@ function handleLogout() {
     <!-- Logo -->
     <RouterLink to="/" class="flex items-center no-underline">
       <img
-        :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v1.png'"
+        :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v3.png'"
         alt="PointQR"
         class="h-8 w-auto"
       />

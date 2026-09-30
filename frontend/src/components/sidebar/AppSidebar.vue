@@ -83,14 +83,14 @@ function logout() {
     <div class="sidebar-header">
       <RouterLink to="/dashboard" class="brand">
         <img
-          :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v1.png'"
+          :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v3.png'"
           alt="PointQR"
           class="brand-logo"
           v-show="!collapsed"
         />
         <!-- Collapsed: show a small square crop of the logo -->
         <img
-          :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v1.png'"
+          :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v3.png'"
           alt="PointQR"
           class="brand-logo-icon"
           v-show="collapsed"
