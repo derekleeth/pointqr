@@ -94,10 +94,216 @@ watch(
 // Downloads
 // ---------------------------------------------------------------------------
 
-/** Client-side instant download (no server round-trip needed). */
-function downloadClient(ext: 'png' | 'svg') {
-  qrInstance?.download({ name: store.title || 'qrcode', extension: ext })
+/**
+ * Measure how tall a label will be when rendered at `width` px.
+ * We use an offscreen canvas to get font metrics.
+ */
+function measureLabelHeight(
+  text: string,
+  fontFamily: string,
+  fontSize: number,
+  fontWeight: string,
+  width: number,
+  padding: number,
+): number {
+  if (!text) return 0
+  // Approximate line height as 1.4× font size
+  const lineHeight = fontSize * 1.4
+  const ctx = document.createElement('canvas').getContext('2d')!
+  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
+  const words = text.split('\n')
+  let lines = 0
+  for (const word of words) {
+    const measured = ctx.measureText(word).width
+    lines += Math.max(1, Math.ceil(measured / width))
+  }
+  return lines * lineHeight + padding * 2
 }
+
+/**
+ * Draw a label's text onto a Canvas 2D context.
+ * `y` is the top of the label band.
+ */
+function drawLabel(
+  ctx: CanvasRenderingContext2D,
+  lbl: { text: string; fontFamily: string; fontSize: number; fontWeight: string; fontStyle: string; color: string; align: 'left' | 'center' | 'right'; letterSpacing: number; padding: number },
+  y: number,
+  width: number,
+) {
+  const lineHeight = lbl.fontSize * 1.4
+  ctx.font = `${lbl.fontStyle} ${lbl.fontWeight} ${lbl.fontSize}px ${lbl.fontFamily}`
+  ctx.fillStyle = lbl.color
+  ctx.textBaseline = 'top'
+
+  // Split by explicit newlines then word-wrap within `width`
+  const rawLines = lbl.text.split('\n')
+  const wrappedLines: string[] = []
+  for (const raw of rawLines) {
+    const words = raw.split(' ')
+    let cur = ''
+    for (const w of words) {
+      const test = cur ? `${cur} ${w}` : w
+      if (ctx.measureText(test).width > width - 8 && cur) {
+        wrappedLines.push(cur)
+        cur = w
+      } else {
+        cur = test
+      }
+    }
+    wrappedLines.push(cur)
+  }
+
+  let textY = y + lbl.padding
+  for (const line of wrappedLines) {
+    let x = 4
+    if (lbl.align === 'center') x = (width - ctx.measureText(line).width) / 2
+    else if (lbl.align === 'right') x = width - ctx.measureText(line).width - 4
+
+    // Manual letter spacing: draw char by char
+    if (lbl.letterSpacing !== 0) {
+      let cx = x
+      for (const char of line) {
+        ctx.fillText(char, cx, textY)
+        cx += ctx.measureText(char).width + lbl.letterSpacing
+      }
+    } else {
+      ctx.fillText(line, x, textY)
+    }
+    textY += lineHeight
+  }
+}
+
+/** Client-side composited PNG download (QR + labels). */
+async function downloadClient(ext: 'png' | 'svg') {
+  const cfg = store.designConfig
+  const qrSize = 300
+  const topLbl = cfg.labelTop
+  const botLbl = cfg.labelBottom
+
+  const topH = topLbl.enabled && topLbl.text
+    ? measureLabelHeight(topLbl.text, topLbl.fontFamily, topLbl.fontSize, topLbl.fontWeight, qrSize, topLbl.padding)
+    : 0
+  const botH = botLbl.enabled && botLbl.text
+    ? measureLabelHeight(botLbl.text, botLbl.fontFamily, botLbl.fontSize, botLbl.fontWeight, qrSize, botLbl.padding)
+    : 0
+
+  const totalH = qrSize + topH + botH
+  const name = store.title || 'qrcode'
+
+  if (ext === 'png') {
+    // Get the QR as a raw PNG blob via qr-code-styling
+    const blob = await qrInstance!.getRawData('png') as Blob
+    const img = await createImageBitmap(await blob.arrayBuffer().then(b => new Blob([b], { type: 'image/png' })))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = qrSize
+    canvas.height = totalH
+    const ctx = canvas.getContext('2d')!
+
+    // Background
+    ctx.fillStyle = cfg.backgroundOptions.color
+    ctx.fillRect(0, 0, qrSize, totalH)
+
+    // Top label
+    if (topH > 0) drawLabel(ctx, topLbl, 0, qrSize)
+
+    // QR code
+    ctx.drawImage(img, 0, topH, qrSize, qrSize)
+
+    // Bottom label
+    if (botH > 0) drawLabel(ctx, botLbl, topH + qrSize, qrSize)
+
+    canvas.toBlob(b => {
+      if (!b) return
+      const url = URL.createObjectURL(b)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${name}.png`
+      a.click()
+      URL.revokeObjectURL(url)
+    }, 'image/png')
+
+  } else {
+    // SVG: get raw SVG string from qr-code-styling then inject label text elements
+    const blob = await qrInstance!.getRawData('svg') as Blob
+    const svgText = await blob.text()
+
+    // Parse and resize the SVG to add label space
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(svgText, 'image/svg+xml')
+    const svg = doc.documentElement
+
+    svg.setAttribute('width', String(qrSize))
+    svg.setAttribute('height', String(totalH))
+    svg.setAttribute('viewBox', `0 0 ${qrSize} ${totalH}`)
+
+    // Background rect for label areas
+    if (topH > 0 || botH > 0) {
+      const bg = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      bg.setAttribute('x', '0')
+      bg.setAttribute('y', '0')
+      bg.setAttribute('width', String(qrSize))
+      bg.setAttribute('height', String(totalH))
+      bg.setAttribute('fill', cfg.backgroundOptions.color)
+      svg.insertBefore(bg, svg.firstChild)
+    }
+
+    // Shift the QR content down by topH using a <g> wrapper
+    if (topH > 0) {
+      const children = Array.from(svg.childNodes).slice(1) // skip bg rect
+      const g = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
+      g.setAttribute('transform', `translate(0,${topH})`)
+      children.forEach(c => g.appendChild(c))
+      svg.appendChild(g)
+    }
+
+    // Helper: append SVG <text> for a label
+    function appendSvgLabel(
+      lbl: typeof topLbl,
+      yOffset: number,
+    ) {
+      if (!lbl.enabled || !lbl.text) return
+      const lines = lbl.text.split('\n')
+      const lineH = lbl.fontSize * 1.4
+      let lineY = yOffset + lbl.padding + lbl.fontSize
+
+      for (const line of lines) {
+        const t = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
+        t.setAttribute('x',
+          lbl.align === 'center' ? String(qrSize / 2)
+          : lbl.align === 'right' ? String(qrSize - 4)
+          : '4')
+        t.setAttribute('y', String(lineY))
+        t.setAttribute('font-family', lbl.fontFamily)
+        t.setAttribute('font-size', String(lbl.fontSize))
+        t.setAttribute('font-weight', lbl.fontWeight)
+        t.setAttribute('font-style', lbl.fontStyle)
+        t.setAttribute('fill', lbl.color)
+        t.setAttribute('text-anchor',
+          lbl.align === 'center' ? 'middle'
+          : lbl.align === 'right' ? 'end'
+          : 'start')
+        if (lbl.letterSpacing !== 0) t.setAttribute('letter-spacing', String(lbl.letterSpacing))
+        t.textContent = line
+        svg.appendChild(t)
+        lineY += lineH
+      }
+    }
+
+    appendSvgLabel(topLbl, 0)
+    appendSvgLabel(botLbl, topH + qrSize)
+
+    const serialized = new XMLSerializer().serializeToString(doc)
+    const outBlob = new Blob([serialized], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(outBlob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${name}.svg`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+}
+
 
 /** Stop any active export poll and reset state. */
 function stopPolling() {
