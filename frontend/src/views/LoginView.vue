@@ -53,64 +53,76 @@ async function handleLogin() {
     <!-- Centered card -->
     <main class="login-main">
       <div class="login-card">
-        <!-- Card header -->
-        <div class="card-header">
-          <h1 class="card-title">Welcome back</h1>
-          <p class="card-subtitle">Sign in to your PointQR account</p>
-        </div>
-
-        <!-- Error -->
-        <div class="error-msg" v-if="error">
-          <i class="pi pi-exclamation-circle" />
-          {{ error }}
-        </div>
-
-        <!-- Form -->
-        <form @submit.prevent="handleLogin" class="login-form" novalidate>
-          <div class="field">
-            <label for="email" class="field-label">Email address</label>
-            <InputText
-              id="email"
-              v-model="email"
-              type="email"
-              placeholder="you@example.com"
-              class="w-full"
-              autocomplete="email"
-              :disabled="loading"
-            />
+        <!-- Form column -->
+        <div class="login-card-form">
+          <!-- Card header -->
+          <div class="card-header">
+            <h1 class="card-title">Welcome back</h1>
+            <p class="card-subtitle">Sign in to your PointQR account</p>
           </div>
 
-          <div class="field">
-            <div class="field-label-row">
-              <label for="password" class="field-label">Password</label>
+          <!-- Error -->
+          <div class="error-msg" v-if="error">
+            <i class="pi pi-exclamation-circle" />
+            {{ error }}
+          </div>
+
+          <!-- Form -->
+          <form @submit.prevent="handleLogin" class="login-form" novalidate>
+            <div class="field">
+              <label for="email" class="field-label">Email address</label>
+              <InputText
+                id="email"
+                v-model="email"
+                type="email"
+                placeholder="you@example.com"
+                class="w-full"
+                autocomplete="email"
+                :disabled="loading"
+              />
             </div>
-            <Password
-              id="password"
-              v-model="password"
-              placeholder="••••••••"
+
+            <div class="field">
+              <div class="field-label-row">
+                <label for="password" class="field-label">Password</label>
+              </div>
+              <Password
+                id="password"
+                v-model="password"
+                placeholder="••••••••"
+                class="w-full"
+                :feedback="false"
+                toggle-mask
+                :input-style="{ width: '100%' }"
+                autocomplete="current-password"
+                :disabled="loading"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              label="Sign in"
+              icon="pi pi-sign-in"
               class="w-full"
-              :feedback="false"
-              toggle-mask
-              :input-style="{ width: '100%' }"
-              autocomplete="current-password"
-              :disabled="loading"
+              :loading="loading"
             />
-          </div>
+          </form>
 
-          <Button
-            type="submit"
-            label="Sign in"
-            icon="pi pi-sign-in"
-            class="w-full"
-            :loading="loading"
+          <!-- Footer -->
+          <p class="card-footer">
+            Don't have an account?
+            <RouterLink to="/register" class="card-link">Create one →</RouterLink>
+          </p>
+        </div>
+
+        <!-- Logo column (right side inside login box) -->
+        <div class="login-card-brand">
+          <img
+            :src="theme.isDark ? '/PointQR-Dark-v2.png' : '/PointQR-Light-v3.png'"
+            alt="PointQR Logo"
+            class="login-brand-logo"
           />
-        </form>
-
-        <!-- Footer -->
-        <p class="card-footer">
-          Don't have an account?
-          <RouterLink to="/register" class="card-link">Create one →</RouterLink>
-        </p>
+        </div>
       </div>
     </main>
   </div>
@@ -159,8 +171,8 @@ async function handleLogin() {
   letter-spacing: -0.02em;
 }
 .brand-icon {
-  width: 90px;
-  height: 90px;
+  width: 28px;
+  height: 28px;
   border-radius: 7px;
   background: var(--color-primary-soft);
   color: var(--color-primary);
@@ -199,12 +211,24 @@ async function handleLogin() {
 
 .login-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 760px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 2.5rem 2rem;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.12);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.login-card-form {
+  flex: 1.1;
+  padding: 2.5rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
 }
 
 .card-header { margin-bottom: 1.75rem; }
@@ -219,6 +243,33 @@ async function handleLogin() {
   font-size: 0.9375rem;
   color: var(--text-secondary);
   margin: 0;
+}
+
+/* ── Brand Logo Column (Right Side) ──────────── */
+.login-card-brand {
+  flex: 0.9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border);
+  position: relative;
+}
+
+.login-brand-logo {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.1));
+  transition: transform 0.25s ease, filter 0.25s ease;
+  user-select: none;
+}
+
+.login-brand-logo:hover {
+  transform: scale(1.03);
 }
 
 /* ── Error banner ────────────────────────────── */
@@ -264,5 +315,27 @@ async function handleLogin() {
   font-weight: 500;
 }
 .card-link:hover { text-decoration: underline; }
+
+/* ── Responsive adjustments ─────────────────── */
+@media (max-width: 640px) {
+  .login-card {
+    max-width: 420px;
+    flex-direction: column-reverse;
+  }
+
+  .login-card-brand {
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+    padding: 1.75rem 1.5rem 1.25rem;
+  }
+
+  .login-brand-logo {
+    max-width: 130px;
+  }
+
+  .login-card-form {
+    padding: 1.75rem 1.5rem 2rem;
+  }
+}
 </style>
 
