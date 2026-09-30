@@ -14,6 +14,25 @@ const canvasRef = ref<HTMLDivElement>()
 const isExporting = ref(false)
 const exportError = ref<string | null>(null)
 
+/** Build CSS style object for a text label. */
+function labelStyle(key: 'labelTop' | 'labelBottom') {
+  const lbl = store.designConfig[key]
+  return {
+    fontFamily: lbl.fontFamily,
+    fontSize: `${lbl.fontSize}px`,
+    fontWeight: lbl.fontWeight,
+    fontStyle: lbl.fontStyle,
+    color: lbl.color,
+    textAlign: lbl.align,
+    letterSpacing: `${lbl.letterSpacing}px`,
+    padding: `${lbl.padding}px 0`,
+    width: '300px',
+    display: 'block',
+    lineHeight: '1.3',
+    whiteSpace: 'pre-wrap' as const,
+  }
+}
+
 let qrInstance: QRCodeStyling | null = null
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let pollInterval: ReturnType<typeof setInterval> | null = null
@@ -174,15 +193,27 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
          reads as intentional rather than a bright intrusion into the dark UI -->
     <div class="flex flex-col items-center gap-3 w-full">
       <div
-        class="relative rounded-2xl p-4 transition-colors duration-200"
+        class="relative rounded-2xl p-4 transition-colors duration-200 flex flex-col items-center"
         :class="isDark
           ? 'qr-checkerboard ring-1 ring-surface-600'
           : 'bg-surface-50 ring-1 ring-surface-200'"
       >
+        <!-- Top label -->
+        <span
+          v-if="store.designConfig.labelTop.enabled && store.designConfig.labelTop.text"
+          :style="labelStyle('labelTop')"
+        >{{ store.designConfig.labelTop.text }}</span>
+
         <div
           ref="canvasRef"
           class="rounded-lg overflow-hidden shadow-sm block"
         />
+
+        <!-- Bottom label -->
+        <span
+          v-if="store.designConfig.labelBottom.enabled && store.designConfig.labelBottom.text"
+          :style="labelStyle('labelBottom')"
+        >{{ store.designConfig.labelBottom.text }}</span>
       </div>
       <!-- Background colour hint in dark mode -->
       <p class="text-xs text-surface-400 flex items-center gap-1.5">

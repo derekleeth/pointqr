@@ -39,6 +39,19 @@ export interface ImageOptions {
   hideBackgroundDots: boolean
 }
 
+export interface TextLabelOptions {
+  enabled: boolean
+  text: string
+  fontFamily: string
+  fontSize: number
+  fontWeight: 'normal' | 'bold'
+  fontStyle: 'normal' | 'italic'
+  color: string
+  align: 'left' | 'center' | 'right'
+  letterSpacing: number
+  padding: number
+}
+
 export interface DesignConfig {
   content: string
   width: number
@@ -50,6 +63,8 @@ export interface DesignConfig {
   cornersSquareOptions: CornersSquareOptions
   cornersDotOptions: CornersDotOptions
   imageOptions: ImageOptions
+  labelTop: TextLabelOptions
+  labelBottom: TextLabelOptions
 }
 
 // ---------------------------------------------------------------------------
@@ -107,6 +122,30 @@ export const DEFAULT_DESIGN_CONFIG: DesignConfig = {
   cornersSquareOptions: { color: '#000000', type: 'square' },
   cornersDotOptions: { color: '#000000', type: 'square' },
   imageOptions: { src: null, margin: 5, imageSize: 0.4, hideBackgroundDots: true },
+  labelTop: {
+    enabled: false,
+    text: '',
+    fontFamily: 'sans-serif',
+    fontSize: 14,
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    color: '#000000',
+    align: 'center',
+    letterSpacing: 0,
+    padding: 8,
+  },
+  labelBottom: {
+    enabled: false,
+    text: '',
+    fontFamily: 'sans-serif',
+    fontSize: 14,
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    color: '#000000',
+    align: 'center',
+    letterSpacing: 0,
+    padding: 8,
+  },
 }
 
 // ---------------------------------------------------------------------------
