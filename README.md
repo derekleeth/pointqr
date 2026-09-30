@@ -1,15 +1,17 @@
-# pointqr
 # PointQR 📱
 
 A modern, scalable QR Code Generation Platform — create, customize, manage, and track static and dynamic QR codes.
 
 ## Features
 
-- 🎨 **Interactive QR Editor** — Real-time canvas preview with dot patterns, gradients, and logo embedding
+- 🎨 **Interactive QR Editor** — Real-time canvas preview with dot patterns, corner shapes, colors, and logo embedding
+- 🏷️ **Custom Text Labels** — Configurable top and bottom text labels with typography controls (font, size, weight, italic, color, alignment, letter spacing, and padding)
+- 📥 **Composited & High-Res Export** — Instant client-side PNG/SVG export with text labels, plus background worker exports (PDF, EPS, SVG, PNG)
 - ⚡ **Dynamic Redirects** — Update link destinations anytime; sub-15ms redirect latency
 - 📊 **Scan Analytics** — Track scans by location, device, OS, browser, and time
 - 🗂️ **Bulk Generation** — Upload CSV → receive ZIP of QR codes via async Celery workers
 - 🔐 **JWT Authentication** — Secure OAuth2 access/refresh token flow
+
 
 ## Tech Stack
 
@@ -130,9 +132,9 @@ Key variables:
 
 | Phase | Status | Focus |
 |---|---|---|
-| Phase 1 | ✅ In Progress | Foundation: Docker, DB migrations, JWT auth |
-| Phase 2 | 🔜 Planned | QR canvas editor + FastAPI rendering endpoints |
-| Phase 3 | 🔜 Planned | Dynamic redirects + async scan logging |
+| Phase 1 | ✅ Completed | Foundation: Docker, DB migrations, JWT auth |
+| Phase 2 | ✅ Completed | QR canvas editor + FastAPI rendering endpoints |
+| Phase 3 | ✅ Completed | Dynamic redirects, async scan logging, and outer text labels |
 | Phase 4 | 🔜 Planned | Analytics dashboard + bulk CSV generation |
 | Phase 5 | 🔜 Planned | Security hardening, CI/CD, production launch |
 

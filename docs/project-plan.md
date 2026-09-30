@@ -79,11 +79,11 @@ Marketing professionals, businesses, event organizers, and individual creators r
 - **Patterns:** Customizable dot patterns, corner square styles, and corner dot styles.
 - **Styling:** Solid colors, linear/radial gradients, and custom or transparent backgrounds.
 - **Logo Embedding:** Center logo/icon embedding with automatic error correction level adjustment (Level H recommended).
-- **Labels:** Call-to-action (CTA) frames and customizable banner labels (e.g., "SCAN ME").
+- **Labels:** Call-to-action (CTA) frames and customizable banner labels (e.g., "SCAN ME"). Includes independently configurable top and bottom text labels with full typography controls (font family, font size, bold/italic, color, alignment, letter spacing, and padding) and composited client-side export.
 
 ### Asset Export Engine
 
-- **Formats:** PNG (custom DPI/resolution), SVG (pure vector), PDF, and EPS (print-ready vector).
+- **Formats:** PNG (custom DPI/resolution and composite multi-layer client-side export), SVG (pure vector with integrated text labels), PDF, and EPS (print-ready vector).
 - **Batch Processing:** CSV upload functionality for hundreds of URLs/texts, returning a zipped archive of QR codes processed via Celery.
 
 ### Analytics & Reporting Dashboard
@@ -127,13 +127,14 @@ Marketing professionals, businesses, event organizers, and individual creators r
 
 ## 7. Project Implementation Milestones & Roadmap
 
-| Phase | Timeline | Focus |
-|---|---|---|
-| **Phase 1** | Weeks 1–2 | Repository structure, Docker Compose orchestration, DB migrations with Alembic, JWT user authentication |
-| **Phase 2** | Weeks 3–4 | Vue 3 + PrimeVue setup, interactive canvas editor with live preview, FastAPI QR rendering endpoints |
-| **Phase 3** | Weeks 5–6 | URL shortening/redirect service (sub-10ms target), RabbitMQ/Celery async scan logging, background vector export |
-| **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard with Chart.js, CSV bulk QR generation pipeline |
-| **Phase 5** | Weeks 9–10 | Rate limiting, penetration testing, automated CI/CD pipelines, project documentation |
+| Phase | Timeline | Focus | Status |
+|---|---|---|---|
+| **Phase 1** | Weeks 1–2 | Repository structure, Docker Compose orchestration, DB migrations with Alembic, JWT user authentication | ✅ Completed |
+| **Phase 2** | Weeks 3–4 | Vue 3 + PrimeVue setup, interactive canvas editor with live preview, FastAPI QR rendering endpoints | ✅ Completed |
+| **Phase 3** | Weeks 5–6 | URL shortening/redirect service (sub-10ms target), RabbitMQ/Celery async scan logging, background vector export, outer text labels | ✅ Completed |
+| **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard with Chart.js, CSV bulk QR generation pipeline | ⏳ Planned |
+| **Phase 5** | Weeks 9–10 | Rate limiting, penetration testing, automated CI/CD pipelines, project documentation | ⏳ Planned |
+
 
 ---
 

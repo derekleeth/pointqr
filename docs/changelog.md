@@ -1,6 +1,6 @@
 # PointQR – Progress, Bugs & Feature Tracker
 
-> Last Updated: 2026-09-29 · Phase 3 complete
+> Last Updated: 2026-09-30 · Phase 3 complete + QR Text Labels Feature
 
 ---
 
@@ -74,9 +74,32 @@
 - ✅ **`src/components/editor/ContentPanel.vue`** — dynamic QR helper text added
 - ✅ **`src/views/QREditorView.vue`** — dynamic QR notice in live preview panel header
 
+### Post-Phase 3 Enhancements – QR Text Labels & Outer Customization (2026-09-30) ✅
+
+- ✅ **`src/api/qrcodes.ts`** — Added `TextLabelOptions` type, added `labelTop` and `labelBottom` to `DesignConfig` with full defaults in `DEFAULT_DESIGN_CONFIG`.
+- ✅ **`src/components/editor/DesignPanel.vue`** — Added **"Text Labels"** accordion panel supporting independent top and bottom labels with:
+  - Toggle switches to enable/disable each label independently
+  - Multi-line text input
+  - Font family selection (System Sans, Serif, Monospace, Arial, Georgia, Courier New, Trebuchet MS, Impact)
+  - Font size slider (8–48px)
+  - Bold and Italic toggles
+  - Color picker with hex display
+  - Text alignment controls (Left, Center, Right)
+  - Letter spacing slider (-2px to 10px)
+  - Padding slider (0px to 32px)
+- ✅ **`src/components/editor/QRCanvas.vue`** — Live preview rendering of styled text labels outside the QR canvas matrix inside the mat container.
+- ✅ **Client-Side Composite Export in `QRCanvas.vue`** — Overhauled `downloadClient()` to composite the barcode + outer text labels:
+  - **PNG:** Offscreen HTML5 Canvas 2D rendering calculating dynamic label heights, background fill, word-wrapping, letter spacing, and drawing the barcode matrix bitmap.
+  - **SVG:** DOMParser-based SVG modification that resizes viewBox, adds background fill, wraps and offsets inner QR elements via `<g transform="...">`, and injects native SVG `<text>` elements.
+- ✅ **`backend/app/schemas/qrcode.py`** — Added `TextLabelOptions` Pydantic model and updated `DesignConfig` with `labelTop` and `labelBottom` fields so label configurations persist in PostgreSQL instead of being stripped on save.
+- ✅ **`src/stores/qrEditor.ts`** — Enhanced `loadFromQRCode()` with deep-merge logic across nested sub-objects (`imageOptions`, `labelTop`, `labelBottom`) against defaults to maintain backward compatibility and preserve label state.
+
 ### Bug Fixes Applied During Phase 3
 
 - 🐛 *(fixed)* `startAsyncExport` and `getExportJob` had double `/v1/v1/` URL prefix — corrected to relative paths matching `apiClient` base URL
+- 🐛 *(fixed)* Labels not saving — backend Pydantic `DesignConfig` was missing `labelTop` and `labelBottom`, causing incoming label parameters to be stripped during `model_dump()`.
+- 🐛 *(fixed)* Client-side download missing outer text — `qr-code-styling` download exported only the inner barcode matrix. Implemented offscreen Canvas 2D and SVG composite rendering to export QR code with top/bottom labels intact.
+- 🐛 *(fixed)* Shallow merge in `loadFromQRCode` in Pinia store — updated to deep-merge sub-objects against defaults to prevent partial configs from resetting nested properties.
 
 ---
 
@@ -105,21 +128,24 @@
 
 ## Bugs 🐛
 
-> _No bugs logged yet._
 | # | Status | Description | Fix |
 |---|--------|-------------|-----|
 | 1 | ✅ Fixed | `invalid input value for enum qrcodetype: "dynamic"` — SQLAlchemy `Enum()` stores Python member **names** (`dynamic`) by default; PostgreSQL enum was created with uppercase **values** (`DYNAMIC`) in migration 001 | Added `values_callable=lambda objs: [e.value for e in objs]` to `QRCode.type` and `BatchJob.status` columns in [`models/qrcode.py`](../backend/app/models/qrcode.py) and [`models/batch_job.py`](../backend/app/models/batch_job.py) |
 | 2 | ✅ Fixed | Frontend `startAsyncExport` / `getExportJob` used hardcoded `/v1/` prefix causing double `/v1/v1/` URL with the Axios base URL | Removed the `/v1` prefix from both functions in `src/api/qrcodes.ts` |
 | 3 | ✅ Fixed | Vite dev server blocked requests from custom hostname (`monkey-v-1`) | Added `allowedHosts: 'all'` to `vite.config.ts` |
+| 4 | ✅ Fixed | Outer text labels not persisting on save | Added `TextLabelOptions` Pydantic model to `backend/app/schemas/qrcode.py` so `labelTop` and `labelBottom` are retained in `DesignConfig` payloads. |
+| 5 | ✅ Fixed | Quick download (PNG/SVG) did not include outer text labels | Replaced direct library download in `QRCanvas.vue` with Canvas 2D (PNG) and DOM SVG composite rendering containing labels, custom fonts, wrapping, and spacing. |
+| 6 | ✅ Fixed | Nested store state reset on load/save | Updated `loadFromQRCode` in `frontend/src/stores/qrEditor.ts` to perform explicit deep-merging of `imageOptions`, `labelTop`, and `labelBottom`. |
 
 ---
 
 ## Feature Requests 💡
 
-> _No feature requests logged yet._
 | # | Status | Description |
 |---|--------|-------------|
 | 1 | ✅ Done | Toast notifications on QR code save success (new codes) and failure — added to `QREditorView.vue` with error detail extracted from Axios response |
+| 2 | ✅ Done | Customizable text labels above and below QR code with typography, alignment, letter-spacing, and padding options |
+
 
 ---
 
