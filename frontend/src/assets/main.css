@@ -140,3 +140,59 @@ body {
   border-color: var(--border) !important;
   color: var(--text-secondary) !important;
 }
+
+/* ============================================================
+   PrimeVue Tabs — dark-mode overrides
+   ============================================================ */
+
+.p-tabs,
+.p-tabpanels,
+.p-tabpanel {
+  background: transparent !important;
+}
+
+.p-tablist {
+  background-color: var(--bg-elevated) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.p-tab {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  border-color: transparent !important;
+}
+
+.p-tab:hover {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-hover) !important;
+}
+
+.p-tab[data-p-active='true'] {
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  background: transparent !important;
+}
+
+/* ============================================================
+   PrimeVue Accordion — dark-mode overrides
+   ============================================================ */
+
+.p-accordion,
+.p-accordioncontent,
+.p-accordioncontent-content {
+  background: transparent !important;
+}
+
+.p-accordionheader {
+  background-color: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+.p-accordionheader:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+.p-accordionpanel {
+  border-color: var(--border) !important;
+}

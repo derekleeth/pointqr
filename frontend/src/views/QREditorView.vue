@@ -97,7 +97,8 @@ async function handleSave() {
       <!-- Left panel: tabs for Content + Design controls -->
       <div class="lg:col-span-2">
         <div
-          class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 overflow-hidden"
+          class="rounded-xl overflow-hidden border transition-colors duration-200"
+          style="background-color: var(--bg-card); border-color: var(--border);"
         >
           <Tabs value="content">
             <TabList>
@@ -127,7 +128,8 @@ async function handleSave() {
       <!-- Right panel: live QR preview + download actions -->
       <div class="lg:col-span-3 flex justify-center">
         <div
-          class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 p-8 w-full flex flex-col items-center gap-6"
+          class="rounded-xl border p-8 w-full flex flex-col items-center gap-6 transition-colors duration-200"
+          style="background-color: var(--bg-card); border-color: var(--border);"
         >
           <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0 self-start">
             Live Preview
