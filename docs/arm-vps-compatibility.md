@@ -3,6 +3,8 @@
 > **Status:** Evaluated & Documented  
 > **Target Architecture:** `ARM64` / `aarch64` (e.g., Hetzner CAX series, AWS Graviton `t4g`, Oracle Cloud Ampere A1, Scaleway ARM)  
 > **Key Finding:** **PointQR can run natively on a cheaper ARM VPS with 30%–50% cost savings.** All core services run natively; only the local developer SMTP tool (`mailhog`) requires a modern drop-in replacement (`mailpit`).
+> **Target Architecture:** `ARM64` / `aarch64` vs `x86_64` (Hetzner CX vs CAX series)  
+> **Key Finding:** **PointQR can run on either ARM or x86.** However, with current Hetzner pricing (including IPv4), **the x86 CX23 ($7.09/mo) is actually cheaper than the ARM CAX11 ($7.59/mo)**. Choosing x86 avoids paying extra and allows 100% of existing containers (including MailHog) to run out of the box with zero changes.
 
 ---
 
@@ -11,12 +13,16 @@
 When deciding between an x86 server and an ARM server for hosting PointQR:
 - **ARM VPS instances are significantly more cost-effective** (often 30%–50% cheaper for equivalent or better CPU and memory performance).
 - **PointQR's core stack is 100% ARM-compatible** without requiring emulation:
+- **Price Comparison:** With current Hetzner pricing (including IPv4), **x86 CX23 is $7.09/mo**, whereas **ARM CAX11 is $7.59/mo**. You do **not** need to pay more for x86; x86 is actually slightly cheaper!
+- **Zero Configuration on x86:** On x86 (CX23 or CX33), your entire existing Docker Compose stack runs immediately without modifying MailHog.
+- **ARM Compatibility:** If you do choose an ARM VPS (such as CAX11 or Oracle Cloud Free Tier), PointQR's core stack is 100% ARM-compatible:
   - **FastAPI Backend:** Multi-stage build on `python:3.12-slim`. Every single dependency (`asyncpg`, `pydantic-core`, `cryptography`, `bcrypt`, `pillow`, `uvloop`, `celery`) has pre-compiled `manylinux_2_17_aarch64` wheels on PyPI.
   - **PostgreSQL 16:** Official `postgres:16-alpine` multi-arch image (`linux/arm64`).
   - **RabbitMQ 3.13:** Official `rabbitmq:3.13-management-alpine` multi-arch image (`linux/arm64`).
   - **Nginx:** Official `nginx:alpine` multi-arch image (`linux/arm64`).
   - **Vue 3 Frontend:** `node:22-alpine` multi-arch image (`linux/arm64`) with Alpine musl binaries for Vite/Rollup.
 - **The Only Blocker:** `mailhog/mailhog:latest` is an abandoned x86-only image that throws `exec format error` on ARM Linux. It must be replaced with **Mailpit** (`axllent/mailpit:latest`), which is a drop-in replacement, or disabled in production where a real SMTP provider is used.
+- **The Only ARM Blocker:** `mailhog/mailhog:latest` is an abandoned x86-only image that throws `exec format error` on ARM Linux. If deploying to an ARM server, it must be replaced with **Mailpit** (`axllent/mailpit:latest`), which is a drop-in replacement.
 
 ---
 
@@ -83,27 +89,67 @@ When moving to a VPS for production:
 
 ---
 
-## 5. ARM VPS Sizing & Cost Analysis
+## 5. Server Sizing & Multi-Provider Cost Comparison
 
-PointQR's total memory footprint:
+### 5.1 PointQR Resource Footprint Baseline
+The entire PointQR stack (Postgres + RabbitMQ + FastAPI + Celery + Nginx) requires:
 - **PostgreSQL 16:** ~50–100 MB idle
 - **RabbitMQ 3.13:** ~120–180 MB idle
 - **FastAPI:** ~80–120 MB
 - **Celery Worker (concurrency 2–4):** ~150–250 MB
 - **Nginx:** ~15 MB
 - **Total Base Footprint:** ~500 MB – 800 MB RAM
+- **Recommended Minimum RAM:** **4 GB** (ensures smooth operation during peak bulk QR exports, database indexing, and OS caching without OOM risk; 2 GB is workable for staging).
 
-### Provider Comparison
+---
 
-| Provider | Plan | Cores / RAM / Storage | Architecture | Approx Cost | Recommendation |
-|---|---|---|---|---|---|
-| **Hetzner Cloud** | **CAX11** | 2 vCPU Ampere, 4 GB RAM, 40 GB NVMe | **ARM64** | **~€3.79 / mo** | 🌟 **Best Value** |
-| **Hetzner Cloud** | **CAX21** | 4 vCPU Ampere, 8 GB RAM, 80 GB NVMe | **ARM64** | **~€6.49 / mo** | High load / heavy bulk QR generation |
-| **Hetzner Cloud** | CX22 | 2 vCPU Intel, 4 GB RAM, 40 GB NVMe | x86-64 | ~€4.35 / mo | More expensive per unit of compute |
-| **Oracle Cloud** | VM.Standard.A1.Flex | Up to 4 OCPU, 24 GB RAM | **ARM64** | **$0.00 (Free Tier)** | Completely free always-free tier |
-| **AWS Lightsail** | Standard | 1 vCPU, 2 GB RAM, 60 GB SSD | x86-64 | ~$10.00 / mo | 2.5x more expensive than Hetzner ARM |
+### 5.2 Hetzner Cloud
 
-> **Conclusion:** An entry-level ARM server with 4 GB RAM (e.g. Hetzner CAX11 at under €4/month) is more than sufficient for PointQR with substantial headroom for PostgreSQL indexing and Celery concurrency.
+| Plan | Arch | vCPU | RAM | Disk | Traffic | Hourly | Monthly (incl. IPv4) | Notes / Status |
+|---|---|---|---|---|---|---|---|---|
+| **CX23** | **x86-64** | 2 | 4 GB | 40 GB NVMe | 20 TB | $0.0114 | **$7.09** | 🌟 Runs 100% of containers out-of-the-box. Cheaper than CAX11! |
+| **CAX11** | **ARM64** | 2 | 4 GB | 40 GB NVMe | 20 TB | $0.0122 | **$7.59** | Fully compatible once MailHog is swapped to Mailpit. |
+| **CX33** | **x86-64** | 4 | 8 GB | 80 GB NVMe | 20 TB | $0.0170 | **$10.59** | Great upgrade for higher load / Celery batch processing. |
+
+---
+
+### 5.3 Netcup
+
+*(Prices in EUR, incl. 0% VAT; contracts include traffic, snapshots, remote console)*
+
+| Plan | Arch | vCore | RAM | Disk | Contract | Monthly | Approx USD | Suitability for PointQR |
+|---|---|---|---|---|---|---|---|---|
+| **VPS pico G11.5s** | **x86** | 1 | 1 GB | 30 GB SSD | 12 mo | **€1.85** | ~$2.00 | ⚠️ **Too small:** 1 GB risks OOM kills with Postgres + RabbitMQ + Celery. |
+| **VPS nano G11.5s** | **x86** | 2 | 2 GB | 60 GB SSD | 6 mo | **€3.10** | ~$3.35 | ⚡ **Tight:** Sufficient for dev/staging, but leaves little margin during bulk jobs. |
+| **VPS Lite 1 G12.5s**| **x86** | 2 | 4 GB | 80 GB SSD | 6 mo | **€4.92** | **~$5.35** | 🌟 **Top Budget Sweet Spot:** 4 GB RAM, 80 GB SSD, x86 native, under €5/mo! |
+| **VPS Lite 2 G12.5s**| **x86** | 4 | 8 GB | 160 GB SSD| 3 mo | **€7.98** | **~$8.70** | 🚀 **Top Power Value:** 4 vCores, 8 GB RAM, 160 GB SSD for less than Hetzner CX33. |
+
+---
+
+### 5.4 Cross-Provider Comparison & Key Takeaways
+
+#### The 4 GB RAM Sweet Spot (Recommended for PointQR):
+1. **Netcup VPS Lite 1 (€4.92 / ~$5.35 mo)**:
+   - **Cheapest 4 GB option overall** (saves ~$1.74/mo compared to Hetzner CX23 and ~$2.24/mo compared to Hetzner CAX11).
+   - Gives **80 GB SSD** (2x the storage of Hetzner CX23).
+   - **x86 architecture**: Runs 100% of existing PointQR containers (including MailHog) immediately with zero modifications.
+   - *Trade-off*: 6-month contract commitment (vs Hetzner hourly billing).
+
+2. **Hetzner CX23 ($7.09 mo)**:
+   - **Best for hourly / month-to-month flexibility** (cancel anytime, pay per hour).
+   - Fast NVMe drives.
+   - **x86 architecture**: Runs 100% of existing containers out-of-the-box.
+   - Cheaper than Hetzner ARM CAX11 ($7.59).
+
+3. **Hetzner CAX11 ($7.59 mo)**:
+   - ARM64 architecture (requires Mailpit migration).
+   - More expensive than both Netcup Lite 1 and Hetzner CX23.
+
+> [!TIP]
+> **Summary Recommendation:**
+> - If you want the **absolute lowest monthly price** with generous disk space: **Netcup VPS Lite 1** (€4.92/mo) is the clear winner.
+> - If you want **hourly billing without contract lock-in**: **Hetzner CX23** ($7.09/mo) is the best choice.
+> - In both cases, **both are x86**, meaning **you don't have to worry about ARM container incompatibilities or swapping MailHog right away!**
 
 ---
 
