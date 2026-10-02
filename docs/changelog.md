@@ -1,6 +1,6 @@
 # PointQR – Progress, Bugs & Feature Tracker
 
-> Last Updated: 2026-09-30 · Phase 3 complete + QR Text Labels Feature
+> Last Updated: 2026-10-02 · Phase 4 Track A Complete (Analytics Dashboard)
 
 ---
 
@@ -117,7 +117,7 @@
 - ✅ **`frontend/src/router/index.ts`** — `/analytics` route added
 - ✅ **`frontend/src/components/sidebar/AppSidebar.vue`** — "Scan Analytics" link activated (removed `soon` flag)
 
-### Track B – CSV Bulk QR Generation ⏳
+### Track B – CSV Bulk QR Generation ⏳ (On Hold)
 
 - ⏳ Celery `qr_batch` generation task (CSV parse → PNG per row → ZIP archive)
 - ⏳ `POST /v1/qrcodes/batch` upload endpoint + `GET /v1/qrcodes/batch/jobs` listing
@@ -146,6 +146,7 @@
 | 4 | ✅ Fixed | Outer text labels not persisting on save | Added `TextLabelOptions` Pydantic model to `backend/app/schemas/qrcode.py` so `labelTop` and `labelBottom` are retained in `DesignConfig` payloads. |
 | 5 | ✅ Fixed | Quick download (PNG/SVG) did not include outer text labels | Replaced direct library download in `QRCanvas.vue` with Canvas 2D (PNG) and DOM SVG composite rendering containing labels, custom fonts, wrapping, and spacing. |
 | 6 | ✅ Fixed | Nested store state reset on load/save | Updated `loadFromQRCode` in `frontend/src/stores/qrEditor.ts` to perform explicit deep-merging of `imageOptions`, `labelTop`, and `labelBottom`. |
+| 7 | ✅ Fixed | Vite 504 "Outdated Optimize Dep" error and missing peer dependency `Could not resolve "chart.js/auto"` when navigating to `/analytics` | Added `chart.js` to `frontend/package.json` dependencies and configured `optimizeDeps.include` in `frontend/vite.config.ts` for `chart.js`, `chart.js/auto`, and all PrimeVue components. |
 
 ---
 
