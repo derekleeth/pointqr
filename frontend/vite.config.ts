@@ -72,6 +72,8 @@ export default defineConfig(({ mode }) => {
     // uses a component not yet seen by the dev server.
     optimizeDeps: {
       include: [
+        'chart.js',
+        'chart.js/auto',
         'primevue/button',
         'primevue/inputtext',
         'primevue/password',
