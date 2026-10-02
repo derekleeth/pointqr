@@ -113,6 +113,8 @@ services:
       dockerfile: Dockerfile.dev
     container_name: pointqr_frontend
     restart: unless-stopped
+    env_file:
+      - .env
     volumes:
       - ./frontend:/app
       - /app/node_modules
