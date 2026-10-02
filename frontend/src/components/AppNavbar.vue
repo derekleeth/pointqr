@@ -28,6 +28,22 @@ function handleLogout() {
 
     <!-- Nav links -->
     <div class="flex items-center gap-3">
+      <a
+        href="https://github.com/derekleeth/pointqr"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Source code on GitHub"
+        title="Source code on GitHub"
+        class="inline-flex items-center no-underline"
+      >
+        <Button
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          icon="pi pi-github"
+        />
+      </a>
       <template v-if="auth.isAuthenticated">
         <span class="text-sm text-surface-500 hidden sm:block">{{ auth.user?.email }}</span>
         <Button

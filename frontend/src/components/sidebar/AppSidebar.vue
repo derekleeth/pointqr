@@ -139,6 +139,18 @@ function logout() {
 
     <!-- ── Footer ─────────────────────────── -->
     <div class="sidebar-footer">
+      <!-- GitHub source link -->
+      <a
+        href="https://github.com/derekleeth/pointqr"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-row"
+        v-tooltip.right="collapsed ? 'Source Code (GitHub)' : undefined"
+      >
+        <i class="pi pi-github nav-icon" />
+        <span v-show="!collapsed">GitHub</span>
+      </a>
+
       <!-- Theme toggle -->
       <button class="footer-row" @click="theme.toggle()"
         v-tooltip.right="collapsed ? (theme.isDark ? 'Light mode' : 'Dark mode') : undefined">
@@ -354,6 +366,7 @@ function logout() {
   cursor: pointer;
   text-align: left;
   white-space: nowrap;
+  text-decoration: none;
   transition: background 0.14s, color 0.14s;
 }
 .is-collapsed .footer-row {

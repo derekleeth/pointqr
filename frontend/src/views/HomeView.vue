@@ -38,6 +38,16 @@ const features = [
         <span>PointQR</span>
       </RouterLink>
       <nav class="home-nav-links">
+        <a
+          href="https://github.com/derekleeth/pointqr"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="nav-icon-btn"
+          title="Source code on GitHub"
+          aria-label="Source code on GitHub"
+        >
+          <i class="pi pi-github" />
+        </a>
         <button class="theme-toggle" @click="theme.toggle()" :title="theme.isDark ? 'Light mode' : 'Dark mode'">
           <i :class="theme.isDark ? 'pi pi-sun' : 'pi pi-moon'" />
         </button>
@@ -116,6 +126,7 @@ const features = [
     <!-- ── Footer ────────────────────────────────── -->
     <footer class="home-footer">
       <span>© {{ new Date().getFullYear() }} PointQR</span>
+      <a href="https://github.com/derekleeth/pointqr" target="_blank" rel="noopener noreferrer">GitHub</a>
       <RouterLink to="/login">Login</RouterLink>
       <RouterLink to="/register">Register</RouterLink>
     </footer>
@@ -174,7 +185,8 @@ const features = [
   gap: 0.75rem;
 }
 
-.theme-toggle {
+.theme-toggle,
+.nav-icon-btn {
   width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -185,9 +197,11 @@ const features = [
   display: flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
   transition: all 0.15s;
 }
-.theme-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
+.theme-toggle:hover,
+.nav-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 /* ── Buttons ─────────────────────────────────── */
 .btn-primary {
