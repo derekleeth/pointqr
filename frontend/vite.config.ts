@@ -67,6 +67,39 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    // Pre-bundle all PrimeVue component packages at startup so Vite never hits
+    // a 504 "Outdated Optimize Dep" error when first navigating to a route that
+    // uses a component not yet seen by the dev server.
+    optimizeDeps: {
+      include: [
+        'primevue/button',
+        'primevue/inputtext',
+        'primevue/password',
+        'primevue/select',
+        'primevue/selectbutton',
+        'primevue/datatable',
+        'primevue/column',
+        'primevue/tag',
+        'primevue/chart',
+        'primevue/progressspinner',
+        'primevue/progressbar',
+        'primevue/dialog',
+        'primevue/toast',
+        'primevue/accordion',
+        'primevue/accordionpanel',
+        'primevue/accordionheader',
+        'primevue/accordioncontent',
+        'primevue/slider',
+        'primevue/toggleswitch',
+        'primevue/fileupload',
+        'primevue/colorpicker',
+        'primevue/tabs',
+        'primevue/tablist',
+        'primevue/tab',
+        'primevue/tabpanels',
+        'primevue/tabpanel',
+      ],
+    },
   }
 })
 
