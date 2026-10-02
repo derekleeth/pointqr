@@ -57,11 +57,6 @@ const features = [
     <section class="hero">
       <div class="hero-glow" />
       <div class="hero-content">
-        <img
-          :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
-          alt="PointQR"
-          class="hero-logo"
-        />
         <div class="hero-badge">
           <i class="pi pi-sparkles" style="font-size:0.75rem" />
           Built for marketing teams, agencies & creators
@@ -85,17 +80,13 @@ const features = [
         </div>
       </div>
 
-      <!-- Decorative QR grid -->
-      <div class="hero-visual" aria-hidden="true">
-        <div class="qr-demo-card">
-          <div class="qr-dots-grid">
-            <div v-for="i in 81" :key="i"
-              class="qr-dot"
-              :class="{ 'qr-dot--filled': [1,2,3,4,5,6,7,9,15,16,22,23,24,25,26,27,29,37,39,45,46,47,48,49,50,53,54,55,61,65,67,68,69,71,72,73,74,75,76,77,78,79,80,81].includes(i) }"
-            />
-          </div>
-          <div class="qr-card-label">pointqr.app/r/Ab3xKm9Z</div>
-        </div>
+      <!-- Logo visual -->
+      <div class="hero-visual">
+        <img
+          :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
+          alt="PointQR"
+          class="hero-logo"
+        />
       </div>
     </section>
 
@@ -257,11 +248,22 @@ const features = [
 }
 
 .hero-logo {
-  height: 80px;
-  width: auto;
+  max-width: 100%;
+  width: 340px;
+  height: auto;
   display: block;
-  margin-bottom: 1.75rem;
 }
+
+/* ── Logo visual ─────────────────────────────── */
+.hero-visual {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 .hero-badge {
   display: inline-flex;
@@ -301,42 +303,6 @@ const features = [
   flex-wrap: wrap;
 }
 
-/* ── Decorative QR card ──────────────────────── */
-.hero-visual {
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
-}
-
-.qr-demo-card {
-  width: 240px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.15);
-}
-
-.qr-dots-grid {
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 3px;
-  margin-bottom: 1rem;
-}
-.qr-dot {
-  aspect-ratio: 1;
-  border-radius: 2px;
-  background: var(--bg-elevated);
-}
-.qr-dot--filled {
-  background: var(--color-primary);
-}
-.qr-card-label {
-  font-size: 0.6875rem;
-  color: var(--text-muted);
-  text-align: center;
-  font-family: monospace;
-}
 
 /* ── Features ────────────────────────────────── */
 .features {
