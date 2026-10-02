@@ -33,13 +33,7 @@ const features = [
   <div class="home-page">
     <!-- ── Top Nav ───────────────────────────────── -->
     <header class="home-nav">
-      <RouterLink to="/" class="home-brand">
-        <img
-          :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
-          alt="PointQR"
-          class="home-brand-logo"
-        />
-      </RouterLink>
+      <RouterLink to="/" class="home-brand">PointQR</RouterLink>
       <nav class="home-nav-links">
         <a
           href="https://github.com/derekleeth/pointqr"
@@ -63,6 +57,11 @@ const features = [
     <section class="hero">
       <div class="hero-glow" />
       <div class="hero-content">
+        <img
+          :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
+          alt="PointQR"
+          class="hero-logo"
+        />
         <div class="hero-badge">
           <i class="pi pi-sparkles" style="font-size:0.75rem" />
           Built for marketing teams, agencies & creators
@@ -170,11 +169,7 @@ const features = [
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
-.home-brand-logo {
-  height: 36px;
-  width: auto;
-  display: block;
-}
+
 
 .home-nav-links {
   display: flex;
@@ -259,6 +254,13 @@ const features = [
   max-width: 580px;
   position: relative;
   z-index: 1;
+}
+
+.hero-logo {
+  height: 80px;
+  width: auto;
+  display: block;
+  margin-bottom: 1.75rem;
 }
 
 .hero-badge {
