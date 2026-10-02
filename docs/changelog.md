@@ -103,15 +103,25 @@
 
 ---
 
-## Phase 4 – Analytics Dashboard & Bulk Generation ⏳
+## Phase 4 – Analytics Dashboard & Bulk Generation 🚧
 
-> **Target:** Weeks 7–8
+> **Target:** Weeks 7–8 | Track A complete · Track B planned
 
-- ⏳ PrimeVue analytics dashboard with Chart.js
-- ⏳ Scan metrics: totals, unique visitors, scans over time
-- ⏳ Breakdown by OS, browser, device
-- ⏳ Geographic distribution
-- ⏳ CSV bulk QR generation pipeline via Celery `qr_batch` queue
+### Track A – Analytics Dashboard ✅
+
+- ✅ **`backend/app/schemas/analytics.py`** — `ScanSummary`, `TimeSeriesPoint`, `TimeSeriesResponse`, `BreakdownItem`, `BreakdownResponse` Pydantic schemas
+- ✅ **`backend/app/api/v1/analytics.py`** — 6 analytics endpoints: `GET /v1/analytics/summary`, `scans-over-time`, `by-device`, `by-os`, `by-browser`, `by-country`; all scoped to `current_user` via QR code ownership; uses PostgreSQL `date_trunc` for time-series bucketing
+- ✅ **`backend/app/api/v1/router.py`** — analytics router registered
+- ✅ **`frontend/src/api/analytics.ts`** — typed API client for all 6 analytics endpoints
+- ✅ **`frontend/src/views/AnalyticsView.vue`** — full analytics dashboard: 4 summary stat cards, scans-over-time line chart (day/hour/month granularity + look-back window selector + per-QR filter), 3 doughnut charts (device / browser / OS), paginated country DataTable with share %; empty state when no scans recorded
+- ✅ **`frontend/src/router/index.ts`** — `/analytics` route added
+- ✅ **`frontend/src/components/sidebar/AppSidebar.vue`** — "Scan Analytics" link activated (removed `soon` flag)
+
+### Track B – CSV Bulk QR Generation ⏳
+
+- ⏳ Celery `qr_batch` generation task (CSV parse → PNG per row → ZIP archive)
+- ⏳ `POST /v1/qrcodes/batch` upload endpoint + `GET /v1/qrcodes/batch/jobs` listing
+- ⏳ `BatchView.vue` with drag-and-drop CSV upload and job progress table
 
 ---
 

@@ -47,7 +47,7 @@ const navGroups: NavGroup[] = [
     id: 'analytics',
     label: 'Analytics',
     items: [
-      { label: 'Scan Analytics', icon: 'pi pi-chart-bar', to: '/analytics', soon: true },
+      { label: 'Scan Analytics', icon: 'pi pi-chart-bar', to: '/analytics' },
       { label: 'Batch Jobs', icon: 'pi pi-inbox', to: '/batch', soon: true },
     ],
   },

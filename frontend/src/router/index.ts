@@ -43,6 +43,12 @@ const router = createRouter({
       component: () => import('@/views/QREditorView.vue'),
       meta: { layout: 'AppLayout', requiresAuth: true },
     },
+    {
+      path: '/analytics',
+      name: 'analytics',
+      component: () => import('@/views/AnalyticsView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true },
+    },
   ],
 })
 
