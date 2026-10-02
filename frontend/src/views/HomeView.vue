@@ -34,8 +34,11 @@ const features = [
     <!-- ── Top Nav ───────────────────────────────── -->
     <header class="home-nav">
       <RouterLink to="/" class="home-brand">
-        <div class="home-brand-icon"><i class="pi pi-stop-circle" /></div>
-        <span>PointQR</span>
+        <img
+          :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
+          alt="PointQR"
+          class="home-brand-logo"
+        />
       </RouterLink>
       <nav class="home-nav-links">
         <a
@@ -167,16 +170,10 @@ const features = [
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
-.home-brand-icon {
-  width: 90px;
-  height: 90px;
-  border-radius: 7px;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
+.home-brand-logo {
+  height: 36px;
+  width: auto;
+  display: block;
 }
 
 .home-nav-links {
