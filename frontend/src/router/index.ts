@@ -63,6 +63,12 @@ const router = createRouter({
       component: () => import('@/views/AdminSettingsView.vue'),
       meta: { layout: 'AppLayout', requiresAuth: true, requiresAdmin: true },
     },
+    {
+      path: '/admin/monitor',
+      name: 'admin-monitor',
+      component: () => import('@/views/AdminMonitorView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true, requiresAdmin: true },
+    },
   ],
 })
 

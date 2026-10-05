@@ -57,6 +57,10 @@ services:
       - .env
     environment:
       PYTHONPATH: /app
+      RABBITMQ_MGMT_URL: http://rabbitmq:15672
+      RABBITMQ_MGMT_USER: ${RABBITMQ_DEFAULT_USER:-pointqr}
+      RABBITMQ_MGMT_PASS: ${RABBITMQ_DEFAULT_PASS:-pointqr_dev_password}
+      METRICS_INTERVAL_S: ${METRICS_INTERVAL_S:-3}
     volumes:
       - storage:/app/storage
     depends_on:

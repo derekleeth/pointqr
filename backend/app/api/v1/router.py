@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import admin, analytics, auth, qrcodes
+from app.api.v1 import admin, analytics, auth, qrcodes, ws_metrics
 
 api_v1_router = APIRouter(prefix="/v1")
 
@@ -10,3 +10,4 @@ api_v1_router.include_router(auth.router)
 api_v1_router.include_router(qrcodes.router)
 api_v1_router.include_router(analytics.router)
 api_v1_router.include_router(admin.router)
+api_v1_router.include_router(ws_metrics.router)

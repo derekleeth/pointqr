@@ -68,6 +68,7 @@ const navGroups = computed<NavGroup[]>(() => {
       items: [
         { label: 'Users', icon: 'pi pi-users', to: '/admin/users' },
         { label: 'Site Settings', icon: 'pi pi-sliders-h', to: '/admin/settings' },
+        { label: 'Queue Monitor', icon: 'pi pi-chart-line', to: '/admin/monitor' },
       ],
     })
   }

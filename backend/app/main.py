@@ -14,6 +14,7 @@ from sqlalchemy import select
 
 from app.api.v1.redirect import router as redirect_router
 from app.api.v1.router import api_v1_router
+from app.api.v1.ws_metrics import start_metrics_background_tasks, stop_metrics_background_tasks
 from app.config import get_settings
 from app.core.security import hash_password, verify_password
 from app.database import AsyncSessionLocal
@@ -109,8 +110,14 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     # Initialise site settings from .env if not already in the DB
     await _seed_site_settings()
 
+    # Start real-time metrics poller + broadcaster for the admin dashboard
+    start_metrics_background_tasks()
+
     yield
-    # Shutdown: SQLAlchemy disposes connection pool automatically
+
+    # Shutdown: cancel metrics background tasks gracefully
+    stop_metrics_background_tasks()
+    # SQLAlchemy disposes connection pool automatically
 
 
 def create_app() -> FastAPI:
