@@ -34,9 +34,13 @@ app.directive('tooltip', Tooltip)
 import { useThemeStore } from './stores/theme'
 useThemeStore() // watch({ immediate: true }) fires during store creation
 
-// Restore auth state from localStorage
+// Restore auth state from localStorage before mounting so that user.role is
+// available when the router's beforeEach guard runs on the initial navigation.
+// Without the await, user.value is still null when the guard checks requiresAdmin,
+// causing an erroneous redirect to /dashboard on hard refresh.
 import { useAuthStore } from './stores/auth'
-useAuthStore().initialize()
-
-app.mount('#app')
+;(async () => {
+  await useAuthStore().initialize()
+  app.mount('#app')
+})()
 
