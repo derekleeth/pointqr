@@ -16,6 +16,10 @@ const newUser = ref({ email: '', password: '', role: 'user', tier: 'free' })
 
 // Delete confirm dialog
 const confirmDeleteId = ref<string | null>(null)
+const showDeleteDialog = computed({
+  get: () => confirmDeleteId.value !== null,
+  set: (val: boolean) => { if (!val) confirmDeleteId.value = null },
+})
 
 const filteredUsers = computed(() => {
   const q = searchQuery.value.toLowerCase()
@@ -308,7 +312,7 @@ onMounted(loadUsers)
 
     <!-- Delete Confirm Dialog -->
     <Dialog
-      v-model:visible="confirmDeleteId !== null"
+      v-model:visible="showDeleteDialog"
       header="Delete User"
       modal
       :style="{ width: '360px' }"
