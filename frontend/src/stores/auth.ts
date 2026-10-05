@@ -18,6 +18,10 @@ export const useAuthStore = defineStore('auth', () => {
   const refreshToken = ref<string | null>(localStorage.getItem('refresh_token'))
   const user = ref<User | null>(null)
 
+  // Tracks the in-flight initialize() promise so the router guard can await it
+  // even if the guard fires before initialize() has been called from main.ts.
+  let initPromise: Promise<void> | null = null
+
   // Getters
   const isAuthenticated = computed(() => !!accessToken.value)
 
@@ -75,15 +79,22 @@ export const useAuthStore = defineStore('auth', () => {
     clearTokens()
   }
 
-  // Restore user on page load if token exists
-  async function initialize(): Promise<void> {
-    if (accessToken.value) {
-      try {
-        await fetchMe()
-      } catch {
-        clearTokens()
+  // Restore user on page load if token exists.
+  // Stores the result as a shared promise so any caller (including the router
+  // guard) that calls initialize() after it has already started will await the
+  // same in-flight request rather than re-fetching or checking too early.
+  function initialize(): Promise<void> {
+    if (initPromise) return initPromise
+    initPromise = (async () => {
+      if (accessToken.value) {
+        try {
+          await fetchMe()
+        } catch {
+          clearTokens()
+        }
       }
-    }
+    })()
+    return initPromise
   }
 
   return {

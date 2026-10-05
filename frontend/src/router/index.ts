@@ -73,8 +73,16 @@ const router = createRouter({
 })
 
 // Global navigation guard
-router.beforeEach((to) => {
+// Must be async so we can await auth.initialize() before checking user.role.
+// initialize() returns the same shared promise on every call (no duplicate
+// fetches), so after the first navigation this resolves immediately.
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  // Wait for the /auth/me response to land before any role/auth checks.
+  // This prevents a race on hard refresh where user.value is still null
+  // while the token is already in localStorage.
+  await auth.initialize()
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
