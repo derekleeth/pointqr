@@ -14,6 +14,10 @@ from app.core.security import hash_password
 from app.models.qrcode import QRCode
 from app.models.user import User, UserRole, UserTier
 from app.schemas.user import UserRead
+from app.services.site_settings import (
+    get_registration_enabled,
+    set_registration_enabled,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 settings = get_settings()
@@ -40,6 +44,11 @@ class UserStatusUpdate(BaseModel):
 
 class SiteSettings(BaseModel):
     """Current site-level settings returned to the admin UI."""
+    registration_enabled: bool
+
+
+class RegistrationUpdate(BaseModel):
+    """Payload to toggle public registration."""
     registration_enabled: bool
 
 
@@ -258,9 +267,36 @@ async def delete_user(
     response_model=SiteSettings,
     summary="Get current site settings",
 )
-async def get_site_settings(_admin: AdminUser) -> SiteSettings:
-    """Return the current site-level configuration visible to admins."""
-    return SiteSettings(registration_enabled=settings.registration_enabled)
+async def get_site_settings(_admin: AdminUser, db: DBSession) -> SiteSettings:
+    """Return the current site-level configuration.
+
+    The DB value takes priority over the .env default.
+    """
+    reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
+    return SiteSettings(registration_enabled=reg_enabled)
+
+
+# ---------------------------------------------------------------------------
+# PATCH /admin/settings
+# ---------------------------------------------------------------------------
+
+@router.patch(
+    "/settings",
+    response_model=SiteSettings,
+    summary="Update site settings",
+)
+async def update_site_settings(
+    payload: RegistrationUpdate,
+    _admin: AdminUser,
+    db: DBSession,
+) -> SiteSettings:
+    """Persist updated site settings to the database.
+
+    The DB value overrides whatever is set in the .env file without requiring
+    a container restart.
+    """
+    await set_registration_enabled(payload.registration_enabled, db=db)
+    return SiteSettings(registration_enabled=payload.registration_enabled)
 
 
 # ---------------------------------------------------------------------------

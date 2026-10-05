@@ -6,6 +6,7 @@ import { useToast } from 'primevue/usetoast'
 const toast = useToast()
 const settings = ref<SiteSettings | null>(null)
 const loading = ref(true)
+const saving = ref(false)
 
 async function loadSettings() {
   loading.value = true
@@ -18,6 +19,33 @@ async function loadSettings() {
   }
 }
 
+async function toggleRegistration() {
+  if (!settings.value) return
+  saving.value = true
+  const newVal = !settings.value.registration_enabled
+  try {
+    const updated = await adminApi.updateSettings({ registration_enabled: newVal })
+    settings.value = updated
+    toast.add({
+      severity: newVal ? 'success' : 'warn',
+      summary: newVal ? 'Registration enabled' : 'Registration disabled',
+      detail: newVal
+        ? 'New users can now register accounts.'
+        : 'Public registration is now closed. Use User Management to create accounts.',
+      life: 4000,
+    })
+  } catch (err: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: err?.response?.data?.detail ?? 'Failed to save setting',
+      life: 3500,
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(loadSettings)
 </script>
 
@@ -26,7 +54,7 @@ onMounted(loadSettings)
     <div class="page-header">
       <div>
         <h1 class="page-title">Site Settings</h1>
-        <p class="page-subtitle">Platform-wide configuration managed via environment variables</p>
+        <p class="page-subtitle">Platform-wide configuration — changes take effect immediately</p>
       </div>
     </div>
 
@@ -40,7 +68,7 @@ onMounted(loadSettings)
       <div class="settings-card">
         <div class="card-header">
           <i class="pi pi-user-plus card-icon" />
-          <div>
+          <div class="card-header-text">
             <h2 class="card-title">Public Registration</h2>
             <p class="card-desc">Controls whether visitors can self-register new accounts.</p>
           </div>
@@ -52,32 +80,54 @@ onMounted(loadSettings)
         </div>
 
         <div class="card-body">
-          <div class="setting-row">
-            <div>
-              <p class="setting-label">REGISTRATION_ENABLED</p>
-              <p class="setting-value">{{ settings.registration_enabled ? 'true' : 'false' }}</p>
+          <!-- Live toggle row -->
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <p class="toggle-label">Allow public sign-ups</p>
+              <p class="toggle-desc">
+                {{ settings.registration_enabled
+                  ? 'Anyone can create an account via the registration page.'
+                  : 'Registration is closed. Only admins can create accounts.' }}
+              </p>
             </div>
-            <div class="current-badge" :class="settings.registration_enabled ? 'badge-enabled' : 'badge-disabled'">
-              <i :class="settings.registration_enabled ? 'pi pi-check-circle' : 'pi pi-ban'" />
-              {{ settings.registration_enabled ? 'Open to public' : 'Closed – admin invite only' }}
+            <div class="toggle-action">
+              <ToggleSwitch
+                :model-value="settings.registration_enabled"
+                :disabled="saving"
+                @update:model-value="toggleRegistration"
+              />
             </div>
           </div>
 
-          <Message severity="info" :closable="false" class="info-message">
+          <!-- Status detail -->
+          <div
+            class="status-detail"
+            :class="settings.registration_enabled ? 'detail-enabled' : 'detail-disabled'"
+          >
+            <i :class="settings.registration_enabled ? 'pi pi-check-circle' : 'pi pi-lock'" />
+            <span>
+              {{ settings.registration_enabled
+                ? 'Registration is open to the public'
+                : 'Registration is closed — admin invite only' }}
+            </span>
+          </div>
+
+          <Message v-if="!settings.registration_enabled" severity="warn" :closable="false">
             <template #default>
-              <div class="message-body">
-                <strong>To change this setting:</strong>
-                <ol>
-                  <li>Open <code>.env</code> at the project root.</li>
-                  <li>Set <code>REGISTRATION_ENABLED=false</code> (or <code>true</code>).</li>
-                  <li>Restart the backend container: <code>docker compose restart backend</code></li>
-                </ol>
-                <p>
-                  When disabled, use the
-                  <RouterLink to="/admin/users" class="inline-link">User Management</RouterLink>
-                  page to create accounts manually.
-                </p>
-              </div>
+              <span>
+                When disabled, use the
+                <RouterLink to="/admin/users" class="inline-link">User Management</RouterLink>
+                page to create new accounts manually.
+              </span>
+            </template>
+          </Message>
+
+          <Message severity="info" :closable="false">
+            <template #default>
+              <span>
+                This value is stored in the database and overrides <code>REGISTRATION_ENABLED</code>
+                in <code>.env</code>. It takes effect immediately — no restart required.
+              </span>
             </template>
           </Message>
         </div>
@@ -87,9 +137,13 @@ onMounted(loadSettings)
       <div class="settings-card">
         <div class="card-header">
           <i class="pi pi-shield card-icon" />
-          <div>
+          <div class="card-header-text">
             <h2 class="card-title">Bootstrap Admin Account</h2>
-            <p class="card-desc">The admin user seeded from environment variables on first startup.</p>
+            <p class="card-desc">
+              Seeded from environment variables on first startup. Use
+              <RouterLink to="/admin/users" class="inline-link">User Management</RouterLink>
+              to promote other users to admin.
+            </p>
           </div>
         </div>
 
@@ -105,24 +159,20 @@ onMounted(loadSettings)
             </div>
           </div>
 
-          <Message severity="warn" :closable="false" class="info-message">
+          <Message severity="warn" :closable="false">
             <template #default>
-              <div class="message-body">
-                <strong>Security reminder:</strong> change <code>ADMIN_PASSWORD</code> in
-                <code>.env</code> before going to production. The password is hashed and stored
-                only once — when the admin row is first created. Changing it in <code>.env</code>
-                after that has no effect unless you delete the admin row from the database.
-              </div>
+              Change <code>ADMIN_PASSWORD</code> in <code>.env</code> before going to production.
+              The password is hashed and stored only once (when the row is first created).
             </template>
           </Message>
         </div>
       </div>
 
-      <!-- Environment Info Card -->
+      <!-- Environment Card -->
       <div class="settings-card">
         <div class="card-header">
           <i class="pi pi-info-circle card-icon" />
-          <div>
+          <div class="card-header-text">
             <h2 class="card-title">Environment</h2>
             <p class="card-desc">Runtime information about this deployment.</p>
           </div>
@@ -131,8 +181,8 @@ onMounted(loadSettings)
         <div class="card-body">
           <div class="kv-grid">
             <div class="kv-item">
-              <span class="kv-label">Config source</span>
-              <span class="kv-value"><code>.env</code> file (Pydantic Settings)</span>
+              <span class="kv-label">Runtime settings source</span>
+              <span class="kv-value">Database (overrides <code>.env</code>)</span>
             </div>
             <div class="kv-item">
               <span class="kv-label">API docs</span>
@@ -214,6 +264,11 @@ onMounted(loadSettings)
   flex-shrink: 0;
 }
 
+.card-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .card-title {
   font-size: 1rem;
   font-weight: 600;
@@ -228,7 +283,6 @@ onMounted(loadSettings)
 }
 
 .status-tag {
-  margin-left: auto;
   flex-shrink: 0;
 }
 
@@ -239,81 +293,65 @@ onMounted(loadSettings)
   gap: 1rem;
 }
 
-.setting-row {
+/* Toggle row */
+.toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
-.setting-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  margin: 0;
-  font-family: monospace;
+.toggle-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.setting-value {
-  font-size: 1rem;
+.toggle-label {
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0.2rem 0 0;
-  font-family: monospace;
+  margin: 0;
 }
 
-.current-badge {
+.toggle-desc {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.toggle-action {
+  flex-shrink: 0;
+}
+
+/* Status badge */
+.status-detail {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
   border-radius: 6px;
   font-size: 0.8125rem;
   font-weight: 500;
 }
 
-.badge-enabled {
+.detail-enabled {
   background: rgba(34, 197, 94, 0.1);
   color: #16a34a;
 }
 
-.badge-disabled {
+.detail-disabled {
   background: rgba(239, 68, 68, 0.1);
   color: #dc2626;
 }
 
-.info-message {
-  font-size: 0.875rem;
-}
-
-.message-body ol {
-  margin: 0.5rem 0 0.75rem 1.25rem;
-  padding: 0;
-}
-
-.message-body li {
-  margin-bottom: 0.25rem;
-}
-
-.message-body p {
-  margin: 0;
-}
-
-code {
-  background: var(--bg-elevated);
-  padding: 0.1em 0.35em;
-  border-radius: 4px;
-  font-size: 0.85em;
-  font-family: monospace;
-}
-
+/* KV table */
 .kv-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .kv-item {
@@ -337,6 +375,14 @@ code {
 
 .kv-value {
   color: var(--text-primary);
+}
+
+code {
+  background: var(--bg-elevated);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: monospace;
 }
 
 .inline-link {

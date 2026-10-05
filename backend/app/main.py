@@ -18,6 +18,7 @@ from app.config import get_settings
 from app.core.security import hash_password, verify_password
 from app.database import AsyncSessionLocal
 from app.models.user import User, UserRole
+from app.services.site_settings import KEY_REGISTRATION_ENABLED, get_setting, set_setting
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -70,6 +71,30 @@ async def _seed_admin() -> None:
         logger.exception("Failed to seed admin user on startup")
 
 
+async def _seed_site_settings() -> None:
+    """Seed the site_settings table from .env on first startup only.
+
+    If a row already exists (set via the admin UI) it is left untouched so
+    that an admin-toggled value is never silently overwritten by a restart.
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            async with session.begin():
+                env_default = "true" if settings.registration_enabled else "false"
+                existing = await get_setting(
+                    KEY_REGISTRATION_ENABLED, default="__missing__", db=session
+                )
+                if existing == "__missing__":
+                    await set_setting(KEY_REGISTRATION_ENABLED, env_default, db=session)
+                    logger.info(
+                        "Seeded site setting %s=%s from .env",
+                        KEY_REGISTRATION_ENABLED,
+                        env_default,
+                    )
+    except Exception:
+        logger.exception("Failed to seed site settings on startup")
+
+
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan – startup and shutdown hooks."""
@@ -80,6 +105,9 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
 
     # Seed or synchronize the admin user
     await _seed_admin()
+
+    # Initialise site settings from .env if not already in the DB
+    await _seed_site_settings()
 
     yield
     # Shutdown: SQLAlchemy disposes connection pool automatically

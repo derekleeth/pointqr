@@ -62,6 +62,11 @@ export const adminApi = {
   getSettings(): Promise<SiteSettings> {
     return apiClient.get<SiteSettings>('/admin/settings').then((r) => r.data)
   },
+
+  /** Persist updated site settings (stored in DB, overrides .env) */
+  updateSettings(payload: Partial<SiteSettings>): Promise<SiteSettings> {
+    return apiClient.patch<SiteSettings>('/admin/settings', payload).then((r) => r.data)
+  },
 }
 
 /** Public endpoint – does not require authentication */

@@ -21,6 +21,7 @@ from app.core.security import (
 from app.models.user import User
 from app.schemas.auth import RefreshRequest, Token
 from app.schemas.user import UserCreate, UserRead
+from app.services.site_settings import get_registration_enabled
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -38,7 +39,8 @@ async def register(payload: UserCreate, db: DBSession) -> User:
     Returns 409 if the email is already registered.
     Returns 403 if registration is disabled by the administrator.
     """
-    if not settings.registration_enabled:
+    reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
+    if not reg_enabled:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Registration is currently disabled. Please contact the administrator.",
@@ -56,7 +58,7 @@ async def register(payload: UserCreate, db: DBSession) -> User:
         hashed_password=hash_password(payload.password),
     )
     db.add(user)
-    await db.flush()       # Populate user.id without committing
+    await db.flush()
     await db.refresh(user)
     return user
 
@@ -139,7 +141,12 @@ async def me(current_user: CurrentUser) -> User:
     "/registration-status",
     summary="Check whether public registration is enabled",
 )
-async def registration_status() -> dict:
-    """Return whether self-registration is currently open."""
-    return {"registration_enabled": settings.registration_enabled}
+async def registration_status(db: DBSession) -> dict:
+    """Return whether self-registration is currently open.
+
+    Reads the DB value first (set by the admin UI), falling back to the
+    REGISTRATION_ENABLED env var if no DB override exists.
+    """
+    reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
+    return {"registration_enabled": reg_enabled}
 
