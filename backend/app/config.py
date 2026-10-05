@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     mail_port: int = 1025
     mail_from: str = "noreply@pointqr.dev"
 
+    # ---- Admin user (seeded on startup) -------------------------------------
+    admin_email: str = "admin@pointqr.dev"
+    admin_password: str = "ChangeMe!123"
+
+    # ---- Registration -------------------------------------------------------
+    registration_enabled: bool = True
+
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS_ORIGINS comma-separated string into a list."""

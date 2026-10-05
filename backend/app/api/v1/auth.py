@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.core.dependencies import CurrentUser, DBSession
 from app.core.security import (
     create_access_token,
@@ -22,6 +23,7 @@ from app.schemas.auth import RefreshRequest, Token
 from app.schemas.user import UserCreate, UserRead
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+settings = get_settings()
 
 
 @router.post(
@@ -34,7 +36,14 @@ async def register(payload: UserCreate, db: DBSession) -> User:
     """Create a new user account with a hashed password.
 
     Returns 409 if the email is already registered.
+    Returns 403 if registration is disabled by the administrator.
     """
+    if not settings.registration_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registration is currently disabled. Please contact the administrator.",
+        )
+
     result = await db.execute(select(User).where(User.email == payload.email))
     if result.scalar_one_or_none() is not None:
         raise HTTPException(
@@ -124,3 +133,13 @@ async def refresh(payload: RefreshRequest, db: DBSession) -> Token:
 async def me(current_user: CurrentUser) -> User:
     """Return the authenticated user's profile."""
     return current_user
+
+
+@router.get(
+    "/registration-status",
+    summary="Check whether public registration is enabled",
+)
+async def registration_status() -> dict:
+    """Return whether self-registration is currently open."""
+    return {"registration_enabled": settings.registration_enabled}
+

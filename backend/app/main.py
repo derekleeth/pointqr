@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -9,12 +10,64 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import select
 
 from app.api.v1.redirect import router as redirect_router
 from app.api.v1.router import api_v1_router
 from app.config import get_settings
+from app.core.security import hash_password, verify_password
+from app.database import AsyncSessionLocal
+from app.models.user import User, UserRole
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+async def _seed_admin() -> None:
+    """Create or synchronize the admin user from environment variables."""
+    if not settings.admin_email or not settings.admin_password:
+        logger.info("ADMIN_EMAIL or ADMIN_PASSWORD not configured; skipping admin seed.")
+        return
+
+    try:
+        async with AsyncSessionLocal() as session:
+            async with session.begin():
+                result = await session.execute(
+                    select(User).where(User.email == settings.admin_email)
+                )
+                user = result.scalar_one_or_none()
+
+                if user is None:
+                    admin = User(
+                        email=settings.admin_email,
+                        hashed_password=hash_password(settings.admin_password),
+                        role=UserRole.admin,
+                        is_active=True,
+                        is_verified=True,
+                    )
+                    session.add(admin)
+                    logger.info("Successfully created admin user: %s", settings.admin_email)
+                else:
+                    changed = False
+                    if user.role != UserRole.admin:
+                        user.role = UserRole.admin
+                        changed = True
+                    if not user.is_active:
+                        user.is_active = True
+                        changed = True
+                    if not user.is_verified:
+                        user.is_verified = True
+                        changed = True
+                    if not verify_password(settings.admin_password, user.hashed_password):
+                        user.hashed_password = hash_password(settings.admin_password)
+                        changed = True
+
+                    if changed:
+                        logger.info("Synchronized admin credentials/role for: %s", settings.admin_email)
+                    else:
+                        logger.info("Admin user already verified and up to date: %s", settings.admin_email)
+    except Exception:
+        logger.exception("Failed to seed admin user on startup")
 
 
 @asynccontextmanager
@@ -24,6 +77,10 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     storage = Path(settings.storage_path)
     (storage / "logos").mkdir(parents=True, exist_ok=True)
     (storage / "exports").mkdir(parents=True, exist_ok=True)
+
+    # Seed or synchronize the admin user
+    await _seed_admin()
+
     yield
     # Shutdown: SQLAlchemy disposes connection pool automatically
 
