@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import { fetchRegistrationStatus } from '@/api/admin'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -13,6 +14,20 @@ const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
+const registrationEnabled = ref(true)
+const checkingStatus = ref(true)
+
+onMounted(async () => {
+  try {
+    const status = await fetchRegistrationStatus()
+    registrationEnabled.value = status.registration_enabled
+  } catch {
+    // If we can't reach the server, allow attempts (backend will reject anyway)
+    registrationEnabled.value = true
+  } finally {
+    checkingStatus.value = false
+  }
+})
 
 async function handleRegister() {
   error.value = ''
@@ -61,70 +76,91 @@ async function handleRegister() {
           <p class="card-subtitle">Start building better QR codes today</p>
         </div>
 
-        <div class="error-msg" v-if="error">
-          <i class="pi pi-exclamation-circle" />
-          {{ error }}
+        <!-- Checking registration status -->
+        <div v-if="checkingStatus" class="loading-check">
+          <ProgressSpinner style="width: 28px; height: 28px" />
+          <span>Checking registration status…</span>
         </div>
 
-        <form @submit.prevent="handleRegister" class="login-form" novalidate>
-          <div class="field">
-            <label for="email" class="field-label">Email address</label>
-            <InputText
-              id="email"
-              v-model="email"
-              type="email"
-              placeholder="you@example.com"
-              class="w-full"
-              autocomplete="email"
-              :disabled="loading"
-            />
+        <!-- Registration is disabled -->
+        <div v-else-if="!registrationEnabled" class="disabled-msg">
+          <i class="pi pi-lock disabled-icon" />
+          <h2 class="disabled-title">Registration is closed</h2>
+          <p class="disabled-body">
+            Public registration is currently disabled by the administrator.
+            Please contact your administrator to request access.
+          </p>
+          <RouterLink to="/login" class="btn-back">← Back to sign in</RouterLink>
+        </div>
+
+        <!-- Normal registration form -->
+        <template v-else>
+          <div class="error-msg" v-if="error">
+            <i class="pi pi-exclamation-circle" />
+            {{ error }}
           </div>
 
-          <div class="field">
-            <label for="password" class="field-label">Password</label>
-            <Password
-              id="password"
-              v-model="password"
-              placeholder="Min. 8 characters"
+          <form @submit.prevent="handleRegister" class="login-form" novalidate>
+            <div class="field">
+              <label for="email" class="field-label">Email address</label>
+              <InputText
+                id="email"
+                v-model="email"
+                type="email"
+                placeholder="you@example.com"
+                class="w-full"
+                autocomplete="email"
+                :disabled="loading"
+              />
+            </div>
+
+            <div class="field">
+              <label for="password" class="field-label">Password</label>
+              <Password
+                id="password"
+                v-model="password"
+                placeholder="Min. 8 characters"
+                class="w-full"
+                :feedback="true"
+                toggle-mask
+                :input-style="{ width: '100%' }"
+                autocomplete="new-password"
+                :disabled="loading"
+              />
+            </div>
+
+            <div class="field">
+              <label for="confirm" class="field-label">Confirm password</label>
+              <Password
+                id="confirm"
+                v-model="confirmPassword"
+                placeholder="••••••••"
+                class="w-full"
+                :feedback="false"
+                toggle-mask
+                :input-style="{ width: '100%' }"
+                autocomplete="new-password"
+                :disabled="loading"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              label="Create account"
+              icon="pi pi-user-plus"
               class="w-full"
-              :feedback="true"
-              toggle-mask
-              :input-style="{ width: '100%' }"
-              autocomplete="new-password"
-              :disabled="loading"
+              :loading="loading"
             />
-          </div>
+          </form>
 
-          <div class="field">
-            <label for="confirm" class="field-label">Confirm password</label>
-            <Password
-              id="confirm"
-              v-model="confirmPassword"
-              placeholder="••••••••"
-              class="w-full"
-              :feedback="false"
-              toggle-mask
-              :input-style="{ width: '100%' }"
-              autocomplete="new-password"
-              :disabled="loading"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            label="Create account"
-            icon="pi pi-user-plus"
-            class="w-full"
-            :loading="loading"
-          />
-        </form>
-
-        <p class="card-footer">
-          Already have an account?
-          <RouterLink to="/login" class="card-link">Sign in →</RouterLink>
-        </p>
+          <p class="card-footer">
+            Already have an account?
+            <RouterLink to="/login" class="card-link">Sign in →</RouterLink>
+          </p>
+        </template>
       </div>
     </main>
+
   </div>
 </template>
 
@@ -238,5 +274,54 @@ async function handleRegister() {
 .card-footer { text-align: center; font-size: 0.875rem; color: var(--text-secondary); margin: 1.5rem 0 0; }
 .card-link { color: var(--color-primary); text-decoration: none; font-weight: 500; }
 .card-link:hover { text-decoration: underline; }
+
+/* Registration status states */
+.loading-check {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 2rem 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+.disabled-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 0;
+  gap: 0.75rem;
+}
+.disabled-icon {
+  font-size: 2.5rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+.disabled-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.disabled-body {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+.btn-back {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-back:hover { background: var(--bg-hover); }
 </style>
 

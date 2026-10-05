@@ -27,38 +27,53 @@ interface NavGroup {
   items: NavItem[]
 }
 
-const navGroups: NavGroup[] = [
-  {
-    id: 'overview',
-    label: 'Overview',
-    items: [
-      { label: 'Dashboard', icon: 'pi pi-home', to: '/dashboard', exact: true },
-    ],
-  },
-  {
-    id: 'qrcodes',
-    label: 'QR Codes',
-    items: [
-      { label: 'All QR Codes', icon: 'pi pi-th-large', to: '/dashboard' },
-      { label: 'Create New', icon: 'pi pi-plus-circle', to: '/editor', exact: true },
-    ],
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    items: [
-      { label: 'Scan Analytics', icon: 'pi pi-chart-bar', to: '/analytics' },
-      { label: 'Batch Jobs', icon: 'pi pi-inbox', to: '/batch', soon: true },
-    ],
-  },
-  {
-    id: 'account',
-    label: 'Account',
-    items: [
-      { label: 'Settings', icon: 'pi pi-cog', to: '/settings', soon: true },
-    ],
-  },
-]
+const navGroups = computed<NavGroup[]>(() => {
+  const groups: NavGroup[] = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      items: [
+        { label: 'Dashboard', icon: 'pi pi-home', to: '/dashboard', exact: true },
+      ],
+    },
+    {
+      id: 'qrcodes',
+      label: 'QR Codes',
+      items: [
+        { label: 'All QR Codes', icon: 'pi pi-th-large', to: '/dashboard' },
+        { label: 'Create New', icon: 'pi pi-plus-circle', to: '/editor', exact: true },
+      ],
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics',
+      items: [
+        { label: 'Scan Analytics', icon: 'pi pi-chart-bar', to: '/analytics' },
+        { label: 'Batch Jobs', icon: 'pi pi-inbox', to: '/batch', soon: true },
+      ],
+    },
+    {
+      id: 'account',
+      label: 'Account',
+      items: [
+        { label: 'Settings', icon: 'pi pi-cog', to: '/settings', soon: true },
+      ],
+    },
+  ]
+
+  if (auth.user?.role === 'admin') {
+    groups.push({
+      id: 'admin',
+      label: 'Admin',
+      items: [
+        { label: 'Users', icon: 'pi pi-users', to: '/admin/users' },
+        { label: 'Site Settings', icon: 'pi pi-sliders-h', to: '/admin/settings' },
+      ],
+    })
+  }
+
+  return groups
+})
 
 function isActive(item: NavItem): boolean {
   if (item.to === '/dashboard') return route.path === '/dashboard'
@@ -113,7 +128,12 @@ function logout() {
 
     <!-- ── Navigation ─────────────────────── -->
     <nav class="sidebar-nav">
-      <div v-for="group in navGroups" :key="group.id" class="nav-section">
+      <div
+        v-for="group in navGroups"
+        :key="group.id"
+        class="nav-section"
+        :class="{ 'is-admin': group.id === 'admin' }"
+      >
 
         <p class="section-label" v-show="!collapsed">{{ group.label }}</p>
         <div class="section-divider" v-show="collapsed" />
@@ -127,6 +147,7 @@ function logout() {
           :class="{
             'is-active': isActive(item),
             'is-soon': item.soon,
+            'is-admin-item': group.id === 'admin',
           }"
           v-tooltip.right="collapsed ? item.label : undefined"
         >
@@ -327,6 +348,24 @@ function logout() {
   color: var(--color-primary);
 }
 .nav-item.is-soon { opacity: 0.45; cursor: not-allowed; }
+
+/* Admin section styling */
+.nav-section.is-admin {
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border);
+}
+.nav-section.is-admin .section-label {
+  color: #f59e0b;
+}
+.nav-item.is-admin-item:not(.is-soon):hover {
+  background: rgba(245, 158, 11, 0.08);
+  color: #d97706;
+}
+.nav-item.is-admin-item.is-active {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
 
 .nav-icon { font-size: 0.875rem; width: 16px; text-align: center; flex-shrink: 0; }
 .nav-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }

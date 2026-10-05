@@ -49,6 +49,20 @@ const router = createRouter({
       component: () => import('@/views/AnalyticsView.vue'),
       meta: { layout: 'AppLayout', requiresAuth: true },
     },
+
+    // ── Admin (sidebar layout, admin role required) ───────
+    {
+      path: '/admin/users',
+      name: 'admin-users',
+      component: () => import('@/views/AdminUsersView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/settings',
+      name: 'admin-settings',
+      component: () => import('@/views/AdminSettingsView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true, requiresAdmin: true },
+    },
   ],
 })
 
@@ -63,7 +77,10 @@ router.beforeEach((to) => {
   if (to.meta.guestOnly && auth.isAuthenticated) {
     return { name: 'dashboard' }
   }
+
+  if (to.meta.requiresAdmin && auth.user?.role !== 'admin') {
+    return { name: 'dashboard' }
+  }
 })
 
 export default router
-
