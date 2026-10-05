@@ -4,11 +4,17 @@
  *
  * Design goals:
  *  - Rolling window of N samples for the line chart (bounded memory).
- *  - Debounced chart-option updates so ECharts / Chart.js are never hammered
- *    at a rate faster than the browser's animation frame budget.
  *  - Automatic reconnection with exponential back-off via @vueuse/core's
  *    useWebSocket.
  *  - Clean teardown on component unmount (no leaked listeners or timers).
+ *
+ * Snapshot schema (from the backend):
+ *  {
+ *    ts:     ISO-8601 UTC string
+ *    queues: [{ name, ready, unacked, total }]
+ *    celery: { active, reserved, scheduled, revoked }   ← instantaneous
+ *    jobs:   { pending, processing, completed, failed, total }  ← cumulative DB counts
+ *  }
  */
 
 import { ref, computed, onUnmounted } from 'vue'
@@ -31,10 +37,20 @@ export interface CeleryStats {
   revoked: number
 }
 
+/** Cumulative BatchJob counts queried directly from the database. */
+export interface JobStats {
+  pending: number
+  processing: number
+  completed: number
+  failed: number
+  total: number
+}
+
 export interface MetricsSnapshot {
   ts: string
   queues: QueueDepth[]
   celery: CeleryStats
+  jobs: JobStats
 }
 
 /** One point in the rolling time-series for a single queue. */
@@ -52,6 +68,9 @@ const WINDOW_SIZE = 60
 /** Queues we want to track separately in the line chart. */
 const TRACKED_QUEUES = ['default', 'qr_export', 'qr_batch', 'scan_analytics'] as const
 type TrackedQueue = (typeof TRACKED_QUEUES)[number]
+
+const EMPTY_JOB_STATS: JobStats = { pending: 0, processing: 0, completed: 0, failed: 0, total: 0 }
+const EMPTY_CELERY: CeleryStats = { active: 0, reserved: 0, scheduled: 0, revoked: 0 }
 
 // ── Composable ────────────────────────────────────────────────────────────────
 
@@ -76,8 +95,11 @@ export function useQueueMetrics() {
     new Map(TRACKED_QUEUES.map((q) => [q, []]))
   )
 
-  /** Latest Celery task-state counts for the doughnut chart. */
-  const celeryStats = ref<CeleryStats>({ active: 0, reserved: 0, scheduled: 0, revoked: 0 })
+  /** Instantaneous Celery worker state. */
+  const celeryStats = ref<CeleryStats>({ ...EMPTY_CELERY })
+
+  /** Cumulative BatchJob counts from the database. */
+  const jobStats = ref<JobStats>({ ...EMPTY_JOB_STATS })
 
   /** Shared ordered x-axis labels (ISO timestamps, trimmed to last N). */
   const timeLabels = ref<string[]>([])
@@ -137,8 +159,12 @@ export function useQueueMetrics() {
         // Trigger reactivity on the Map
         series.value = new Map(series.value)
 
-        // ── Update Celery stats ────────────────────────────────────────
-        celeryStats.value = snapshot.celery ?? { active: 0, reserved: 0, scheduled: 0, revoked: 0 }
+        // ── Update live worker state ───────────────────────────────────
+        celeryStats.value = snapshot.celery ?? { ...EMPTY_CELERY }
+
+        // ── Update cumulative job history ──────────────────────────────
+        jobStats.value = snapshot.jobs ?? { ...EMPTY_JOB_STATS }
+
       } catch (err) {
         console.warn('[useQueueMetrics] Failed to parse WS message', err)
       }
@@ -191,31 +217,35 @@ export function useQueueMetrics() {
     return { labels: timeLabels.value, datasets }
   })
 
-  /** Chart.js doughnut data for Celery task states. */
+  /**
+   * Doughnut chart showing cumulative BatchJob status breakdown.
+   * Uses DB totals so completed/failed jobs are always visible, regardless
+   * of how quickly they ran.
+   */
   const doughnutChartData = computed(() => ({
-    labels: ['Active', 'Reserved', 'Scheduled', 'Revoked'],
+    labels: ['Completed', 'Failed', 'Processing', 'Pending'],
     datasets: [
       {
         data: [
-          celeryStats.value.active,
-          celeryStats.value.reserved,
-          celeryStats.value.scheduled,
-          celeryStats.value.revoked,
+          jobStats.value.completed,
+          jobStats.value.failed,
+          jobStats.value.processing,
+          jobStats.value.pending,
         ],
-        backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#ef4444'],
+        backgroundColor: ['#10b981', '#ef4444', '#6366f1', '#94a3b8'],
         hoverOffset: 6,
         borderWidth: 0,
       },
     ],
   }))
 
-  const totalTasks = computed(
-    () =>
-      celeryStats.value.active +
-      celeryStats.value.reserved +
-      celeryStats.value.scheduled +
-      celeryStats.value.revoked
-  )
+  const totalJobsEver = computed(() => jobStats.value.total)
+
+  const successRate = computed(() => {
+    const done = jobStats.value.completed + jobStats.value.failed
+    if (done === 0) return null
+    return Math.round((jobStats.value.completed / done) * 100)
+  })
 
   // ── Cleanup ──────────────────────────────────────────────────────────────
 
@@ -231,10 +261,13 @@ export function useQueueMetrics() {
     latest,
     timeLabels,
     celeryStats,
+    jobStats,
     series,
     // Chart-ready data
     lineChartData,
     doughnutChartData,
-    totalTasks,
+    // Derived
+    totalJobsEver,
+    successRate,
   }
 }

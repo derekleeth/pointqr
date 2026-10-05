@@ -28,11 +28,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 import httpx
-from celery import Celery
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
+from sqlalchemy import func, select
 
 from app.celery_app import celery_app
 from app.core.security import decode_access_token
+from app.database import AsyncSessionLocal
+from app.models.batch_job import BatchJob, BatchJobStatus
 from app.models.user import UserRole
 
 logger = logging.getLogger(__name__)
@@ -132,6 +134,9 @@ def _fetch_celery_stats() -> dict[str, int]:
     """Query active Celery workers via the inspect API (synchronous, fast).
 
     Returns counts per logical state: active, reserved, scheduled, revoked.
+    These are *instantaneous* point-in-time counts – tasks that finish faster
+    than the poll interval will not appear here.  Use job_stats for cumulative
+    history instead.
     Falls back to zeros if no workers are reachable within the timeout.
     """
     inspect = celery_app.control.inspect(timeout=2.0)
@@ -159,6 +164,32 @@ def _fetch_celery_stats() -> dict[str, int]:
     return result
 
 
+async def _fetch_job_stats() -> dict[str, int]:
+    """Count BatchJob rows by status from the database.
+
+    This gives *cumulative* totals that persist across task executions,
+    so the dashboard shows history even when tasks complete in milliseconds.
+    Returns zeros on any DB error so the poller continues gracefully.
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            rows = await session.execute(
+                select(BatchJob.status, func.count().label("cnt"))
+                .group_by(BatchJob.status)
+            )
+            counts: dict[str, int] = {row.status.value: row.cnt for row in rows}
+        return {
+            "pending":    counts.get(BatchJobStatus.pending.value,    0),
+            "processing": counts.get(BatchJobStatus.processing.value, 0),
+            "completed":  counts.get(BatchJobStatus.completed.value,  0),
+            "failed":     counts.get(BatchJobStatus.failed.value,     0),
+            "total":      sum(counts.values()),
+        }
+    except Exception as exc:
+        logger.debug("Job stats DB query failed: %s", exc)
+        return {"pending": 0, "processing": 0, "completed": 0, "failed": 0, "total": 0}
+
+
 # ---------------------------------------------------------------------------
 # Background poller – runs as a long-lived asyncio Task
 # ---------------------------------------------------------------------------
@@ -174,11 +205,13 @@ async def _run_poller() -> None:
                     None, _fetch_celery_stats
                 )
                 queue_depths = await _fetch_rabbitmq_metrics(client)
+                job_stats = await _fetch_job_stats()
 
                 snapshot: dict[str, Any] = {
                     "ts": datetime.now(tz=timezone.utc).isoformat(),
                     "queues": queue_depths,
                     "celery": celery_stats,
+                    "jobs": job_stats,
                 }
 
                 # Non-blocking put; drop oldest if the queue is full (back-pressure)
@@ -269,7 +302,6 @@ async def metrics_ws(
     # We do a lightweight check here; the user object is loaded only to
     # confirm the role claim persisted in the DB matches.
     from sqlalchemy import select
-    from app.database import AsyncSessionLocal
     from app.models.user import User
 
     async with AsyncSessionLocal() as db:

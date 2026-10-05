@@ -51,7 +51,9 @@ const {
   lineChartData,
   doughnutChartData,
   celeryStats,
-  totalTasks,
+  jobStats,
+  totalJobsEver,
+  successRate,
 } = useQueueMetrics()
 
 // ── Canvas refs ───────────────────────────────────────────────────────────────
@@ -221,7 +223,8 @@ onUnmounted(() => {
       {{ lastError }}
     </Message>
 
-    <!-- ── KPI strip ─────────────────────────────────────────────────────── -->
+    <!-- ── KPI strip – Live workers (instantaneous) ──────────────────── -->
+    <p class="kpi-section-label">Live Workers</p>
     <div class="kpi-strip">
       <div class="kpi-card">
         <p class="kpi-label">Active Tasks</p>
@@ -247,6 +250,33 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- ── KPI strip – Job history (cumulative DB counts) ────────────── -->
+    <p class="kpi-section-label">Job History</p>
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <p class="kpi-label">Total Jobs</p>
+        <p class="kpi-value">{{ totalJobsEver }}</p>
+      </div>
+      <div class="kpi-card">
+        <p class="kpi-label">Completed</p>
+        <p class="kpi-value kpi-scheduled">{{ jobStats.completed }}</p>
+      </div>
+      <div class="kpi-card">
+        <p class="kpi-label">Failed</p>
+        <p class="kpi-value kpi-revoked">{{ jobStats.failed }}</p>
+      </div>
+      <div class="kpi-card">
+        <p class="kpi-label">In Progress</p>
+        <p class="kpi-value kpi-active">{{ jobStats.processing + jobStats.pending }}</p>
+      </div>
+      <div class="kpi-card kpi-wide">
+        <p class="kpi-label">Success Rate</p>
+        <p class="kpi-value kpi-scheduled">
+          {{ successRate !== null ? `${successRate}%` : '—' }}
+        </p>
+      </div>
+    </div>
+
     <!-- ── Charts ─────────────────────────────────────────────────────────── -->
     <div class="charts-grid">
       <!-- Line chart: queue depth over time -->
@@ -260,11 +290,11 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Doughnut chart: Celery task states -->
+      <!-- Doughnut chart: cumulative job status breakdown -->
       <div class="chart-card chart-card--donut">
         <div class="chart-header">
-          <h2 class="chart-title">Task States</h2>
-          <span class="chart-hint">{{ totalTasks }} total</span>
+          <h2 class="chart-title">Job Status Breakdown</h2>
+          <span class="chart-hint">{{ totalJobsEver }} total · all time</span>
         </div>
         <div class="chart-body">
           <canvas ref="doughnutCanvas" />
@@ -386,6 +416,15 @@ onUnmounted(() => {
 .error-msg { margin: 0; }
 
 /* ── KPI strip ────────────────────────────────────────────────────────────── */
+.kpi-section-label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
 .kpi-strip {
   display: flex;
   gap: 0.75rem;
