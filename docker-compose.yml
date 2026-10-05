@@ -139,6 +139,9 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Mount the shared storage volume so Nginx can serve /static/ directly
+      # from disk without proxying through FastAPI (faster + avoids path issues)
+      - storage:/app/storage:ro
     depends_on:
       - backend
       - frontend
