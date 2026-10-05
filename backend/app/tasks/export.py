@@ -1,95 +1,79 @@
-"""Celery tasks for high-resolution QR code export (PNG, SVG, PDF, EPS)."""
+"""Celery tasks for high-resolution QR code export (PNG, SVG, PDF, EPS).
+
+All database access uses the synchronous psycopg2 engine from app.tasks.db so
+that there is no asyncpg / event-loop interaction inside forked Celery workers.
+"""
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from pathlib import Path
 
+from sqlalchemy import select
+
 from app.celery_app import celery_app
 from app.config import get_settings
+from app.models.batch_job import BatchJob, BatchJobStatus
+from app.models.qrcode import QRCode
+from app.tasks.db import task_session
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
 # ---------------------------------------------------------------------------
-# Internal async helpers (run inside asyncio.run() from the sync task)
+# Internal sync helpers
 # ---------------------------------------------------------------------------
 
-async def _mark_job_processing(job_id: str) -> None:
+def _mark_job_processing(job_id: str) -> None:
     """Set BatchJob status to PROCESSING."""
-    from sqlalchemy import select
-
-    from app.database import AsyncSessionLocal
-    from app.models.batch_job import BatchJob, BatchJobStatus
-
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(
+    with task_session() as session:
+        job = session.execute(
             select(BatchJob).where(BatchJob.id == uuid.UUID(job_id))
-        )
-        job = result.scalar_one_or_none()
+        ).scalar_one_or_none()
         if job is None:
             raise ValueError(f"BatchJob {job_id} not found")
         job.status = BatchJobStatus.processing
-        await session.commit()
+        session.commit()
 
 
-async def _fetch_qr_design(qr_code_id: str) -> dict:
+def _fetch_qr_design(qr_code_id: str) -> dict:
     """Fetch design_config for the given QRCode id."""
-    from sqlalchemy import select
-
-    from app.database import AsyncSessionLocal
-    from app.models.qrcode import QRCode
-
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(
+    with task_session() as session:
+        qr = session.execute(
             select(QRCode).where(QRCode.id == uuid.UUID(qr_code_id))
-        )
-        qr = result.scalar_one_or_none()
+        ).scalar_one_or_none()
         if qr is None:
             raise ValueError(f"QRCode {qr_code_id} not found")
         return dict(qr.design_config or {})
 
 
-async def _mark_job_completed(job_id: str, result_url: str) -> None:
+def _mark_job_completed(job_id: str, result_url: str) -> None:
     """Set BatchJob status to COMPLETED and store result_url."""
-    from sqlalchemy import select
-
-    from app.database import AsyncSessionLocal
-    from app.models.batch_job import BatchJob, BatchJobStatus
-
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(
+    with task_session() as session:
+        job = session.execute(
             select(BatchJob).where(BatchJob.id == uuid.UUID(job_id))
-        )
-        job = result.scalar_one_or_none()
+        ).scalar_one_or_none()
         if job is None:
             raise ValueError(f"BatchJob {job_id} not found")
         job.status = BatchJobStatus.completed
         job.processed_items = job.total_items
         job.result_url = result_url
-        await session.commit()
+        session.commit()
 
 
-async def _mark_job_failed(job_id: str) -> None:
+def _mark_job_failed(job_id: str) -> None:
     """Set BatchJob status to FAILED."""
-    from sqlalchemy import select
-
-    from app.database import AsyncSessionLocal
-    from app.models.batch_job import BatchJob, BatchJobStatus
-
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(
+    with task_session() as session:
+        job = session.execute(
             select(BatchJob).where(BatchJob.id == uuid.UUID(job_id))
-        )
-        job = result.scalar_one_or_none()
+        ).scalar_one_or_none()
         if job is None:
             logger.warning("BatchJob %s not found when attempting to mark FAILED", job_id)
             return
         job.status = BatchJobStatus.failed
-        await session.commit()
+        session.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -117,10 +101,10 @@ def export_qr_code(self, qr_code_id: str, format: str, job_id: str) -> str:  # n
 
     try:
         # Step 1 – Mark job as PROCESSING
-        asyncio.run(_mark_job_processing(job_id))
+        _mark_job_processing(job_id)
 
         # Step 2 – Fetch QR code design config
-        design = asyncio.run(_fetch_qr_design(qr_code_id))
+        design = _fetch_qr_design(qr_code_id)
 
         # Step 3 – Generate the file bytes using the appropriate renderer
         match format:
@@ -144,7 +128,7 @@ def export_qr_code(self, qr_code_id: str, format: str, job_id: str) -> str:  # n
 
         # Step 5 – Mark job as COMPLETED
         result_url = f"/static/exports/{qr_code_id}/{job_id}.{format}"
-        asyncio.run(_mark_job_completed(job_id, result_url))
+        _mark_job_completed(job_id, result_url)
 
         return result_url
 
@@ -156,10 +140,10 @@ def export_qr_code(self, qr_code_id: str, format: str, job_id: str) -> str:  # n
             job_id,
             exc,
         )
-        # Step 6 – Mark job FAILED before retrying so the client sees the
-        # intermediate failure; it will be flipped back to PROCESSING on retry.
+        # Mark job FAILED before retrying so the client sees the intermediate
+        # failure; it will be flipped back to PROCESSING on retry.
         try:
-            asyncio.run(_mark_job_failed(job_id))
+            _mark_job_failed(job_id)
         except Exception:
             logger.exception("Failed to mark BatchJob %s as FAILED", job_id)
 

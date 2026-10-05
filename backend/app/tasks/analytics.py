@@ -1,8 +1,11 @@
-"""Celery tasks for scan event ingestion and analytics enrichment."""
+"""Celery tasks for scan event ingestion and analytics enrichment.
+
+All database access uses the synchronous psycopg2 engine from app.tasks.db so
+that there is no asyncpg / event-loop interaction inside forked Celery workers.
+"""
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -10,8 +13,8 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 
 from app.celery_app import celery_app
-from app.database import AsyncSessionLocal
 from app.models.scan_event import ScanEvent
+from app.tasks.db import task_session
 
 logger = logging.getLogger(__name__)
 
@@ -69,66 +72,6 @@ def _parse_browser(ua: str | None) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Async DB helper (called via asyncio.run inside the sync Celery task)
-# ---------------------------------------------------------------------------
-
-async def _async_log_scan_event(
-    qr_code_id: str,
-    ip_hash: str,
-    user_agent: str | None,
-    referer: str | None,
-    timestamp: str,
-) -> None:
-    """Async coroutine: insert ScanEvent and increment QRCode.scan_count."""
-    # TODO: Add GeoIP lookup (country/city) once geoip2 is added to dependencies
-    country: str | None = None
-    city: str | None = None
-
-    device_type = _parse_device_type(user_agent)
-    os_name = _parse_os(user_agent)
-    browser = _parse_browser(user_agent)
-
-    # Parse the ISO timestamp from the redirect service
-    try:
-        ts = datetime.fromisoformat(timestamp)
-    except ValueError:
-        ts = datetime.now(tz=timezone.utc)
-
-    qr_uuid = uuid.UUID(qr_code_id)
-
-    async with AsyncSessionLocal() as session:
-        try:
-            # Insert ScanEvent row
-            event = ScanEvent(
-                qr_code_id=qr_uuid,
-                timestamp=ts,
-                ip_hash=ip_hash,
-                country=country,
-                city=city,
-                device_type=device_type,
-                os=os_name,
-                browser=browser,
-                referer=referer,
-            )
-            session.add(event)
-
-            # Atomically increment the denormalized scan counter
-            await session.execute(
-                text("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = :id"),
-                {"id": qr_uuid},
-            )
-
-            await session.commit()
-            logger.info(
-                "scan_event logged",
-                extra={"qr_code_id": qr_code_id, "device": device_type, "browser": browser},
-            )
-        except Exception:
-            await session.rollback()
-            raise
-
-
-# ---------------------------------------------------------------------------
 # Celery task
 # ---------------------------------------------------------------------------
 
@@ -157,15 +100,48 @@ def log_scan_event(
         timestamp:  ISO-8601 datetime string of when the scan occurred.
     """
     try:
-        asyncio.run(
-            _async_log_scan_event(
-                qr_code_id=qr_code_id,
+        # TODO: Add GeoIP lookup (country/city) once geoip2 is added to dependencies
+        country: str | None = None
+        city: str | None = None
+
+        device_type = _parse_device_type(user_agent)
+        os_name = _parse_os(user_agent)
+        browser = _parse_browser(user_agent)
+
+        try:
+            ts = datetime.fromisoformat(timestamp)
+        except ValueError:
+            ts = datetime.now(tz=timezone.utc)
+
+        qr_uuid = uuid.UUID(qr_code_id)
+
+        with task_session() as session:
+            # Insert ScanEvent row
+            event = ScanEvent(
+                qr_code_id=qr_uuid,
+                timestamp=ts,
                 ip_hash=ip_hash,
-                user_agent=user_agent,
+                country=country,
+                city=city,
+                device_type=device_type,
+                os=os_name,
+                browser=browser,
                 referer=referer,
-                timestamp=timestamp,
             )
-        )
+            session.add(event)
+
+            # Atomically increment the denormalized scan counter
+            session.execute(
+                text("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = :id"),
+                {"id": qr_uuid},
+            )
+
+            session.commit()
+            logger.info(
+                "scan_event logged",
+                extra={"qr_code_id": qr_code_id, "device": device_type, "browser": browser},
+            )
+
     except Exception as exc:
         logger.exception("log_scan_event failed – retrying: %s", exc)
         raise self.retry(exc=exc)
