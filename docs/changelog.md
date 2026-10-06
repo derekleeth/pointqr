@@ -164,6 +164,7 @@
 |---|--------|-------------|
 | 1 | ✅ Done | Toast notifications on QR code save success (new codes) and failure — added to `QREditorView.vue` with error detail extracted from Axios response |
 | 2 | ✅ Done | Customizable text labels above and below QR code with typography, alignment, letter-spacing, and padding options |
+| 3 | ⏳ Planned (Phase 6+) | Multi-up repeating PDF print sheet generator — allows repeating a styled QR code across a single printable PDF page (US Letter / A4) with cut guides and margins for print-and-cut |
 
 
 ---

@@ -86,6 +86,7 @@ Marketing professionals, businesses, event organizers, and individual creators r
 
 - **Formats:** PNG (custom DPI/resolution and composite multi-layer client-side export), SVG (pure vector with integrated text labels), PDF, and EPS (print-ready vector).
 - **Batch Processing:** CSV upload functionality for hundreds of URLs/texts, returning a zipped archive of QR codes processed via Celery.
+- **Print Sheet Generation (Post-Launch / Future):** Multi-up repeating grid PDF exporter that tiles a customized QR code across a single printable sheet (US Letter / A4) with cut guides and margins for print-and-cut physical distribution.
 
 ### Analytics & Reporting Dashboard
 
@@ -155,6 +156,7 @@ PointQR uses a dedicated Celery Beat scheduler daemon (`celery -A app.celery_app
 | **Phase 3** | Weeks 5–6 | URL shortening/redirect service (sub-10ms target), RabbitMQ/Celery async scan logging, background vector export, outer text labels | ✅ Completed |
 | **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard (✅ Track A), CSV bulk QR generation pipeline (⏳ Track B), Storage lifecycle management & automated cleanup via Celery Beat (⏳ Track C) | 🚧 In Progress |
 | **Phase 5** | Weeks 9–10 | Rate limiting, penetration testing, automated CI/CD pipelines, project documentation | ⏳ Planned |
+| **Phase 6+** | Post-Launch / Future | Multi-up repeating PDF print sheets (print & cut), team/organization workspaces, advanced campaign tags | 💡 Backlog |
 
 ### Phase 4 Detailed Breakdown: Analytics, Bulk Generation & Storage Operations
 
@@ -168,6 +170,19 @@ PointQR uses a dedicated Celery Beat scheduler daemon (`celery -A app.celery_app
   - **Disk Space Monitoring:** Periodic task `monitor_storage_usage` evaluating volume capacity via `shutil.disk_usage()`, warning on 80% usage and alerting at 90%.
   - **Asset Safeguards:** Strict path exclusion ensuring uploaded brand assets in `/storage/logos/` are protected from automated cleanup routines.
 
+### Post-Launch & Future Roadmap (Phase 6+ Backlog)
+
+- **Multi-Up Repeating PDF Print Sheet Generator (Print & Cut):**
+  - **Objective:** Give users the option to generate a printable PDF containing multiple copies of a single styled QR code laid out across a single sheet of paper for printing and cutting out physically.
+  - **Page Sizes & Formats:** US Letter (8.5 × 11 in) and A4 (210 × 297 mm), supporting both Portrait and Landscape orientations.
+  - **Grid Presets & Layouts:**
+    - Standard repeating grid options (e.g., 2×2, 3×3, 4×4, 5×2).
+    - Standard peel-and-stick / label sheet presets (e.g., Avery 5160, 5163, or custom label dimensions).
+  - **Print & Cut Guides:**
+    - Configurable crop marks and dashed cut lines along borders to facilitate easy hand cutting or guillotine cutting.
+    - Adjustable margins, gutters, and card padding.
+  - **Styling Fidelity:** Full reproduction of dot styling, corner elements, center logo embed, and outer top/bottom text labels on each repeated item.
+  - **Rendering Engine:** Option for fast client-side rendering (via `jsPDF` / canvas) or high-resolution server-side PDF compilation via Celery (`reportlab` / `weasyprint`).
 
 ---
 
