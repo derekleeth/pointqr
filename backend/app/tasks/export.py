@@ -99,6 +99,8 @@ def export_qr_code(self, qr_code_id: str, format: str, job_id: str) -> str:  # n
     """
     from app.services.qr_generator import generate_eps, generate_pdf, generate_png, generate_svg
 
+    logger.info("Starting export_qr_code task for qr=%s format=%s job=%s", qr_code_id, format, job_id)
+    
     try:
         # Step 1 – Mark job as PROCESSING
         _mark_job_processing(job_id)
