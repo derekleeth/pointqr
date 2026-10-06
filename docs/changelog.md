@@ -123,6 +123,14 @@
 - ⏳ `POST /v1/qrcodes/batch` upload endpoint + `GET /v1/qrcodes/batch/jobs` listing
 - ⏳ `BatchView.vue` with drag-and-drop CSV upload and job progress table
 
+### Track C – Storage Lifecycle & Celery Beat Cleanup ⏳ (Planned)
+
+- ⏳ `celery_beat` scheduler container added to `docker-compose.yml` (`celery -A app.celery_app beat`)
+- ⏳ `backend/app/tasks/cleanup.py` — `cleanup_expired_exports` Celery Beat task (scans `/app/storage/exports/`, purges single exports and batch ZIPs older than `EXPORT_RETENTION_HOURS=24`)
+- ⏳ `backend/app/tasks/cleanup.py` — `monitor_storage_usage` Celery Beat task (checks volume disk space using `shutil.disk_usage`, triggers warning logs at >80% and critical alerts at >90%)
+- ⏳ Preservation guarantee for persistent assets (`/app/storage/logos/`) to prevent accidental deletion
+- ⏳ Configuration in `.env` / `app/config.py`: `EXPORT_RETENTION_HOURS`, `DISK_WARN_THRESHOLD_PCT`, `DISK_CRITICAL_THRESHOLD_PCT`
+
 ---
 
 ## Phase 5 – Hardening, CI/CD & Docs ⏳

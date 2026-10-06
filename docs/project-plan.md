@@ -39,12 +39,13 @@ Marketing professionals, businesses, event organizers, and individual creators r
 
 - **Task Queue:** Celery 5.x.
 - **Message Broker & Result Backend:** RabbitMQ (AMQP protocol for robust task queuing, message routing, dead-letter exchanges, and RPC/AMQP task results). Task states and job completion records are stored directly in PostgreSQL (`BatchJobs` table), eliminating the need for Redis.
+- **Task Scheduling & Periodic Maintenance:** Celery Beat daemon for automated recurring jobs (export file pruning, storage threshold monitoring, and periodic health checks).
 - **Caching & Rate Limiting:** In-memory LRU caching within FastAPI and database-backed rate limiting.
 
 ### Persistence & Storage
 
 - **Primary Database:** PostgreSQL 16 for relational data (users, QR configurations, scan logs, tags).
-- **File Storage:** Local filesystem storage (using persistent Docker volumes shared between FastAPI and Celery worker containers, served directly via FastAPI static file mounts or Nginx) for uploaded logos and generated export files.
+- **File Storage & Lifecycle:** Local filesystem storage (using persistent Docker volumes `pointqr_storage` shared between FastAPI, Celery worker, and Celery Beat containers, served directly via Nginx or FastAPI static mounts). Storage is partitioned into permanent user assets (`/storage/logos/`) and transient generated files (`/storage/exports/`, batch archives), managed with automated TTL cleanup and disk usage monitoring.
 
 ### Infrastructure
 
@@ -93,6 +94,17 @@ Marketing professionals, businesses, event organizers, and individual creators r
 - **Geographic Data:** Distribution by country, region, and city.
 - **Data Export:** Exportable tables (CSV, Excel) powered by PrimeVue DataTable export features.
 
+### Storage Management & Disk Monitoring Engine
+
+- **Automated Export Lifecycle & Cleanup:**
+  - Configurable retention window (default: 24–48 hours via `EXPORT_RETENTION_HOURS`) for generated export files and bulk zip packages in `/storage/exports/`.
+  - Periodic Celery Beat task sweeps `/storage/exports/`, deleting expired directories/files whose mtime exceeds the retention policy, and cleans up corresponding temporary batch artifacts.
+  - Safeguard isolation: Permanent user assets in `/storage/logos/` are strictly excluded from automated cleanup.
+- **Disk Usage & Capacity Monitoring:**
+  - Periodic Celery Beat task monitors persistent storage volume utilization using `shutil.disk_usage()`.
+  - Configurable warning (`80%`) and critical (`90%`) thresholds with structured log alerts and metric logging to prevent volume exhaustion.
+  - Option to expose disk utilization metrics via system health endpoint / WebSocket for real-time operational visibility.
+
 ---
 
 ## 5. Database Schema & Data Models
@@ -123,6 +135,15 @@ Marketing professionals, businesses, event organizers, and individual creators r
 - Dead-letter exchanges (DLX) for failed messages.
 - Automatic retries with exponential backoff.
 
+### Celery Beat Periodic Schedules
+
+PointQR uses a dedicated Celery Beat scheduler daemon (`celery -A app.celery_app beat`) to dispatch recurring maintenance and monitoring tasks to the `default` queue:
+
+| Task Name | Schedule | Target Queue | Purpose |
+|---|---|---|---|
+| `cleanup_expired_exports` | Hourly (`0 * * * *`) | `default` | Scan `/storage/exports/` and purge export files/folders older than `EXPORT_RETENTION_HOURS` (default 24h) |
+| `monitor_storage_usage` | Every 15 min (`*/15 * * * *`) | `default` | Check storage volume free disk space and percentage usage; emit warnings if usage > 80% and critical alerts if > 90% |
+
 ---
 
 ## 7. Project Implementation Milestones & Roadmap
@@ -132,8 +153,20 @@ Marketing professionals, businesses, event organizers, and individual creators r
 | **Phase 1** | Weeks 1–2 | Repository structure, Docker Compose orchestration, DB migrations with Alembic, JWT user authentication | ✅ Completed |
 | **Phase 2** | Weeks 3–4 | Vue 3 + PrimeVue setup, interactive canvas editor with live preview, FastAPI QR rendering endpoints | ✅ Completed |
 | **Phase 3** | Weeks 5–6 | URL shortening/redirect service (sub-10ms target), RabbitMQ/Celery async scan logging, background vector export, outer text labels | ✅ Completed |
-| **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard with Chart.js (✅ Track A), CSV bulk QR generation pipeline (⏳ Track B) | 🚧 In Progress |
+| **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard (✅ Track A), CSV bulk QR generation pipeline (⏳ Track B), Storage lifecycle management & automated cleanup via Celery Beat (⏳ Track C) | 🚧 In Progress |
 | **Phase 5** | Weeks 9–10 | Rate limiting, penetration testing, automated CI/CD pipelines, project documentation | ⏳ Planned |
+
+### Phase 4 Detailed Breakdown: Analytics, Bulk Generation & Storage Operations
+
+- **Track A: Scan Analytics Dashboard (✅ Completed)**
+  - Aggregated metrics API (`/v1/analytics/*`), PrimeVue + Chart.js time-series, browser/OS/device doughnuts, and country breakdown.
+- **Track B: CSV Bulk QR Generation Pipeline (⏳ Planned)**
+  - CSV parser, batch rendering to ZIP archive on `qr_batch` queue, BatchJob tracking, drag-and-drop batch UI.
+- **Track C: Storage Lifecycle Management & Celery Beat Automation (⏳ Planned)**
+  - **Celery Beat Service:** Add `celery_beat` scheduler container to `docker-compose.yml` (`celery -A app.celery_app beat`).
+  - **Automated Retention Cleanup:** Periodic task `cleanup_expired_exports` to purge `/storage/exports/` directories and batch zip packages exceeding retention TTL (default 24 hours), preventing export accumulation from both single exports (Phase 3) and batch archives (Track B).
+  - **Disk Space Monitoring:** Periodic task `monitor_storage_usage` evaluating volume capacity via `shutil.disk_usage()`, warning on 80% usage and alerting at 90%.
+  - **Asset Safeguards:** Strict path exclusion ensuring uploaded brand assets in `/storage/logos/` are protected from automated cleanup routines.
 
 
 ---
