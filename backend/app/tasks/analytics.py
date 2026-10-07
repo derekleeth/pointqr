@@ -115,7 +115,37 @@ def log_scan_event(
 
         qr_uuid = uuid.UUID(qr_code_id)
 
+        from app.models.qrcode import QRCode
+        from app.models.user import User
+        from app.limits import TIER_LIMITS
+        from sqlalchemy import select, func
+
         with task_session() as session:
+            # Check limits
+            qr = session.execute(select(QRCode).where(QRCode.id == qr_uuid)).scalar_one_or_none()
+            if not qr:
+                return
+            
+            user = session.execute(select(User).where(User.id == qr.user_id)).scalar_one_or_none()
+            if user:
+                limits = TIER_LIMITS.get(user.tier)
+                if limits and limits["max_scans_per_month"] != -1:
+                    now = datetime.now(tz=timezone.utc)
+                    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                    
+                    scan_count = session.execute(
+                        select(func.count(ScanEvent.id))
+                        .join(QRCode, ScanEvent.qr_code_id == QRCode.id)
+                        .where(
+                            QRCode.user_id == user.id,
+                            ScanEvent.timestamp >= start_of_month
+                        )
+                    ).scalar_one()
+
+                    if scan_count >= limits["max_scans_per_month"]:
+                        logger.info("Scan limit reached for user %s, skipping scan log", user.id)
+                        return
+
             # Insert ScanEvent row
             event = ScanEvent(
                 qr_code_id=qr_uuid,

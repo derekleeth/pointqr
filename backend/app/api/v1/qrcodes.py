@@ -5,7 +5,10 @@ from __future__ import annotations
 import math
 import secrets
 import uuid
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, Response, UploadFile, status
 from sqlalchemy import func, select
@@ -120,7 +123,30 @@ async def create_qrcode(
     Dynamic codes receive an auto-generated 8-character short code.
     """
     short_code: str | None = None
+    limits = None
     if payload.type == QRCodeType.dynamic:
+        from app.limits import TIER_LIMITS
+        limits = TIER_LIMITS.get(current_user.tier)
+        if limits and limits["max_dynamic_qrs"] != -1:
+            count = await db.execute(
+                select(func.count()).where(
+                    QRCode.user_id == current_user.id,
+                    QRCode.type == QRCodeType.dynamic,
+                    QRCode.is_active == True
+                )
+            )
+            if count.scalar_one() >= limits["max_dynamic_qrs"]:
+                logger.warning(
+                    "User %s (tier: %s) reached max dynamic QR codes limit (%d)",
+                    current_user.id,
+                    current_user.tier,
+                    limits["max_dynamic_qrs"],
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Dynamic QR code limit reached ({limits['max_dynamic_qrs']}). Please upgrade your tier.",
+                )
+
         # Retry up to 10 times to guarantee uniqueness
         for _ in range(10):
             candidate = _make_short_code()

@@ -59,7 +59,7 @@ const features = [
       <div class="hero-content">
         <div class="hero-badge">
           <i class="pi pi-sparkles" style="font-size:0.75rem" />
-          Built for marketing teams, agencies & creators
+          New application in beta — Self-host for free with no limits!
         </div>
         <h1 class="hero-title">
           QR Codes,<br />
@@ -101,6 +101,26 @@ const features = [
           </div>
           <h3 class="feature-title">{{ f.title }}</h3>
           <p class="feature-desc">{{ f.desc }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Pricing / Free Tier ────────────────────── -->
+    <section class="pricing">
+      <p class="features-eyebrow">Beta Access</p>
+      <h2 class="features-title">Simple, Transparent Free Tier</h2>
+      
+      <div class="pricing-card">
+        <h3 class="feature-title">Free Plan Includes:</h3>
+        <ul class="pricing-list">
+          <li><i class="pi pi-check"></i> <strong>5 Dynamic QR Codes</strong> (change destinations anytime)</li>
+          <li><i class="pi pi-check"></i> <strong>Unlimited Static QR Codes</strong></li>
+          <li><i class="pi pi-check"></i> <strong>200 Tracked Scans per month</strong></li>
+          <li><i class="pi pi-check"></i> Full access to the Live Design Editor & High-Res Exports</li>
+        </ul>
+        <div class="pricing-self-host">
+          <i class="pi pi-server"></i>
+          <p><strong>Want to run it yourself?</strong> <br/>PointQR is open source. <a href="https://github.com/derekleeth/pointqr" target="_blank">Self-host it for free</a> without any limits!</p>
         </div>
       </div>
     </section>
@@ -373,6 +393,70 @@ const features = [
   line-height: 1.6;
   color: var(--text-secondary);
   margin: 0;
+}
+
+/* ── Pricing / Free Tier ─────────────────────── */
+.pricing {
+  padding: 5rem 2.5rem;
+  background: var(--bg-base);
+}
+.pricing-card {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+.pricing-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.pricing-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+.pricing-list li i {
+  color: var(--color-primary);
+  font-size: 1.125rem;
+}
+.pricing-list strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.pricing-self-host {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.pricing-self-host i {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+.pricing-self-host p { margin: 0; }
+.pricing-self-host a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.pricing-self-host a:hover {
+  text-decoration: underline;
 }
 
 /* ── CTA Banner ──────────────────────────────── */
