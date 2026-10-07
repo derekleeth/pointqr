@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.core.dependencies import CurrentUser, DBSession
+from app.core.rate_limit import limiter
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -33,7 +34,8 @@ settings = get_settings()
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user account",
 )
-async def register(payload: UserCreate, db: DBSession) -> User:
+@limiter.limit("5/minute")
+async def register(request: Request, payload: UserCreate, db: DBSession) -> User:
     """Create a new user account with a hashed password.
 
     Returns 409 if the email is already registered.
@@ -68,7 +70,9 @@ async def register(payload: UserCreate, db: DBSession) -> User:
     response_model=Token,
     summary="Authenticate and receive JWT tokens",
 )
+@limiter.limit("10/minute")
 async def login(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DBSession,
 ) -> Token:

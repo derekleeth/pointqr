@@ -7,11 +7,12 @@ import secrets
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, Request, Response, UploadFile, status
 from sqlalchemy import func, select
 
 from app.config import get_settings
 from app.core.dependencies import CurrentUser, DBSession
+from app.core.rate_limit import limiter
 from app.models.batch_job import BatchJob, BatchJobStatus
 from app.models.qrcode import QRCode, QRCodeType
 from app.schemas.batch_job import BatchJobRead
@@ -107,7 +108,9 @@ async def list_qrcodes(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new QR code",
 )
+@limiter.limit("30/minute")
 async def create_qrcode(
+    request: Request,
     payload: QRCodeCreate,
     current_user: CurrentUser,
     db: DBSession,
@@ -220,7 +223,9 @@ async def delete_qrcode(
 # ---------------------------------------------------------------------------
 
 @router.post("/{qr_id}/export", summary="Export QR code as a downloadable file")
+@limiter.limit("20/minute")
 async def export_qrcode(
+    request: Request,
     qr_id: uuid.UUID,
     current_user: CurrentUser,
     db: DBSession,
@@ -268,7 +273,9 @@ async def export_qrcode(
     response_model=QRCodeRead,
     summary="Upload a center logo for the QR code",
 )
+@limiter.limit("10/minute")
 async def upload_logo(
+    request: Request,
     qr_id: uuid.UUID,
     current_user: CurrentUser,
     db: DBSession,
@@ -324,7 +331,9 @@ async def upload_logo(
     status_code=status.HTTP_202_ACCEPTED,
     summary="Queue an async QR code export job",
 )
+@limiter.limit("20/minute")
 async def export_qrcode_async(
+    request: Request,
     qr_id: uuid.UUID,
     current_user: CurrentUser,
     db: DBSession,

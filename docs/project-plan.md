@@ -40,7 +40,7 @@ Marketing professionals, businesses, event organizers, and individual creators r
 - **Task Queue:** Celery 5.x.
 - **Message Broker & Result Backend:** RabbitMQ (AMQP protocol for robust task queuing, message routing, dead-letter exchanges, and RPC/AMQP task results). Task states and job completion records are stored directly in PostgreSQL (`BatchJobs` table), eliminating the need for Redis.
 - **Task Scheduling & Periodic Maintenance:** Celery Beat daemon for automated recurring jobs (export file pruning, storage threshold monitoring, and periodic health checks).
-- **Caching & Rate Limiting:** In-memory LRU caching within FastAPI and database-backed rate limiting.
+- **Caching & Rate Limiting:** In-memory LRU caching within FastAPI and SlowAPI rate limiting (IP-keyed sliding window algorithm).
 
 ### Persistence & Storage
 
@@ -155,7 +155,7 @@ PointQR uses a dedicated Celery Beat scheduler daemon (`celery -A app.celery_app
 | **Phase 2** | Weeks 3–4 | Vue 3 + PrimeVue setup, interactive canvas editor with live preview, FastAPI QR rendering endpoints | ✅ Completed |
 | **Phase 3** | Weeks 5–6 | URL shortening/redirect service (sub-10ms target), RabbitMQ/Celery async scan logging, background vector export, outer text labels | ✅ Completed |
 | **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard (✅ Track A), CSV bulk QR generation pipeline (⏳ Track B), Storage lifecycle management & automated cleanup via Celery Beat (⏳ Track C) | 🚧 In Progress |
-| **Phase 5** | Weeks 9–10 | Rate limiting, penetration testing, automated CI/CD pipelines, project documentation | ⏳ Planned |
+| **Phase 5** | Weeks 9–10 | Rate limiting (✅ completed), penetration testing, automated CI/CD pipelines, project documentation | 🚧 In Progress |
 | **Phase 6+** | Post-Launch / Future | Multi-up repeating PDF print sheets (print & cut), team/organization workspaces, advanced campaign tags | 💡 Backlog |
 
 ### Phase 4 Detailed Breakdown: Analytics, Bulk Generation & Storage Operations
@@ -169,6 +169,20 @@ PointQR uses a dedicated Celery Beat scheduler daemon (`celery -A app.celery_app
   - **Automated Retention Cleanup:** Periodic task `cleanup_expired_exports` to purge `/storage/exports/` directories and batch zip packages exceeding retention TTL (default 24 hours), preventing export accumulation from both single exports (Phase 3) and batch archives (Track B).
   - **Disk Space Monitoring:** Periodic task `monitor_storage_usage` evaluating volume capacity via `shutil.disk_usage()`, warning on 80% usage and alerting at 90%.
   - **Asset Safeguards:** Strict path exclusion ensuring uploaded brand assets in `/storage/logos/` are protected from automated cleanup routines.
+
+### Phase 5 Detailed Breakdown: Hardening, CI/CD & Production Launch
+
+- **API Rate Limiting & Abuse Prevention (✅ Completed):**
+  - Integrated `slowapi` with in-memory sliding-window request counting keyed by caller IP (`get_remote_address`).
+  - Added global `RateLimitExceeded` handler returning RFC-compliant HTTP 429 status codes with `Retry-After` headers.
+  - Rate-limited sensitive authentication endpoints: `/v1/auth/register` (5 req/min) and `/v1/auth/login` (10 req/min).
+  - Rate-limited compute-heavy QR creation, export, and upload routes: `/v1/qrcodes` (30 req/min), `/v1/qrcodes/{id}/export` (20 req/min), `/v1/qrcodes/{id}/export/async` (20 req/min), `/v1/qrcodes/{id}/logo` (10 req/min).
+- **Security Audit & Hardening (⏳ Planned):**
+  - SSRF URL validation, dependency auditing, and penetration check.
+- **CI/CD Pipeline (⏳ Planned):**
+  - GitHub Actions automated testing, linting, and Docker container build verification.
+- **Documentation (⏳ Planned):**
+  - Production deployment runbook, complete API reference guide, and environment configuration documentation.
 
 ### Post-Launch & Future Roadmap (Phase 6+ Backlog)
 

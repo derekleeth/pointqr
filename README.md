@@ -136,7 +136,7 @@ Key variables:
 | Phase 2 | ✅ Completed | QR canvas editor + FastAPI rendering endpoints |
 | Phase 3 | ✅ Completed | Dynamic redirects, async scan logging, and outer text labels |
 | Phase 4 | 🚧 In Progress | Analytics dashboard (✅ Track A) + bulk CSV generation (⏳ Track B) |
-| Phase 5 | 🔜 Planned | Security hardening, CI/CD, production launch |
+| Phase 5 | 🚧 In Progress | Security hardening (rate limiting ✅), CI/CD, production launch |
 
 See [`docs/project-plan.md`](docs/project-plan.md) for the full project plan.
 

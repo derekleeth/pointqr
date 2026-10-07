@@ -33,6 +33,8 @@ dependencies = [
     "user-agents>=2.2.0",
     # TTLCache for redirect LRU cache
     "cachetools>=5.5.0",
+    # Rate limiting
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]

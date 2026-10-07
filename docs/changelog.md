@@ -1,6 +1,6 @@
 # PointQR – Progress, Bugs & Feature Tracker
 
-> Last Updated: 2026-10-02 · Phase 4 Track A Complete (Analytics Dashboard)
+> Last Updated: 2026-10-06 · Phase 5 Rate Limiting Implemented
 
 ---
 
@@ -133,11 +133,26 @@
 
 ---
 
-## Phase 5 – Hardening, CI/CD & Docs ⏳
+## Phase 5 – Hardening, CI/CD & Docs 🚧
 
-> **Target:** Weeks 9–10
+> **Target:** Weeks 9–10 · In Progress
 
-- ⏳ Rate limiting (API-level, per user/IP)
+### Completed
+
+- ✅ **API Rate Limiting (`slowapi`)** — Protected public and compute-heavy endpoints against brute force, denial of service, and resource abuse:
+  - Added `slowapi>=0.1.9` dependency and created central limiter configuration in [`backend/app/core/rate_limit.py`](file:///home/derek/Repos/pointqr/backend/app/core/rate_limit.py) keyed by client IP (`get_remote_address`).
+  - Wired `RateLimitExceeded` exception handler to FastAPI in [`backend/app/main.py`](file:///home/derek/Repos/pointqr/backend/app/main.py) returning standardized HTTP 429 responses with `Retry-After` headers.
+  - Secured authentication endpoints in [`backend/app/api/v1/auth.py`](file:///home/derek/Repos/pointqr/backend/app/api/v1/auth.py):
+    - `POST /v1/auth/register`: 5 req/min (prevents automated account spam)
+    - `POST /v1/auth/login`: 10 req/min (guards against credential stuffing and brute-force attacks)
+  - Secured resource-intensive QR endpoints in [`backend/app/api/v1/qrcodes.py`](file:///home/derek/Repos/pointqr/backend/app/api/v1/qrcodes.py):
+    - `POST /v1/qrcodes`: 30 req/min
+    - `POST /v1/qrcodes/{id}/export`: 20 req/min
+    - `POST /v1/qrcodes/{id}/export/async`: 20 req/min
+    - `POST /v1/qrcodes/{id}/logo`: 10 req/min
+
+### Planned
+
 - ⏳ Penetration testing / security audit
 - ⏳ Automated CI/CD pipeline (GitHub Actions)
 - ⏳ Full project documentation

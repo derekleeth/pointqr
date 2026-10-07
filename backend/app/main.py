@@ -133,6 +133,13 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    from slowapi import _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+    from app.core.rate_limit import limiter
+
+    application.state.limiter = limiter
+    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     # CORS middleware – allow the Vue frontend origin(s)
     application.add_middleware(
         CORSMiddleware,
