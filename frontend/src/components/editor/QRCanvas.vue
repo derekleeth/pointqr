@@ -360,8 +360,15 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
           stopPolling()
           isExporting.value = false
           store.exportStatus = 'completed'
-          // Trigger download by navigating to the pre-signed result URL
-          window.location.href = status.result_url
+          
+          // Trigger download without navigating away
+          const a = document.createElement('a')
+          const title = store.title || 'qrcode'
+          a.href = status.result_url
+          a.download = `${title.replace(/[^a-zA-Z0-9_\-]/g, '_')}.${format}`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
         } else if (status.status === 'FAILED') {
           stopPolling()
           isExporting.value = false
