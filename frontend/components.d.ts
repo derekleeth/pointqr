@@ -23,6 +23,8 @@ declare module 'vue' {
     Divider: typeof import('primevue/divider')['default']
     DownloadModal: typeof import('./src/components/dashboard/DownloadModal.vue')['default']
     FileUpload: typeof import('primevue/fileupload')['default']
+    IconField: typeof import('primevue/iconfield')['default']
+    InputIcon: typeof import('primevue/inputicon')['default']
     InputText: typeof import('primevue/inputtext')['default']
     Message: typeof import('primevue/message')['default']
     Password: typeof import('primevue/password')['default']
