@@ -226,8 +226,8 @@ const features = [
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 3rem;
+  justify-content: center;
+  gap: 6rem;
   padding: 6rem 2.5rem 5rem;
   overflow: hidden;
   flex: 1;
