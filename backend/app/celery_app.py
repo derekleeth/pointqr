@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.config import get_settings
 
@@ -11,7 +12,7 @@ settings = get_settings()
 # ---------------------------------------------------------------------------
 # Queue definitions
 # ---------------------------------------------------------------------------
-# default       – lightweight tasks (emails, notifications)
+# default       – lightweight tasks (emails, notifications, scheduled cleanup)
 # qr_export     – high-priority single QR render/vector export
 # qr_batch      – lower-priority bulk batch generation
 # scan_analytics – high-throughput scan event ingestion
@@ -26,6 +27,7 @@ celery_app = Celery(
         # Phase 3+ – task modules will be added here:
         "app.tasks.analytics",
         "app.tasks.export",
+        "app.tasks.cleanup",
         # "app.tasks.batch",
         # "app.tasks.notifications",
     ],
@@ -70,7 +72,39 @@ celery_app.conf.update(
     task_annotations={
         "*": {"max_retries": 3, "default_retry_delay": 60},
     },
+    # ---------------------------------------------------------------------------
+    # Celery Beat – periodic cleanup schedules
+    # ---------------------------------------------------------------------------
+    beat_schedule={
+        # Purge completed/failed export files + BatchJob rows older than
+        # EXPORT_RETENTION_DAYS (default 7 days).  Runs daily at 02:00 UTC.
+        "purge-expired-exports-daily": {
+            "task": "app.tasks.cleanup.purge_expired_exports",
+            "schedule": crontab(hour=2, minute=0),
+        },
+        # Remove logo files for QR codes soft-deleted more than
+        # LOGO_ORPHAN_GRACE_DAYS ago (default 7 days).  Runs daily at 03:00 UTC.
+        "purge-orphaned-logos-daily": {
+            "task": "app.tasks.cleanup.purge_orphaned_logos",
+            "schedule": crontab(hour=3, minute=0),
+        },
+        # Delete scan events beyond per-tier retention windows
+        # (free=90d / pro=365d / enterprise=730d).  Runs weekly on Sunday 04:00 UTC.
+        "purge-old-scan-events-weekly": {
+            "task": "app.tasks.cleanup.purge_old_scan_events",
+            "schedule": crontab(hour=4, minute=0, day_of_week=0),
+        },
+        # Mark PENDING/PROCESSING BatchJobs that haven't updated in
+        # STALE_JOB_TIMEOUT_HOURS (default 2 h) as FAILED.  Runs every hour.
+        "reap-stale-jobs-hourly": {
+            "task": "app.tasks.cleanup.reap_stale_jobs",
+            "schedule": crontab(minute=0),
+        },
+    },
+    # Beat schedule persistence – stored on disk in the beat service container
+    beat_schedule_filename="/app/storage/celerybeat-schedule",
 )
 
 # Convenience alias used by the Celery CLI: `celery -A app.celery_app worker`
 app = celery_app
+

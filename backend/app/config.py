@@ -52,6 +52,18 @@ class Settings(BaseSettings):
     # ---- Registration -------------------------------------------------------
     registration_enabled: bool = True
 
+    # ---- Cleanup / Storage Lifecycle ----------------------------------------
+    # Number of days to keep completed/failed export files and their BatchJob rows.
+    export_retention_days: int = 7
+    # Grace period (days) before logo files are removed from soft-deleted QR codes.
+    logo_orphan_grace_days: int = 7
+    # Scan event retention per tier (days).  Set to -1 to keep events forever.
+    scan_event_retention_days_free: int = 90
+    scan_event_retention_days_pro: int = 365
+    scan_event_retention_days_enterprise: int = 730
+    # Jobs stuck in PENDING / PROCESSING longer than this are marked FAILED.
+    stale_job_timeout_hours: int = 2
+
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS_ORIGINS comma-separated string into a list."""

@@ -109,6 +109,38 @@ services:
         --prefetch-multiplier=1
 
   # ---------------------------------------------------------------------------
+  # Celery Beat – Periodic task scheduler
+  # ---------------------------------------------------------------------------
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: pointqr_celery_beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+    volumes:
+      # Share the storage volume so beat_schedule_filename (/app/storage/celerybeat-schedule)
+      # persists across container restarts and survives image rebuilds.
+      - storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - pointqr_network
+    # Only one Beat instance must run at a time – do not scale this service.
+    command: >
+      celery -A app.celery_app beat
+        --loglevel=info
+        --schedule=/app/storage/celerybeat-schedule
+
+
+  # ---------------------------------------------------------------------------
   # Vue 3 Frontend (Vite dev server)
   # ---------------------------------------------------------------------------
   frontend:
