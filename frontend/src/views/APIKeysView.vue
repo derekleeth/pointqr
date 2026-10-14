@@ -195,9 +195,18 @@ function formatDate(iso: string) {
       class="rounded-xl border p-6 transition-colors duration-200"
       style="background-color: var(--bg-card); border-color: var(--border)"
     >
-      <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-4">
-        <i class="pi pi-book mr-2" />Using Your API Key
-      </h2>
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0">
+          <i class="pi pi-book mr-2" />Using Your API Key
+        </h2>
+        <RouterLink
+          to="/api-docs"
+          class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-500 hover:text-primary-600 transition-colors"
+        >
+          <span>Full API Docs & Examples</span>
+          <i class="pi pi-arrow-right text-[10px]" />
+        </RouterLink>
+      </div>
 
       <p class="text-sm mb-4" style="color: var(--text-secondary)">
         Include your API key in the

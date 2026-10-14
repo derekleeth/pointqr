@@ -57,6 +57,7 @@ const navGroups = computed<NavGroup[]>(() => {
       label: 'Account',
       items: [
         { label: 'API Keys', icon: 'pi pi-key', to: '/api-keys' },
+        { label: 'API Docs', icon: 'pi pi-book', to: '/api-docs' },
         { label: 'Settings', icon: 'pi pi-cog', to: '/settings', soon: true },
       ],
     },
