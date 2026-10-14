@@ -1,0 +1,10 @@
+# Ignore private keys and certificates
+*.pem
+*.key
+*.crt
+*.cer
+
+# Keep directory structure and documentation
+!.gitignore
+!README.md
+
