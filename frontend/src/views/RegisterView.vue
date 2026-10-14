@@ -29,6 +29,8 @@ onMounted(async () => {
   }
 })
 
+const verificationRequired = ref(false)
+
 async function handleRegister() {
   error.value = ''
   if (!email.value || !password.value) {
@@ -45,8 +47,12 @@ async function handleRegister() {
   }
   loading.value = true
   try {
-    await auth.register(email.value, password.value)
-    router.push('/dashboard')
+    const result = await auth.register(email.value, password.value)
+    if (result.email_verification_required) {
+      verificationRequired.value = true
+    } else {
+      router.push('/dashboard')
+    }
   } catch (e: any) {
     error.value = e?.response?.data?.detail ?? 'Registration failed. The email may already be in use.'
   } finally {
@@ -76,8 +82,21 @@ async function handleRegister() {
           <p class="card-subtitle">Start building better QR codes today</p>
         </div>
 
+        <!-- Email verification required state -->
+        <div v-if="verificationRequired" class="verify-state">
+          <div class="verify-icon-wrap">
+            <i class="pi pi-envelope verify-icon" />
+          </div>
+          <h2 class="verify-title">Check your inbox!</h2>
+          <p class="verify-body">
+            A verification email has been sent to <strong>{{ email }}</strong>.
+            Click the link in the email to activate your account.
+          </p>
+          <RouterLink to="/login" class="btn-back">← Back to sign in</RouterLink>
+        </div>
+
         <!-- Checking registration status -->
-        <div v-if="checkingStatus" class="loading-check">
+        <div v-else-if="checkingStatus" class="loading-check">
           <ProgressSpinner style="width: 28px; height: 28px" />
           <span>Checking registration status…</span>
         </div>
@@ -310,6 +329,45 @@ async function handleRegister() {
   line-height: 1.6;
   margin: 0;
 }
+/* Verification required state */
+.verify-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.verify-icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verify-icon {
+  font-size: 1.75rem;
+  color: #3b82f6;
+}
+
+.verify-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.verify-body {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
 .btn-back {
   display: inline-block;
   margin-top: 0.5rem;

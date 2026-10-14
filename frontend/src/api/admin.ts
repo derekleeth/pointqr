@@ -14,6 +14,7 @@ export interface AdminUser {
 
 export interface SiteSettings {
   registration_enabled: boolean
+  email_verification_required: boolean
 }
 
 export const adminApi = {

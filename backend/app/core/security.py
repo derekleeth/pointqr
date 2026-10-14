@@ -99,3 +99,73 @@ def decode_refresh_token(token: str) -> TokenData:
         raise ValueError("Token payload is missing required fields")
 
     return TokenData(sub=uuid.UUID(sub), role=UserRole(role_value))
+
+
+# ---------------------------------------------------------------------------
+# Email-verification / password-reset tokens
+# ---------------------------------------------------------------------------
+
+def create_email_verification_token(user_id: uuid.UUID) -> str:
+    """Create a 24-hour JWT for email address verification.
+
+    The token type is ``email_verification`` to prevent misuse as other
+    token types.
+    """
+    return _create_token(
+        {"sub": str(user_id), "type": "email_verification"},
+        timedelta(hours=24),
+    )
+
+
+def create_password_reset_token(user_id: uuid.UUID) -> str:
+    """Create a 30-minute JWT for password reset.
+
+    The token type is ``password_reset`` to prevent misuse as other
+    token types.
+    """
+    return _create_token(
+        {"sub": str(user_id), "type": "password_reset"},
+        timedelta(minutes=30),
+    )
+
+
+def decode_email_verification_token(token: str) -> uuid.UUID:
+    """Decode and validate an email verification token, returning the user ID.
+
+    Raises:
+        ValueError: if the token is invalid, expired, or wrong type.
+    """
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except JWTError as exc:
+        raise ValueError("Invalid or expired token") from exc
+
+    if payload.get("type") != "email_verification":
+        raise ValueError("Token is not an email verification token")
+
+    sub = payload.get("sub")
+    if sub is None:
+        raise ValueError("Token payload is missing required fields")
+
+    return uuid.UUID(sub)
+
+
+def decode_password_reset_token(token: str) -> uuid.UUID:
+    """Decode and validate a password-reset token, returning the user ID.
+
+    Raises:
+        ValueError: if the token is invalid, expired, or wrong type.
+    """
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except JWTError as exc:
+        raise ValueError("Invalid or expired token") from exc
+
+    if payload.get("type") != "password_reset":
+        raise ValueError("Token is not a password reset token")
+
+    sub = payload.get("sub")
+    if sub is None:
+        raise ValueError("Token payload is missing required fields")
+
+    return uuid.UUID(sub)

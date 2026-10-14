@@ -35,6 +35,8 @@ dependencies = [
     "cachetools>=5.5.0",
     # Rate limiting
     "slowapi>=0.1.9",
+    # Async SMTP (email verification, password reset)
+    "aiosmtplib>=3.0.0",
 ]
 
 [project.optional-dependencies]

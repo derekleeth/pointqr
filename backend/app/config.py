@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     mail_host: str = "mailhog"
     mail_port: int = 1025
     mail_from: str = "noreply@pointqr.dev"
+    mail_username: str = ""
+    mail_password: str = ""
+    mail_tls: bool = False
+    mail_ssl: bool = False
+
+    # ---- Email verification -------------------------------------------------
+    email_verification_required: bool = False
 
     # ---- Admin user (seeded on startup) -------------------------------------
     admin_email: str = "admin@pointqr.dev"

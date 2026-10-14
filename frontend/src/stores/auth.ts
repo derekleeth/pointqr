@@ -55,10 +55,24 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchMe()
   }
 
-  async function register(email: string, password: string): Promise<void> {
-    await apiClient.post<User>('/auth/register', { email, password })
-    // Auto-login so the user lands on the dashboard immediately
-    await login(email, password)
+  async function register(
+    email: string,
+    password: string,
+  ): Promise<{ email_verification_required: boolean }> {
+    const response = await apiClient.post<{ email_verification_required: boolean }>(
+      '/auth/register',
+      { email, password },
+    )
+    const { email_verification_required } = response.data
+    if (!email_verification_required) {
+      // Auto-login so the user lands on the dashboard immediately
+      await login(email, password)
+    }
+    return { email_verification_required }
+  }
+
+  async function resendVerification(emailAddr: string): Promise<void> {
+    await apiClient.post('/auth/resend-verification', { email: emailAddr })
   }
 
   async function fetchMe(): Promise<void> {
@@ -107,5 +121,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     refresh,
     initialize,
+    resendVerification,
   }
 })

@@ -15,7 +15,9 @@ from app.models.qrcode import QRCode
 from app.models.user import User, UserRole, UserTier
 from app.schemas.user import UserRead
 from app.services.site_settings import (
+    get_email_verification_required,
     get_registration_enabled,
+    set_email_verification_required,
     set_registration_enabled,
 )
 
@@ -44,12 +46,16 @@ class UserStatusUpdate(BaseModel):
 
 class SiteSettings(BaseModel):
     """Current site-level settings returned to the admin UI."""
+
     registration_enabled: bool
+    email_verification_required: bool
 
 
 class RegistrationUpdate(BaseModel):
-    """Payload to toggle public registration."""
-    registration_enabled: bool
+    """Payload to toggle public registration and/or email verification."""
+
+    registration_enabled: bool | None = None
+    email_verification_required: bool | None = None
 
 
 class AdminCreateUser(BaseModel):
@@ -273,7 +279,11 @@ async def get_site_settings(_admin: AdminUser, db: DBSession) -> SiteSettings:
     The DB value takes priority over the .env default.
     """
     reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
-    return SiteSettings(registration_enabled=reg_enabled)
+    ev_required = await get_email_verification_required(db, settings.email_verification_required)
+    return SiteSettings(
+        registration_enabled=reg_enabled,
+        email_verification_required=ev_required,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -292,11 +302,22 @@ async def update_site_settings(
 ) -> SiteSettings:
     """Persist updated site settings to the database.
 
+    Only fields present (non-None) in the request payload are updated.
     The DB value overrides whatever is set in the .env file without requiring
     a container restart.
     """
-    await set_registration_enabled(payload.registration_enabled, db=db)
-    return SiteSettings(registration_enabled=payload.registration_enabled)
+    if payload.registration_enabled is not None:
+        await set_registration_enabled(payload.registration_enabled, db=db)
+    if payload.email_verification_required is not None:
+        await set_email_verification_required(payload.email_verification_required, db=db)
+
+    # Re-read current state to build the canonical response
+    reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
+    ev_required = await get_email_verification_required(db, settings.email_verification_required)
+    return SiteSettings(
+        registration_enabled=reg_enabled,
+        email_verification_required=ev_required,
+    )
 
 
 # ---------------------------------------------------------------------------

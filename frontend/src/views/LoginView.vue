@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
@@ -14,6 +14,9 @@ const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+/** Set to true when the backend returns EMAIL_NOT_VERIFIED so we show the amber banner */
+const emailNotVerified = ref(false)
+const resendingVerification = ref(false)
 
 async function handleLogin() {
   if (!email.value || !password.value) {
@@ -21,18 +24,46 @@ async function handleLogin() {
     return
   }
   error.value = ''
+  emailNotVerified.value = false
   loading.value = true
   try {
     await auth.login(email.value, password.value)
     const redirect = (router.currentRoute.value.query.redirect as string) ?? '/dashboard'
     router.push(redirect)
-  } catch {
-    error.value = 'Invalid email or password. Please try again.'
+  } catch (e: any) {
+    if (e?.response?.status === 403 && e?.response?.data?.detail?.code === 'EMAIL_NOT_VERIFIED') {
+      emailNotVerified.value = true
+    } else {
+      error.value = 'Invalid email or password. Please try again.'
+    }
   } finally {
     loading.value = false
   }
 }
+
+async function resendVerification() {
+  resendingVerification.value = true
+  try {
+    await auth.resendVerification(email.value)
+    toast.add({
+      severity: 'success',
+      summary: 'Email sent',
+      detail: 'A new verification email has been sent. Please check your inbox.',
+      life: 5000,
+    })
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to resend verification email. Please try again later.',
+      life: 4000,
+    })
+  } finally {
+    resendingVerification.value = false
+  }
+}
 </script>
+
 
 <template>
   <div class="login-page">
@@ -61,6 +92,23 @@ async function handleLogin() {
             <p class="card-subtitle">Sign in to your PointQR account</p>
           </div>
 
+          <!-- Email not verified warning -->
+          <div class="warn-msg" v-if="emailNotVerified">
+            <div class="warn-msg-body">
+              <i class="pi pi-envelope warn-icon" />
+              <span>Please verify your email before signing in.</span>
+            </div>
+            <Button
+              label="Resend verification email"
+              size="small"
+              severity="warning"
+              text
+              :loading="resendingVerification"
+              @click="resendVerification"
+              class="resend-btn"
+            />
+          </div>
+
           <!-- Error -->
           <div class="error-msg" v-if="error">
             <i class="pi pi-exclamation-circle" />
@@ -85,6 +133,7 @@ async function handleLogin() {
             <div class="field">
               <div class="field-label-row">
                 <label for="password" class="field-label">Password</label>
+                <RouterLink to="/forgot-password" class="forgot-link">Forgot password?</RouterLink>
               </div>
               <Password
                 id="password"
@@ -125,8 +174,10 @@ async function handleLogin() {
         </div>
       </div>
     </main>
+    <Toast />
   </div>
 </template>
+
 
 <style scoped>
 .login-page {
@@ -285,6 +336,43 @@ async function handleLogin() {
   font-size: 0.875rem;
   margin-bottom: 1.25rem;
 }
+
+/* ── Email-not-verified warning banner ───────── */
+.warn-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #b45309;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+.warn-msg-body {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.warn-icon { flex-shrink: 0; }
+
+.resend-btn {
+  align-self: flex-start;
+  padding-left: 0;
+}
+
+/* ── Forgot password link ────────────────────── */
+.forgot-link {
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.forgot-link:hover { text-decoration: underline; }
+
 
 /* ── Form ────────────────────────────────────── */
 .login-form { display: flex; flex-direction: column; gap: 1.125rem; }

@@ -1,11 +1,12 @@
-"""Authentication endpoints: register, login, refresh, me."""
+"""Authentication endpoints: register, login, refresh, me, email verification, password reset."""
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +15,11 @@ from app.core.dependencies import CurrentUser, DBSession
 from app.core.rate_limit import limiter
 from app.core.security import (
     create_access_token,
+    create_email_verification_token,
+    create_password_reset_token,
     create_refresh_token,
+    decode_email_verification_token,
+    decode_password_reset_token,
     decode_refresh_token,
     hash_password,
     verify_password,
@@ -22,24 +27,70 @@ from app.core.security import (
 from app.models.user import User
 from app.schemas.auth import RefreshRequest, Token
 from app.schemas.user import UserCreate, UserRead
-from app.services.site_settings import get_registration_enabled
+from app.services.email import send_password_reset_email, send_verification_email
+from app.services.site_settings import get_email_verification_required, get_registration_enabled
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 
+# ---------------------------------------------------------------------------
+# Schemas
+# ---------------------------------------------------------------------------
+
+class RegisterResponse(BaseModel):
+    """Response schema for the /register endpoint.
+
+    When *email_verification_required* is ``True`` the ``user`` field is
+    ``None`` and *message* explains what the user should do next.
+    When verification is not required, *user* contains the new account data.
+    """
+
+    email_verification_required: bool
+    user: UserRead | None = None
+    message: str = ""
+
+
+class EmailRequest(BaseModel):
+    """Generic payload carrying a single email address."""
+
+    email: str
+
+
+class PasswordResetRequest(BaseModel):
+    """Payload for completing a password reset."""
+
+    token: str
+    new_password: str
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/register
+# ---------------------------------------------------------------------------
+
 @router.post(
     "/register",
-    response_model=UserRead,
+    response_model=RegisterResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user account",
 )
 @limiter.limit("5/minute")
-async def register(request: Request, payload: UserCreate, db: DBSession) -> User:
+async def register(
+    request: Request,
+    payload: UserCreate,
+    db: DBSession,
+    background_tasks: BackgroundTasks,
+) -> RegisterResponse:
     """Create a new user account with a hashed password.
 
     Returns 409 if the email is already registered.
     Returns 403 if registration is disabled by the administrator.
+
+    When ``email_verification_required`` is enabled in site settings the new
+    account is left unverified and a verification email is dispatched in the
+    background; the response body signals this with
+    ``email_verification_required=True``.  Otherwise the account is
+    immediately marked verified and the new ``UserRead`` is returned.
     """
     reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
     if not reg_enabled:
@@ -55,15 +106,41 @@ async def register(request: Request, payload: UserCreate, db: DBSession) -> User
             detail="An account with this email already exists",
         )
 
+    verification_required = await get_email_verification_required(
+        db, settings.email_verification_required
+    )
+
     user = User(
         email=payload.email,
         hashed_password=hash_password(payload.password),
+        is_verified=not verification_required,
     )
     db.add(user)
     await db.flush()
     await db.refresh(user)
-    return user
 
+    if verification_required:
+        token = create_email_verification_token(user.id)
+        background_tasks.add_task(
+            send_verification_email,
+            to=user.email,
+            token=token,
+            frontend_url=settings.frontend_url,
+        )
+        return RegisterResponse(
+            email_verification_required=True,
+            message="Verification email sent. Please check your inbox to activate your account.",
+        )
+
+    return RegisterResponse(
+        email_verification_required=False,
+        user=UserRead.model_validate(user),
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/login
+# ---------------------------------------------------------------------------
 
 @router.post(
     "/login",
@@ -79,6 +156,7 @@ async def login(
     """Authenticate with email + password (OAuth2 form).
 
     Returns access and refresh JWTs on success.
+    Returns 403 if the account email has not been verified yet.
     """
     result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalar_one_or_none()
@@ -95,11 +173,28 @@ async def login(
             detail="Account is inactive",
         )
 
+    email_verification_required = await get_email_verification_required(
+        db, settings.email_verification_required
+    )
+    if email_verification_required and not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "message": "Email not verified",
+                "code": "EMAIL_NOT_VERIFIED",
+                "email": user.email,
+            },
+        )
+
     return Token(
         access_token=create_access_token(user.id, user.role),
         refresh_token=create_refresh_token(user.id, user.role),
     )
 
+
+# ---------------------------------------------------------------------------
+# POST /auth/refresh
+# ---------------------------------------------------------------------------
 
 @router.post(
     "/refresh",
@@ -131,6 +226,10 @@ async def refresh(payload: RefreshRequest, db: DBSession) -> Token:
     )
 
 
+# ---------------------------------------------------------------------------
+# GET /auth/me
+# ---------------------------------------------------------------------------
+
 @router.get(
     "/me",
     response_model=UserRead,
@@ -140,6 +239,10 @@ async def me(current_user: CurrentUser) -> User:
     """Return the authenticated user's profile."""
     return current_user
 
+
+# ---------------------------------------------------------------------------
+# GET /auth/registration-status
+# ---------------------------------------------------------------------------
 
 @router.get(
     "/registration-status",
@@ -154,3 +257,154 @@ async def registration_status(db: DBSession) -> dict:
     reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
     return {"registration_enabled": reg_enabled}
 
+
+# ---------------------------------------------------------------------------
+# POST /auth/verify-email
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/verify-email",
+    summary="Verify a user's email address",
+)
+@limiter.limit("10/minute")
+async def verify_email(request: Request, token: str, db: DBSession) -> dict:
+    """Mark a user's email address as verified using a signed JWT.
+
+    The token is produced by :func:`~app.core.security.create_email_verification_token`
+    and embedded in the link sent by :func:`~app.services.email.send_verification_email`.
+
+    Returns 400 if the token is invalid or expired.
+    """
+    try:
+        user_id = decode_email_verification_token(token)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification token",
+        )
+
+    user.is_verified = True
+    await db.flush()
+
+    return {"message": "Email verified successfully"}
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/resend-verification
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/resend-verification",
+    summary="Resend email verification link",
+)
+@limiter.limit("3/10minutes")
+async def resend_verification(
+    request: Request,
+    payload: EmailRequest,
+    db: DBSession,
+    background_tasks: BackgroundTasks,
+) -> dict:
+    """Resend the email address verification link.
+
+    Always returns 200 to prevent user enumeration – the caller cannot tell
+    whether the address is registered or already verified.
+    """
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalar_one_or_none()
+
+    if user is not None and not user.is_verified:
+        token = create_email_verification_token(user.id)
+        background_tasks.add_task(
+            send_verification_email,
+            to=user.email,
+            token=token,
+            frontend_url=settings.frontend_url,
+        )
+
+    return {
+        "message": (
+            "If that email is registered and unverified, "
+            "a new verification link has been sent."
+        )
+    }
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/forgot-password
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/forgot-password",
+    summary="Request a password reset link",
+)
+@limiter.limit("5/minute")
+async def forgot_password(
+    request: Request,
+    payload: EmailRequest,
+    db: DBSession,
+    background_tasks: BackgroundTasks,
+) -> dict:
+    """Dispatch a password-reset email if the address is registered.
+
+    Always returns 200 to prevent user enumeration.
+    """
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalar_one_or_none()
+
+    if user is not None and user.is_active:
+        token = create_password_reset_token(user.id)
+        background_tasks.add_task(
+            send_password_reset_email,
+            to=user.email,
+            token=token,
+            frontend_url=settings.frontend_url,
+        )
+
+    return {
+        "message": (
+            "If that email exists in our system, a password reset link has been sent."
+        )
+    }
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/reset-password
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/reset-password",
+    summary="Complete a password reset",
+)
+async def reset_password(payload: PasswordResetRequest, db: DBSession) -> dict:
+    """Set a new password using a valid password-reset JWT.
+
+    Returns 400 if the token is invalid or expired.
+    """
+    try:
+        user_id = decode_password_reset_token(payload.token)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset token",
+        )
+
+    user.hashed_password = hash_password(payload.new_password)
+    await db.flush()
+
+    return {"message": "Password reset successful. You can now log in with your new password."}

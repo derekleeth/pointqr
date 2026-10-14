@@ -13,6 +13,7 @@ from app.models.site_setting import SiteSetting
 
 # Keys used across the codebase
 KEY_REGISTRATION_ENABLED = "registration_enabled"
+KEY_EMAIL_VERIFICATION_REQUIRED = "email_verification_required"
 
 
 async def get_setting(key: str, default: str, db: AsyncSession) -> str:
@@ -53,3 +54,26 @@ async def get_registration_enabled(db: AsyncSession, env_default: bool) -> bool:
 async def set_registration_enabled(enabled: bool, db: AsyncSession) -> None:
     """Persist the registration_enabled setting to the database."""
     await set_setting(KEY_REGISTRATION_ENABLED, "true" if enabled else "false", db=db)
+
+
+# ---------------------------------------------------------------------------
+# Typed helpers for email_verification_required
+# ---------------------------------------------------------------------------
+
+async def get_email_verification_required(db: AsyncSession, env_default: bool) -> bool:
+    """Return whether email verification is required, preferring the DB value."""
+    raw = await get_setting(
+        KEY_EMAIL_VERIFICATION_REQUIRED,
+        default="true" if env_default else "false",
+        db=db,
+    )
+    return raw.lower() in ("true", "1", "yes")
+
+
+async def set_email_verification_required(enabled: bool, db: AsyncSession) -> None:
+    """Persist the email_verification_required setting to the database."""
+    await set_setting(
+        KEY_EMAIL_VERIFICATION_REQUIRED,
+        "true" if enabled else "false",
+        db=db,
+    )

@@ -46,6 +46,33 @@ async function toggleRegistration() {
   }
 }
 
+async function toggleEmailVerification() {
+  if (!settings.value) return
+  saving.value = true
+  const newVal = !settings.value.email_verification_required
+  try {
+    const updated = await adminApi.updateSettings({ email_verification_required: newVal })
+    settings.value = updated
+    toast.add({
+      severity: newVal ? 'success' : 'warn',
+      summary: newVal ? 'Email verification enabled' : 'Email verification disabled',
+      detail: newVal
+        ? 'New users must verify their email before signing in.'
+        : 'New users can sign in immediately after registering.',
+      life: 4000,
+    })
+  } catch (err: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: err?.response?.data?.detail ?? 'Failed to save setting',
+      life: 3500,
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(loadSettings)
 </script>
 
@@ -127,6 +154,65 @@ onMounted(loadSettings)
               <span>
                 This value is stored in the database and overrides <code>REGISTRATION_ENABLED</code>
                 in <code>.env</code>. It takes effect immediately — no restart required.
+              </span>
+            </template>
+          </Message>
+        </div>
+      </div>
+
+      <!-- Email Verification Card -->
+      <div class="settings-card">
+        <div class="card-header">
+          <i class="pi pi-envelope card-icon" />
+          <div class="card-header-text">
+            <h2 class="card-title">Email Verification</h2>
+            <p class="card-desc">Require new users to verify their email address before logging in.</p>
+          </div>
+          <Tag
+            :value="settings.email_verification_required ? 'Enabled' : 'Disabled'"
+            :severity="settings.email_verification_required ? 'success' : 'danger'"
+            class="status-tag"
+          />
+        </div>
+
+        <div class="card-body">
+          <!-- Live toggle row -->
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <p class="toggle-label">Require email verification</p>
+              <p class="toggle-desc">
+                {{ settings.email_verification_required
+                  ? 'New registrations must verify their email before signing in.'
+                  : 'New users can sign in immediately after registering.' }}
+              </p>
+            </div>
+            <div class="toggle-action">
+              <ToggleSwitch
+                :model-value="settings.email_verification_required"
+                :disabled="saving"
+                @update:model-value="toggleEmailVerification"
+              />
+            </div>
+          </div>
+
+          <!-- Status detail -->
+          <div
+            class="status-detail"
+            :class="settings.email_verification_required ? 'detail-enabled' : 'detail-disabled'"
+          >
+            <i :class="settings.email_verification_required ? 'pi pi-check-circle' : 'pi pi-times-circle'" />
+            <span>
+              {{ settings.email_verification_required
+                ? 'Email verification is required for new accounts'
+                : 'Email verification is not required' }}
+            </span>
+          </div>
+
+          <Message severity="info" :closable="false">
+            <template #default>
+              <span>
+                When enabled, new registrations receive a verification email.
+                Requires <code>MAIL_HOST</code> to be configured in <code>.env</code>.
               </span>
             </template>
           </Message>
