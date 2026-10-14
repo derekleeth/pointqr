@@ -623,7 +623,7 @@ const techStack = [
           <h4>Ultra-Lean Resource Footprint</h4>
           <p>
             Idle footprint of only ~600–800 MB RAM across all 5 core containers (FastAPI, Postgres, RabbitMQ,
-            Celery, and Nginx). Runs smoothly on budget 4 GB VPS nodes under €5/mo.
+            Celery, and Nginx). Runs smoothly on budget 4 GB VPS nodes under $6/mo.
           </p>
         </div>
         <div class="spec-card">
