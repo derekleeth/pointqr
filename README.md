@@ -80,7 +80,7 @@ docker compose up --build
 | 🌐 Frontend | http://localhost |
 | 📖 API Docs (Swagger) | http://localhost/api/docs |
 | 🐰 RabbitMQ Management | http://localhost:15672 |
-| 📧 MailHog (dev email) | http://localhost:8025 |
+| 📧 Mailpit (dev email) | http://localhost:8025 |
 
 > **Default RabbitMQ credentials:** `pointqr` / `pointqr_dev_password` (from `.env`)
 

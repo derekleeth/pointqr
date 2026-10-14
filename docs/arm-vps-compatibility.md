@@ -155,7 +155,7 @@ The entire PointQR stack (Postgres + RabbitMQ + FastAPI + Celery + Nginx) requir
 
 ## 6. Action Items Checklist (When Ready for Production)
 
-- [ ] Update `docker-compose.yml` to replace `mailhog/mailhog:latest` with `axllent/mailpit:latest`.
+- [x] Update `docker-compose.yml` to replace `mailhog/mailhog:latest` with `axllent/mailpit:latest`.
 - [ ] Create `frontend/Dockerfile` for multi-stage static asset production build.
 - [ ] Create `docker-compose.prod.yml` configured for production (no code volume mounts, production logging, multiple Uvicorn workers).
 - [ ] Configure domain names, SSL certificates (e.g., Certbot / Let's Encrypt), and secure `.env` secrets on the ARM VPS.

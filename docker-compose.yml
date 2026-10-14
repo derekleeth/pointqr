@@ -75,7 +75,7 @@ services:
     command: >
       sh -c "
         alembic upgrade head &&
-        uvicorn app.main:app --host 0.0.0.0 --port 8000
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-2} --proxy-headers --forwarded-allow-ips='*'
       "
 
   # ---------------------------------------------------------------------------
@@ -181,17 +181,19 @@ services:
       - pointqr_network
 
   # ---------------------------------------------------------------------------
-  # MailHog – Local SMTP catcher
+  # Mailpit – Multi-arch (ARM64/x86) SMTP catcher (MailHog replacement)
   # ---------------------------------------------------------------------------
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: pointqr_mailhog
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: pointqr_mailpit
     restart: unless-stopped
     ports:
       - "1025:1025"   # SMTP
       - "8025:8025"   # Web UI
     networks:
-      - pointqr_network
+      pointqr_network:
+        aliases:
+          - mailhog
 
 # -----------------------------------------------------------------------------
 # Named Volumes

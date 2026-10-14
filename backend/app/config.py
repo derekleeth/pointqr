@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     storage_path: str = "/app/storage"
 
     # ---- Mail ---------------------------------------------------------------
-    mail_host: str = "mailhog"
+    mail_host: str = "mailpit"
     mail_port: int = 1025
     mail_from: str = "noreply@pointqr.dev"
     mail_username: str = ""
