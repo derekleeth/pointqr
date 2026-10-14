@@ -335,22 +335,29 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
           ? 'qr-checkerboard ring-1 ring-surface-600'
           : 'bg-surface-50 ring-1 ring-surface-200'"
       >
-        <!-- Top label -->
-        <span
-          v-if="store.designConfig.labelTop.enabled && store.designConfig.labelTop.text"
-          :style="labelStyle('labelTop')"
-        >{{ store.designConfig.labelTop.text }}</span>
-
+        <!-- Inner solid-background wrapper: gives QR + labels a white canvas
+             so text is always readable regardless of theme or QR bg color -->
         <div
-          ref="canvasRef"
-          class="rounded-lg overflow-hidden shadow-sm block"
-        />
+          class="flex flex-col items-center rounded-lg overflow-hidden shadow-sm"
+          :style="{ backgroundColor: store.designConfig.backgroundOptions.color || '#ffffff' }"
+        >
+          <!-- Top label -->
+          <span
+            v-if="store.designConfig.labelTop.enabled && store.designConfig.labelTop.text"
+            :style="labelStyle('labelTop')"
+          >{{ store.designConfig.labelTop.text }}</span>
 
-        <!-- Bottom label -->
-        <span
-          v-if="store.designConfig.labelBottom.enabled && store.designConfig.labelBottom.text"
-          :style="labelStyle('labelBottom')"
-        >{{ store.designConfig.labelBottom.text }}</span>
+          <div
+            ref="canvasRef"
+            class="block"
+          />
+
+          <!-- Bottom label -->
+          <span
+            v-if="store.designConfig.labelBottom.enabled && store.designConfig.labelBottom.text"
+            :style="labelStyle('labelBottom')"
+          >{{ store.designConfig.labelBottom.text }}</span>
+        </div>
       </div>
       <!-- Background colour hint in dark mode -->
       <p class="text-xs text-surface-400 flex items-center gap-1.5">

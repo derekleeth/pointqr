@@ -486,24 +486,31 @@ async function triggerDownload(format?: 'png' | 'svg' | 'pdf' | 'eps') {
           class="relative rounded-2xl p-4 transition-colors duration-200 flex flex-col items-center w-full max-w-[270px]"
           :class="isDark ? 'qr-checkerboard ring-1 ring-surface-700' : 'bg-surface-50 ring-1 ring-surface-200'"
         >
-          <!-- Top text label if present -->
-          <span
-            v-if="mergedConfig.labelTop.enabled && mergedConfig.labelTop.text"
-            :style="labelStyle(mergedConfig.labelTop)"
+          <!-- Inner solid-background wrapper: gives QR + labels a white canvas
+               so text is always readable regardless of theme or QR bg color -->
+          <div
+            class="flex flex-col items-center rounded-lg overflow-hidden shadow-sm"
+            :style="{ backgroundColor: mergedConfig.backgroundOptions.color || '#ffffff' }"
           >
-            {{ mergedConfig.labelTop.text }}
-          </span>
+            <!-- Top text label if present -->
+            <span
+              v-if="mergedConfig.labelTop.enabled && mergedConfig.labelTop.text"
+              :style="labelStyle(mergedConfig.labelTop)"
+            >
+              {{ mergedConfig.labelTop.text }}
+            </span>
 
-          <!-- QR canvas target -->
-          <div ref="canvasRef" class="rounded-lg overflow-hidden shadow-sm block my-1" />
+            <!-- QR canvas target -->
+            <div ref="canvasRef" class="block" />
 
-          <!-- Bottom text label if present -->
-          <span
-            v-if="mergedConfig.labelBottom.enabled && mergedConfig.labelBottom.text"
-            :style="labelStyle(mergedConfig.labelBottom)"
-          >
-            {{ mergedConfig.labelBottom.text }}
-          </span>
+            <!-- Bottom text label if present -->
+            <span
+              v-if="mergedConfig.labelBottom.enabled && mergedConfig.labelBottom.text"
+              :style="labelStyle(mergedConfig.labelBottom)"
+            >
+              {{ mergedConfig.labelBottom.text }}
+            </span>
+          </div>
         </div>
 
         <!-- Quick metadata badge info -->
