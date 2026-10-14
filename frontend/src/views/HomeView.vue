@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 
 const router = useRouter()
 const theme = useThemeStore()
 const copied = ref(false)
+const apiCopied = ref(false)
+const activeApiTab = ref('update')
 
 const bashSnippet = `# 1. Clone the repository
 git clone https://github.com/derekleeth/pointqr.git
@@ -85,6 +87,13 @@ const features = [
     desc: 'Change destination URLs anytime without reprinting physical collateral. Sub-15ms redirection latency powered by in-process caching and indexed PostgreSQL queries.',
   },
   {
+    icon: 'pi pi-code',
+    category: 'Developer & Automation',
+    title: 'REST API & Webhook Automation',
+    desc: 'Full REST API backend for automated code creation, on-the-fly destination swapping, asynchronous vector rendering, and analytics synchronization.',
+    badge: 'API First',
+  },
+  {
     icon: 'pi pi-chart-bar',
     category: 'Data & Intelligence',
     title: 'Comprehensive Scan Analytics',
@@ -107,6 +116,129 @@ const features = [
     category: 'Operations & DevOps',
     title: 'Live Telemetry & Site Admin',
     desc: 'Real-time WebSocket telemetry dashboard for Celery & RabbitMQ queues, plus instant runtime site toggles for public registration and email verification without restarts.',
+  },
+]
+
+const apiTabs = [
+  {
+    id: 'update',
+    label: 'Dynamic Redirect Updates',
+    method: 'PATCH',
+    methodClass: 'method-patch',
+    lang: 'bash',
+    headline: 'Update Destination URLs Instantly Without Reprinting',
+    desc: 'Automate marketing campaigns, daily menu rotations, or emergency redirect failovers in sub-15ms with a single API call.',
+    code: `# Update destination URL in real time — zero downtime, zero reprinting
+curl -X PATCH "https://pointqr.app/api/v1/qrcodes/qr_7f8a92" \\
+  -H "Authorization: Bearer $POINTQR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "target_url": "https://store.company.com/deals/autumn-sale"
+  }'`,
+  },
+  {
+    id: 'create',
+    label: 'Mint Branded QR Codes',
+    method: 'POST',
+    methodClass: 'method-post',
+    lang: 'python',
+    headline: 'Generate Custom-Styled QR Codes from Webhooks',
+    desc: 'Integrate directly into Stripe checkout, Eventbrite ticketing, or CRM workflows to generate branded QR codes with custom labels automatically.',
+    code: `import requests
+
+# Programmatically mint a QR code with custom colors & top/bottom labels
+res = requests.post(
+    "https://pointqr.app/api/v1/qrcodes",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    json={
+        "title": "VIP Ticket #9481",
+        "type": "dynamic",
+        "target_url": "https://event.com/ticket/9481",
+        "design_config": {
+            "dotsOptions": {"type": "rounded", "color": "#6366f1"},
+            "labelTop": {"enabled": True, "text": "VIP ACCESS"},
+            "labelBottom": {"enabled": True, "text": "BOOTH A-12"}
+        }
+    }
+)
+data = res.json()
+print(f"Created: {data['id']} -> {data['short_code']}")`,
+  },
+  {
+    id: 'export',
+    label: 'Async Vector Exports',
+    method: 'POST',
+    methodClass: 'method-post',
+    lang: 'bash',
+    headline: 'Offload Print-Grade Vector Rendering to Background Workers',
+    desc: 'Trigger async Celery rendering for 300 DPI PNG, pure SVG, PDF, or EPS vector assets without blocking API request threads.',
+    code: `# Dispatch async vector rendering job to Celery worker queue
+curl -X POST "https://pointqr.app/api/v1/qrcodes/qr_7f8a92/export/async?format=eps" \\
+  -H "Authorization: Bearer $POINTQR_API_KEY"
+
+# Returns 202 Accepted with tracking BatchJob ID:
+# {"job_id": "job_e3b8a1", "status": "PENDING", "format": "eps"}`,
+  },
+  {
+    id: 'analytics',
+    label: 'Telemetry & Analytics Sync',
+    method: 'GET',
+    methodClass: 'method-get',
+    lang: 'typescript',
+    headline: 'Sync Scan Logs & Telemetry Directly into Your BI Stack',
+    desc: 'Ingest scan counts, device category breakdowns, operating systems, and geolocation stats into Metabase, BigQuery, or Grafana.',
+    code: `// Fetch aggregated scan performance and device breakdowns
+const res = await fetch("https://pointqr.app/api/v1/analytics/summary", {
+  headers: { Authorization: \`Bearer \${API_KEY}\` }
+});
+const { total_scans, unique_scans, by_device } = await res.json();
+
+console.log(\`Total scans: \${total_scans} | Mobile share: \${by_device.mobile}%\`);`,
+  },
+]
+
+const currentApiTab = computed(() => {
+  return apiTabs.find(t => t.id === activeApiTab.value) || apiTabs[0]
+})
+
+function copyApiSnippet() {
+  navigator.clipboard.writeText(currentApiTab.value.code)
+  apiCopied.value = true
+  setTimeout(() => {
+    apiCopied.value = false
+  }, 2500)
+}
+
+const automationUseCases = [
+  {
+    icon: 'pi pi-calendar',
+    title: 'Dynamic Content Scheduling',
+    desc: 'Use cron jobs or workflow engines (n8n, Zapier) to switch QR code destinations between morning/evening menus or active event stages.',
+  },
+  {
+    icon: 'pi pi-ticket',
+    title: 'Automated Event Ticketing',
+    desc: 'Trigger API generation on checkout to create personalized attendee badges with attendee names and seat numbers composited into outer labels.',
+  },
+  {
+    icon: 'pi pi-sync',
+    title: 'CI/CD & Release Routing',
+    desc: 'Automate QR destination routing during deployments to point testers and users to the latest release or blue/green staging environment.',
+  },
+  {
+    icon: 'pi pi-print',
+    title: 'Automated Print Pipelines',
+    desc: 'Hook ERP or PIM product creations into asynchronous vector exports (EPS, PDF) to stream ready-to-print assets directly into RIP software.',
+  },
+  {
+    icon: 'pi pi-chart-line',
+    title: 'Data Warehouse Ingestion',
+    desc: 'Extract time-series scan activity, device categories, and referrers into your analytics warehouse to measure offline campaign attribution.',
+  },
+  {
+    icon: 'pi pi-shield',
+    title: 'Incident Failover Routing',
+    desc: 'Sub-15ms redirect engine allows instant emergency failover routing on billboards, packaging, or brochures during service disruptions.',
   },
 ]
 
@@ -162,6 +294,7 @@ const techStack = [
         <nav class="nav-menu">
           <a href="#print-sheets" class="nav-link">Print Sheets</a>
           <a href="#features" class="nav-link">Features</a>
+          <a href="#automation" class="nav-link">API & Automation</a>
           <a href="#self-hosting" class="nav-link">Self-Hosting & Tech Stack</a>
           <a href="#pricing" class="nav-link">Pricing</a>
         </nav>
@@ -197,7 +330,7 @@ const techStack = [
       <div class="hero-content">
         <div class="hero-badge">
           <i class="pi pi-sparkles" style="font-size:0.75rem" />
-          <span>Multi-Up PDF Print Sheets & Full Self-Hosting Ready</span>
+          <span>Multi-Up PDF Print Sheets & Full REST API Automation</span>
         </div>
         <h1 class="hero-title">
           QR Codes,<br />
@@ -206,13 +339,17 @@ const techStack = [
         <p class="hero-subtitle">
           Design pixel-perfect static and dynamic QR codes with live 50ms previews,
           sub-15ms redirect latency, and privacy-first analytics. Tile multiple codes on
-          printable PDF sheets with cut guides. Completely open source and self-hostable.
+          printable PDF sheets with cut guides, or automate workflows directly via the REST API.
         </p>
         <div class="hero-cta">
           <button class="btn-primary btn-lg" @click="router.push('/register')">
             <i class="pi pi-user-plus" />
             Get Started Free
           </button>
+          <a href="#automation" class="btn-ghost btn-lg">
+            <i class="pi pi-code" />
+            API & Automation
+          </a>
           <a href="#self-hosting" class="btn-ghost btn-lg">
             <i class="pi pi-server" />
             Self-Host Guide
@@ -232,6 +369,7 @@ const techStack = [
         <div class="hero-pills">
           <span class="hero-pill"><i class="pi pi-print" /> Multi-Up Print Sheets (300 DPI)</span>
           <span class="hero-pill"><i class="pi pi-bolt" /> &lt;15ms Redirect Latency</span>
+          <span class="hero-pill"><i class="pi pi-code" /> Full REST API & Automation</span>
           <span class="hero-pill"><i class="pi pi-pencil" /> Custom Outer Labels</span>
           <span class="hero-pill"><i class="pi pi-server" /> 100% ARM64 & x86 Self-Hostable</span>
         </div>
@@ -247,7 +385,7 @@ const techStack = [
           />
           <div class="visual-badge">
             <span class="pulse-dot" />
-            <span>Real-time Generator & Analytics Engine</span>
+            <span>Real-time Generator & Automation Engine</span>
           </div>
         </div>
       </div>
@@ -324,7 +462,7 @@ const techStack = [
         <p class="features-eyebrow">Comprehensive Feature Set</p>
         <h2 class="features-title">Everything you need to create, manage, and track QR codes</h2>
         <p class="features-subtitle">
-          Designed for creators, marketers, businesses, and homelabbers who need professional versatility and absolute control.
+          Designed for creators, developers, marketers, and homelabbers who need professional versatility and absolute control.
         </p>
       </div>
 
@@ -339,6 +477,88 @@ const techStack = [
           <span class="feature-category">{{ f.category }}</span>
           <h3 class="feature-title">{{ f.title }}</h3>
           <p class="feature-desc">{{ f.desc }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Developer & Automation Section ────────── -->
+    <section id="automation" class="api-section">
+      <div class="api-header">
+        <p class="features-eyebrow">Developer First & Scriptable</p>
+        <h2 class="api-title">Automate Everything Directly via REST API</h2>
+        <p class="api-subtitle">
+          Don't just use PointQR in the browser. Integrate dynamic QR creation, real-time destination swaps,
+          asynchronous background vector exports, and scan analytics extraction straight into your backend
+          services, CI/CD pipelines, CRMs, and webhooks.
+        </p>
+      </div>
+
+      <!-- Interactive API Tabs & Code Showcase -->
+      <div class="api-showcase-container">
+        <!-- Tab selector buttons -->
+        <div class="api-tabs-bar">
+          <button
+            v-for="tab in apiTabs"
+            :key="tab.id"
+            class="api-tab-btn"
+            :class="{ active: activeApiTab === tab.id }"
+            @click="activeApiTab = tab.id"
+          >
+            <span class="api-method-badge" :class="tab.methodClass">{{ tab.method }}</span>
+            <span class="api-tab-label">{{ tab.label }}</span>
+          </button>
+        </div>
+
+        <!-- Active tab code preview box -->
+        <div class="api-code-card">
+          <div class="api-code-header">
+            <div class="api-code-info">
+              <h3 class="api-headline">{{ currentApiTab.headline }}</h3>
+              <p class="api-desc">{{ currentApiTab.desc }}</p>
+            </div>
+            <div class="api-code-actions">
+              <span class="api-lang-tag">{{ currentApiTab.lang }}</span>
+              <button class="terminal-copy-btn" @click="copyApiSnippet">
+                <i :class="apiCopied ? 'pi pi-check' : 'pi pi-copy'" />
+                <span>{{ apiCopied ? 'Copied!' : 'Copy Snippet' }}</span>
+              </button>
+            </div>
+          </div>
+          <pre class="api-code-block"><code>{{ currentApiTab.code }}</code></pre>
+        </div>
+      </div>
+
+      <!-- Real-World Automation Possibilities Grid -->
+      <div class="automation-usecases-wrap">
+        <h3 class="usecases-headline">Real-World Automation Possibilities</h3>
+        <div class="usecases-grid">
+          <div v-for="uc in automationUseCases" :key="uc.title" class="usecase-card">
+            <div class="usecase-icon-box">
+              <i :class="uc.icon" />
+            </div>
+            <h4 class="usecase-title">{{ uc.title }}</h4>
+            <p class="usecase-desc">{{ uc.desc }}</p>
+          </div>
+        </div>
+
+        <!-- OpenAPI / Swagger Callout -->
+        <div class="openapi-callout">
+          <div class="openapi-left">
+            <i class="pi pi-book openapi-icon" />
+            <div>
+              <h4 class="openapi-title">OpenAPI 3.1 & Interactive Swagger Documentation</h4>
+              <p class="openapi-desc">
+                Fully typed FastAPI schemas allow you to auto-generate SDK clients for Python, TypeScript,
+                Go, Java, and C# using open-source generators.
+              </p>
+            </div>
+          </div>
+          <div class="openapi-actions">
+            <a href="/api/docs" target="_blank" rel="noopener noreferrer" class="btn-primary">
+              <i class="pi pi-external-link" />
+              Explore Swagger UI
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -462,6 +682,7 @@ const techStack = [
             <li><i class="pi pi-check" /> <strong>Unlimited Dynamic QR Codes</strong></li>
             <li><i class="pi pi-check" /> <strong>Unlimited Static QR Codes</strong></li>
             <li><i class="pi pi-check" /> <strong>Unlimited Tracked Scans</strong> (No monthly quotas)</li>
+            <li><i class="pi pi-check" /> <strong>Full REST API & Webhook Automation</strong></li>
             <li><i class="pi pi-check" /> <strong>100% Data Sovereignty</strong> (Data stays on your hardware)</li>
             <li><i class="pi pi-check" /> Multi-Up Repeating PDF Print Sheet Generator</li>
             <li><i class="pi pi-check" /> High-Res Background Vector Exports (PDF, EPS, SVG, PNG)</li>
@@ -486,7 +707,7 @@ const techStack = [
       <div class="cta-card">
         <h2 class="cta-title">Ready to take control of your QR codes?</h2>
         <p class="cta-sub">
-          Create custom-styled dynamic codes, generate multi-up print sheets, and self-host on your own infrastructure.
+          Create custom-styled dynamic codes, generate multi-up print sheets, and automate workflows via the REST API.
         </p>
         <div class="cta-buttons">
           <button class="btn-primary btn-lg" @click="router.push('/register')">
@@ -515,6 +736,7 @@ const techStack = [
         <div class="footer-links">
           <a href="#print-sheets">Print Sheets</a>
           <a href="#features">Features</a>
+          <a href="#automation">API & Automation</a>
           <a href="#self-hosting">Self-Hosting</a>
           <a href="#pricing">Pricing</a>
           <a href="https://github.com/derekleeth/pointqr" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -1125,11 +1347,245 @@ const techStack = [
   margin: 0;
 }
 
-/* ── Self-Hosting & Tech Stack ───────────────── */
-.self-host-section {
+/* ── Developer & Automation Hub ──────────────── */
+.api-section {
   padding: 5.5rem 2.5rem;
   background: var(--bg-card);
   border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.api-header {
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto 3rem;
+}
+
+.api-title {
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin: 0.5rem 0 1rem;
+}
+
+.api-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.api-showcase-container {
+  max-width: 1000px;
+  margin: 0 auto 3.5rem;
+}
+
+.api-tabs-bar {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.api-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.api-tab-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.api-tab-btn.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.api-method-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+.method-patch { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.method-post { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.method-get { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+.api-code-card {
+  margin-top: 1rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+}
+
+.api-code-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 1.5rem;
+}
+
+.api-headline {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 0.35rem;
+}
+
+.api-desc {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.api-code-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
+.api-lang-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.api-code-block {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: #38bdf8;
+}
+
+/* Automation Use Cases */
+.automation-usecases-wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.usecases-headline {
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 2rem;
+}
+
+.usecases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.usecase-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.usecase-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  margin-bottom: 0.875rem;
+}
+
+.usecase-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+}
+
+.usecase-desc {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* OpenAPI Banner */
+.openapi-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.75rem 2rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--border));
+  background: var(--bg-base);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.openapi-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.openapi-icon {
+  font-size: 1.75rem;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.openapi-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem;
+}
+
+.openapi-desc {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Self-Hosting & Tech Stack ───────────────── */
+.self-host-section {
+  padding: 5.5rem 2.5rem;
+  background: var(--bg-base);
   border-bottom: 1px solid var(--border);
 }
 
@@ -1246,7 +1702,7 @@ const techStack = [
   padding: 1.5rem;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: var(--bg-card);
 }
 
 .tech-card-header {
@@ -1262,7 +1718,7 @@ const techStack = [
   width: 38px;
   height: 38px;
   border-radius: 8px;
-  background: var(--bg-card);
+  background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1303,7 +1759,7 @@ const techStack = [
   padding: 1.75rem;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: var(--bg-base);
+  background: var(--bg-card);
 }
 
 .spec-icon {
@@ -1329,7 +1785,7 @@ const techStack = [
 /* ── Pricing ─────────────────────────────────── */
 .pricing {
   padding: 5.5rem 2.5rem;
-  background: var(--bg-base);
+  background: var(--bg-card);
 }
 
 .pricing-subtitle {
@@ -1352,7 +1808,7 @@ const techStack = [
   padding: 2.5rem;
   border-radius: 20px;
   border: 1px solid var(--border);
-  background: var(--bg-card);
+  background: var(--bg-elevated);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1362,6 +1818,7 @@ const techStack = [
 .pricing-card-highlighted {
   border-color: var(--color-primary);
   box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 15%, transparent);
+  background: var(--bg-card);
 }
 
 .pricing-badge {
@@ -1371,7 +1828,7 @@ const techStack = [
   font-weight: 600;
   padding: 0.25rem 0.65rem;
   border-radius: 99px;
-  background: var(--bg-elevated);
+  background: var(--bg-base);
   border: 1px solid var(--border);
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -1447,6 +1904,7 @@ const techStack = [
 /* ── CTA Banner ──────────────────────────────── */
 .cta-section {
   padding: 5rem 2.5rem;
+  background: var(--bg-base);
 }
 
 .cta-card {
@@ -1559,6 +2017,10 @@ const techStack = [
   .nav-menu {
     display: none;
   }
+  .openapi-callout {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1568,6 +2030,10 @@ const techStack = [
   .footer-content {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .api-code-header {
+    flex-direction: column;
+    gap: 0.75rem;
   }
 }
 </style>

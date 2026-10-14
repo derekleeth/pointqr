@@ -180,7 +180,7 @@
 | 1 | ✅ Done | Toast notifications on QR code save success (new codes) and failure — added to `QREditorView.vue` with error detail extracted from Axios response |
 | 2 | ✅ Done | Customizable text labels above and below QR code with typography, alignment, letter-spacing, and padding options |
 | 3 | ✅ Done | Multi-up repeating PDF print sheet generator — client-side via `jsPDF` + `qr-code-styling`. Configurable page size (Letter/A4), orientation, QR size (mm), margins, gutter spacing, cut guides (crop marks / dashed lines), optional text labels. Live sheet preview with auto-fit grid calculation. Renders at 300 DPI. New files: `PrintSheetModal.vue`, `printSheetGenerator.ts`, `qrRendering.ts` (shared utils extracted from `QRCanvas.vue`). |
-| 4 | ✅ Done | Modernized Home Page (`HomeView.vue`) — Comprehensive feature showcase, dedicated spotlight section for the Multi-up Repeating PDF Print Sheet Generator, architecture & platform stack breakdown, ARM64/x86 hardware compatibility, and quick-start self-hosting terminal commands. |
+| 4 | ✅ Done | Modernized Home Page (`HomeView.vue`) — Comprehensive feature showcase, dedicated spotlight section for the Multi-up Repeating PDF Print Sheet Generator, Developer & Automation Hub with interactive code snippets and use cases, architecture & platform stack breakdown, ARM64/x86 hardware compatibility, and quick-start self-hosting terminal commands. |
 
 
 ---
