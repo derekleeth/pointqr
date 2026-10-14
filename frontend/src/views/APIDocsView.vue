@@ -1087,17 +1087,17 @@ func main() {
         </p>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="rounded-lg p-3 border" style="background-color: var(--bg-elevated); border-color: var(--border)">
-            <span class="text-xs font-medium text-surface-500">Create QR Rate Limit</span>
-            <p class="text-lg font-bold text-surface-900 dark:text-surface-0 mt-0.5">30 / minute</p>
+          <div class="rounded-lg p-3.5 border transition-colors shadow-sm" style="background-color: var(--bg-card); border-color: var(--border)">
+            <span class="text-xs font-medium" style="color: var(--text-secondary)">Create QR Rate Limit</span>
+            <p class="text-lg font-bold mt-0.5 tracking-tight" style="color: var(--text-primary)">30 / minute</p>
           </div>
-          <div class="rounded-lg p-3 border" style="background-color: var(--bg-elevated); border-color: var(--border)">
-            <span class="text-xs font-medium text-surface-500">Export / Download Limit</span>
-            <p class="text-lg font-bold text-surface-900 dark:text-surface-0 mt-0.5">20 / minute</p>
+          <div class="rounded-lg p-3.5 border transition-colors shadow-sm" style="background-color: var(--bg-card); border-color: var(--border)">
+            <span class="text-xs font-medium" style="color: var(--text-secondary)">Export / Download Limit</span>
+            <p class="text-lg font-bold mt-0.5 tracking-tight" style="color: var(--text-primary)">20 / minute</p>
           </div>
-          <div class="rounded-lg p-3 border" style="background-color: var(--bg-elevated); border-color: var(--border)">
-            <span class="text-xs font-medium text-surface-500">Logo Upload Limit</span>
-            <p class="text-lg font-bold text-surface-900 dark:text-surface-0 mt-0.5">10 / minute</p>
+          <div class="rounded-lg p-3.5 border transition-colors shadow-sm" style="background-color: var(--bg-card); border-color: var(--border)">
+            <span class="text-xs font-medium" style="color: var(--text-secondary)">Logo Upload Limit</span>
+            <p class="text-lg font-bold mt-0.5 tracking-tight" style="color: var(--text-primary)">10 / minute</p>
           </div>
         </div>
       </div>
@@ -1279,14 +1279,14 @@ func main() {
           style="background-color: var(--bg-card); color: var(--text-primary)"
         ><code>{{ codeSnippets.createWithTitle[selectedLang] }}</code></pre>
 
-        <div class="p-4 border-t text-xs space-y-1" style="border-color: var(--border); background-color: var(--bg-elevated)">
-          <p class="font-semibold text-surface-700 dark:text-surface-300">Customizable Label Properties:</p>
-          <ul class="list-disc list-inside text-surface-600 dark:text-surface-400 space-y-0.5">
-            <li><code class="font-mono">fontSize</code> (6–96 px, default: 14)</li>
-            <li><code class="font-mono">fontWeight</code> ("normal" | "bold")</li>
-            <li><code class="font-mono">align</code> ("center" | "left" | "right")</li>
-            <li><code class="font-mono">color</code> (Hex color string e.g. "#111827")</li>
-            <li><code class="font-mono">padding</code> (spacing between label and barcode, default: 8 px)</li>
+        <div class="p-4 border-t text-xs space-y-2" style="border-color: var(--border); background-color: var(--bg-elevated)">
+          <p class="font-semibold text-xs" style="color: var(--text-primary)">Customizable Label Properties:</p>
+          <ul class="list-disc list-inside space-y-1" style="color: var(--text-secondary)">
+            <li><code class="font-mono text-primary-500 font-semibold">fontSize</code> (6–96 px, default: 14)</li>
+            <li><code class="font-mono text-primary-500 font-semibold">fontWeight</code> ("normal" | "bold")</li>
+            <li><code class="font-mono text-primary-500 font-semibold">align</code> ("center" | "left" | "right")</li>
+            <li><code class="font-mono text-primary-500 font-semibold">color</code> (Hex color string e.g. "#111827")</li>
+            <li><code class="font-mono text-primary-500 font-semibold">padding</code> (spacing between label and barcode, default: 8 px)</li>
           </ul>
         </div>
       </div>
@@ -1331,12 +1331,12 @@ func main() {
           style="background-color: var(--bg-card); color: var(--text-primary)"
         ><code>{{ codeSnippets.uploadLogo[selectedLang] }}</code></pre>
 
-        <div class="p-4 border-t text-xs space-y-1" style="border-color: var(--border); background-color: var(--bg-elevated)">
-          <p class="font-semibold text-surface-700 dark:text-surface-300">Logo Guidelines & Specs:</p>
-          <p class="text-surface-600 dark:text-surface-400">
-            • Maximum file size: <strong>500 KB</strong>.<br>
-            • Supported formats: <strong>PNG, SVG, JPEG, WebP</strong>.<br>
-            • The QR code generator automatically sets error correction to level <strong>H (High - 30% recovery)</strong> and creates a protective buffer margin around your logo.
+        <div class="p-4 border-t text-xs space-y-2" style="border-color: var(--border); background-color: var(--bg-elevated)">
+          <p class="font-semibold text-xs" style="color: var(--text-primary)">Logo Guidelines & Specs:</p>
+          <p class="leading-relaxed" style="color: var(--text-secondary)">
+            • Maximum file size: <strong style="color: var(--text-primary)">500 KB</strong>.<br>
+            • Supported formats: <strong style="color: var(--text-primary)">PNG, SVG, JPEG, WebP</strong>.<br>
+            • The QR code generator automatically sets error correction to level <strong style="color: var(--text-primary)">H (High - 30% recovery)</strong> and creates a protective buffer margin around your logo.
           </p>
         </div>
       </div>
@@ -1382,24 +1382,48 @@ func main() {
           style="background-color: var(--bg-card); color: var(--text-primary)"
         ><code>{{ codeSnippets.download[selectedLang] }}</code></pre>
 
-        <div class="p-4 border-t text-xs space-y-1" style="border-color: var(--border); background-color: var(--bg-elevated)">
-          <p class="font-semibold text-surface-700 dark:text-surface-300">Export Formats & Content-Types:</p>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-            <div class="p-2 rounded border bg-white dark:bg-surface-900 border-surface-200 dark:border-surface-800">
-              <span class="font-bold text-surface-900 dark:text-surface-100">PNG</span>
-              <p class="text-[11px] text-surface-500">image/png</p>
+        <div class="p-4 border-t text-xs space-y-2" style="border-color: var(--border); background-color: var(--bg-elevated)">
+          <p class="font-semibold text-xs" style="color: var(--text-primary)">Export Formats & Content-Types:</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div
+              class="p-3 rounded-lg border transition-colors shadow-sm"
+              style="background-color: var(--bg-card); border-color: var(--border)"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm tracking-wide" style="color: var(--text-primary)">PNG</span>
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400">Raster</span>
+              </div>
+              <p class="text-xs font-mono mt-1.5" style="color: var(--text-secondary)">image/png</p>
             </div>
-            <div class="p-2 rounded border bg-white dark:bg-surface-900 border-surface-200 dark:border-surface-800">
-              <span class="font-bold text-surface-900 dark:text-surface-100">SVG</span>
-              <p class="text-[11px] text-surface-500">image/svg+xml</p>
+            <div
+              class="p-3 rounded-lg border transition-colors shadow-sm"
+              style="background-color: var(--bg-card); border-color: var(--border)"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm tracking-wide" style="color: var(--text-primary)">SVG</span>
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400">Vector</span>
+              </div>
+              <p class="text-xs font-mono mt-1.5" style="color: var(--text-secondary)">image/svg+xml</p>
             </div>
-            <div class="p-2 rounded border bg-white dark:bg-surface-900 border-surface-200 dark:border-surface-800">
-              <span class="font-bold text-surface-900 dark:text-surface-100">PDF</span>
-              <p class="text-[11px] text-surface-500">application/pdf</p>
+            <div
+              class="p-3 rounded-lg border transition-colors shadow-sm"
+              style="background-color: var(--bg-card); border-color: var(--border)"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm tracking-wide" style="color: var(--text-primary)">PDF</span>
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Document</span>
+              </div>
+              <p class="text-xs font-mono mt-1.5" style="color: var(--text-secondary)">application/pdf</p>
             </div>
-            <div class="p-2 rounded border bg-white dark:bg-surface-900 border-surface-200 dark:border-surface-800">
-              <span class="font-bold text-surface-900 dark:text-surface-100">EPS</span>
-              <p class="text-[11px] text-surface-500">application/postscript</p>
+            <div
+              class="p-3 rounded-lg border transition-colors shadow-sm"
+              style="background-color: var(--bg-card); border-color: var(--border)"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm tracking-wide" style="color: var(--text-primary)">EPS</span>
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">Vector</span>
+              </div>
+              <p class="text-xs font-mono mt-1.5" style="color: var(--text-secondary)">application/postscript</p>
             </div>
           </div>
         </div>
