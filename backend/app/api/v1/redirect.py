@@ -103,12 +103,9 @@ async def redirect_short_code(short_code: str, request: Request) -> RedirectResp
         from app.tasks.analytics import log_scan_event  # noqa: PLC0415
 
         # Extract client metadata
-        forwarded_for = request.headers.get("X-Forwarded-For")
-        raw_ip: str = (
-            forwarded_for.split(",")[0].strip()
-            if forwarded_for
-            else (request.client.host if request.client else "unknown")
-        )
+        from app.core.rate_limit import get_client_ip  # noqa: PLC0415
+
+        raw_ip: str = get_client_ip(request)
         ip_hash = hashlib.sha256(raw_ip.encode()).hexdigest()
         user_agent: str | None = request.headers.get("User-Agent")
         referer: str | None = request.headers.get("Referer")
