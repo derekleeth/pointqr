@@ -43,6 +43,14 @@ const swaggerUrl = computed(() => {
   return '/api/docs'
 })
 
+const asyncExportSnippet = computed(() => `# 1. Enqueue background export job
+curl -X POST "${apiBaseUrl.value}/qrcodes/{id}/export/async?format=png" \\
+  -H "X-API-Key: pqr_your_key_here"
+
+# 2. Poll job status until COMPLETED
+curl -X GET "${apiBaseUrl.value}/qrcodes/jobs/{job_id}" \\
+  -H "X-API-Key: pqr_your_key_here"`)
+
 function copyText(key: string, text: string) {
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(text).then(() => {
@@ -1455,19 +1463,56 @@ func main() {
         </p>
 
         <div
-          class="rounded-lg p-3 font-mono text-xs overflow-x-auto"
-          style="background-color: var(--bg-elevated); color: var(--text-primary)"
-        ><code># 1. Enqueue job
-curl -X POST "{{ apiBaseUrl }}/qrcodes/{id}/export/async?format=svg" \\
+          class="rounded-xl border overflow-hidden shadow-sm"
+          style="background-color: var(--bg-card); border-color: var(--border)"
+        >
+          <div
+            class="flex items-center justify-between px-4 py-3 border-b text-xs font-mono"
+            style="background-color: var(--bg-elevated); border-color: var(--border)"
+          >
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">202 ACCEPTED</span>
+              <span class="text-surface-700 dark:text-surface-300">/api/v1/qrcodes/{id}/export/async</span>
+            </div>
+            <button
+              @click="copyText('async-code', asyncExportSnippet)"
+              class="flex items-center gap-1 px-2.5 py-1 rounded border hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              style="border-color: var(--border)"
+            >
+              <i :class="copiedSnippets['async-code'] ? 'pi pi-check text-emerald-500' : 'pi pi-copy text-surface-400'" />
+              <span class="font-sans">{{ copiedSnippets['async-code'] ? 'Copied' : 'Copy' }}</span>
+            </button>
+          </div>
+
+          <pre
+            class="p-4 text-xs font-mono overflow-x-auto leading-relaxed"
+            style="background-color: var(--bg-card); color: var(--text-primary); white-space: pre;"
+          ><code># 1. Enqueue background export job
+curl -X POST "{{ apiBaseUrl }}/qrcodes/{id}/export/async?format=png" \
   -H "X-API-Key: pqr_your_key_here"
 
-# Response: {"id": "job-uuid", "status": "PENDING", ...}
+# Sample 202 Response:
+# {
+#   "id": "7bfa8812-42da-4b36-a192-d9f7831d102e",
+#   "status": "PENDING",
+#   "total_items": 1,
+#   "processed_items": 0,
+#   "result_url": null
+# }
 
-# 2. Poll job until completion
-curl -X GET "{{ apiBaseUrl }}/qrcodes/jobs/{job_id}" \\
+# 2. Poll job status until COMPLETED
+curl -X GET "{{ apiBaseUrl }}/qrcodes/jobs/{job_id}" \
   -H "X-API-Key: pqr_your_key_here"
 
-# Response: {"id": "job-uuid", "status": "COMPLETED", "result_url": "/static/exports/..."}</code></div>
+# Sample Completed Response:
+# {
+#   "id": "7bfa8812-42da-4b36-a192-d9f7831d102e",
+#   "status": "COMPLETED",
+#   "total_items": 1,
+#   "processed_items": 1,
+#   "result_url": "/static/exports/7bfa8812-42da-4b36-a192-d9f7831d102e.png"
+# }</code></pre>
+        </div>
       </div>
     </section>
 
