@@ -656,7 +656,7 @@ const techStack = [
             <span class="price-term">/ during beta</span>
           </div>
           <ul class="pricing-list">
-            <li><i class="pi pi-check" /> <strong>5 Dynamic QR Codes</strong> (change URLs anytime)</li>
+            <li><i class="pi pi-check" /> <strong>3 Dynamic QR Codes</strong> (change URLs anytime)</li>
             <li><i class="pi pi-check" /> <strong>Unlimited Static QR Codes</strong></li>
             <li><i class="pi pi-check" /> <strong>200 Tracked Scans / month</strong></li>
             <li><i class="pi pi-check" /> Full Live Design Canvas & Typography Controls</li>

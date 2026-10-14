@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+import hashlib
+from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,26 +15,41 @@ from app.database import get_db
 from app.models.user import User, UserRole
 
 # OAuth2 scheme – points to the login endpoint
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# auto_error=False so we can fall through to API key auth
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    token: Annotated[Optional[str], Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    """Decode the JWT and load the corresponding user from the database."""
+    """Decode the JWT or API key and load the corresponding user from the database."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        token_data = decode_access_token(token)
-    except ValueError:
-        raise credentials_exception
 
-    result = await db.execute(select(User).where(User.id == token_data.sub))
-    user = result.scalar_one_or_none()
+    user: User | None = None
+
+    # --- Strategy 1: JWT Bearer token ---
+    if token:
+        try:
+            token_data = decode_access_token(token)
+        except ValueError:
+            raise credentials_exception
+
+        result = await db.execute(select(User).where(User.id == token_data.sub))
+        user = result.scalar_one_or_none()
+
+    # --- Strategy 2: X-API-Key header ---
+    if user is None:
+        api_key = request.headers.get("X-API-Key")
+        if api_key:
+            hashed = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+            result = await db.execute(select(User).where(User.api_key == hashed))
+            user = result.scalar_one_or_none()
 
     if user is None:
         raise credentials_exception

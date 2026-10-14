@@ -68,6 +68,12 @@ const router = createRouter({
       component: () => import('@/views/AnalyticsView.vue'),
       meta: { layout: 'AppLayout', requiresAuth: true },
     },
+    {
+      path: '/api-keys',
+      name: 'api-keys',
+      component: () => import('@/views/APIKeysView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true },
+    },
 
     // ── Admin (sidebar layout, admin role required) ───────
     {
