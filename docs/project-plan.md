@@ -154,9 +154,9 @@ PointQR uses a dedicated Celery Beat scheduler daemon (`celery -A app.celery_app
 | **Phase 1** | Weeks 1–2 | Repository structure, Docker Compose orchestration, DB migrations with Alembic, JWT user authentication | ✅ Completed |
 | **Phase 2** | Weeks 3–4 | Vue 3 + PrimeVue setup, interactive canvas editor with live preview, FastAPI QR rendering endpoints | ✅ Completed |
 | **Phase 3** | Weeks 5–6 | URL shortening/redirect service (sub-10ms target), RabbitMQ/Celery async scan logging, background vector export, outer text labels | ✅ Completed |
-| **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard (✅ Track A), CSV bulk QR generation pipeline (⏳ Track B), Storage lifecycle management & automated cleanup via Celery Beat (⏳ Track C) | 🚧 In Progress |
+| **Phase 4** | Weeks 7–8 | PrimeVue analytics dashboard (✅ Track A), CSV bulk QR generation pipeline (⏳ Track B), Storage lifecycle management & automated cleanup via Celery Beat (✅ Track C) | 🚧 In Progress |
 | **Phase 5** | Weeks 9–10 | Rate limiting (✅ completed), penetration testing, automated CI/CD pipelines, project documentation | 🚧 In Progress |
-| **Phase 6+** | Post-Launch / Future | Multi-up repeating PDF print sheets (print & cut), team/organization workspaces, advanced campaign tags | 💡 Backlog |
+| **Phase 6+** | Post-Launch / Future | Multi-up repeating PDF print sheets (✅ Completed & Live), team/organization workspaces, advanced campaign tags | 💡 Backlog |
 
 ### Phase 4 Detailed Breakdown: Analytics, Bulk Generation & Storage Operations
 
@@ -186,7 +186,7 @@ PointQR uses a dedicated Celery Beat scheduler daemon (`celery -A app.celery_app
 
 ### Post-Launch & Future Roadmap (Phase 6+ Backlog)
 
-- **Multi-Up Repeating PDF Print Sheet Generator (Print & Cut):**
+- **Multi-Up Repeating PDF Print Sheet Generator (Print & Cut) — ✅ Completed & Live:**
   - **Objective:** Give users the option to generate a printable PDF containing multiple copies of a single styled QR code laid out across a single sheet of paper for printing and cutting out physically.
   - **Page Sizes & Formats:** US Letter (8.5 × 11 in) and A4 (210 × 297 mm), supporting both Portrait and Landscape orientations.
   - **Grid Presets & Layouts:**

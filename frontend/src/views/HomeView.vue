@@ -1,30 +1,151 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 
 const router = useRouter()
 const theme = useThemeStore()
+const copied = ref(false)
+
+const bashSnippet = `# 1. Clone the repository
+git clone https://github.com/derekleeth/pointqr.git
+cd pointqr
+
+# 2. Configure environment
+cp .env.example .env
+
+# 3. Spin up all services with Docker Compose
+docker compose up -d --build`
+
+function copySnippet() {
+  navigator.clipboard.writeText(bashSnippet)
+  copied.value = true
+  setTimeout(() => {
+    copied.value = false
+  }, 2500)
+}
+
+const printSheetFeatures = [
+  {
+    icon: 'pi pi-file',
+    title: 'Standard Paper Formats',
+    desc: 'Support for US Letter (8.5 × 11 in) and A4 (210 × 297 mm) with instant Portrait or Landscape orientation toggles.',
+  },
+  {
+    icon: 'pi pi-th-large',
+    title: 'Auto-Fit Grid Calculator',
+    desc: 'Set custom QR sizes in millimetres or inches. The layout engine automatically calculates rows, columns, and total yield per sheet.',
+  },
+  {
+    icon: 'pi pi-table',
+    title: 'Precision Cut Guides',
+    desc: 'Choose between professional corner Crop Marks or Dashed Lines for quick and effortless trimming with scissors or guillotines.',
+  },
+  {
+    icon: 'pi pi-sliders-h',
+    title: 'Custom Margins & Gutters',
+    desc: 'Fine-tune page margins and spacing between QR codes to fit any printer hardware, label sheet, or custom cutter.',
+  },
+  {
+    icon: 'pi pi-tag',
+    title: 'Typography & Label Preservation',
+    desc: 'Preserves top and bottom custom callout banners ("SCAN ME", WiFi details) and brand styling across every repeated tile.',
+  },
+  {
+    icon: 'pi pi-bolt',
+    title: 'Instant 300 DPI Client PDF',
+    desc: 'Generated directly in your browser using jsPDF at crisp 300 DPI print quality — zero server queues, zero waiting.',
+  },
+]
 
 const features = [
   {
     icon: 'pi pi-palette',
-    title: 'Live Design Editor',
-    desc: 'Customize dots, corners, colors, and embed your logo — all with a real-time preview that updates in under 50ms.',
+    category: 'Design & Customization',
+    title: 'Live 50ms Design Canvas',
+    desc: 'Sub-50ms debounced live preview. Customize 6 dot patterns, corner squares, corner dots, gradients, backgrounds, and embed logos with auto Level H error correction.',
+  },
+  {
+    icon: 'pi pi-pencil',
+    category: 'Branding & Typography',
+    title: 'Custom Outer Text Labels',
+    desc: 'Add independent top and bottom banner labels. Full typography controls: font family, size (8–48px), bold, italic, colors, text alignment, letter spacing, and padding.',
+  },
+  {
+    icon: 'pi pi-print',
+    category: 'Physical Distribution',
+    title: 'Multi-Up Repeating Print Sheets',
+    desc: 'Tile identical styled QR codes across US Letter or A4 sheets with auto-fit grid calculation, adjustable gutters, margins, and precision cut guides.',
+    badge: 'Popular',
   },
   {
     icon: 'pi pi-refresh',
-    title: 'Dynamic QR Codes',
-    desc: 'Change the destination URL anytime without reprinting. Your QR code stays the same, the destination evolves.',
+    category: 'High Performance',
+    title: 'Dynamic QR & Sub-15ms Redirects',
+    desc: 'Change destination URLs anytime without reprinting physical collateral. Sub-15ms redirection latency powered by in-process caching and indexed PostgreSQL queries.',
   },
   {
     icon: 'pi pi-chart-bar',
-    title: 'Scan Analytics',
-    desc: 'Track every scan with timestamps, device types, geolocation, and browser data — all in one dashboard.',
+    category: 'Data & Intelligence',
+    title: 'Comprehensive Scan Analytics',
+    desc: 'Track scans over time with granular hourly, daily, and monthly bucketing. Segment scans by device category, operating system, browser, and country distribution.',
   },
   {
     icon: 'pi pi-download',
-    title: 'High-Res Exports',
-    desc: 'Export print-ready PNG, SVG, PDF, or EPS at any resolution. Perfect for packaging, signage, and print.',
+    category: 'Multi-Format Output',
+    title: 'Composited & Async Server Exports',
+    desc: 'Instant client-side PNG/SVG with baked-in text labels, plus asynchronous Celery worker exports for print-ready PNG (300 DPI), SVG, PDF, and EPS vectors.',
+  },
+  {
+    icon: 'pi pi-shield',
+    category: 'Security & Hardening',
+    title: 'API Rate Limiting & Protection',
+    desc: 'Built-in slowapi sliding-window rate limiters protecting authentication, logo uploads, and heavy export endpoints against brute-force attacks and abuse.',
+  },
+  {
+    icon: 'pi pi-server',
+    category: 'Operations & DevOps',
+    title: 'Live Telemetry & Site Admin',
+    desc: 'Real-time WebSocket telemetry dashboard for Celery & RabbitMQ queues, plus instant runtime site toggles for public registration and email verification without restarts.',
+  },
+]
+
+const techStack = [
+  {
+    layer: 'Frontend SPA',
+    tech: 'Vue 3 + Vite + PrimeVue 4',
+    desc: 'Composition API, TypeScript, Tailwind CSS, Pinia store, and Chart.js telemetry visualization.',
+    icon: 'pi pi-desktop',
+  },
+  {
+    layer: 'Backend API',
+    tech: 'FastAPI (Python 3.12+ async)',
+    desc: 'High-throughput async ASGI engine with native OpenAPI Swagger docs and Pydantic v2 validation.',
+    icon: 'pi pi-code',
+  },
+  {
+    layer: 'Relational Database',
+    tech: 'PostgreSQL 16 + Alembic',
+    desc: 'ACID transactional persistence for users, QR designs, scan events, and schema migrations.',
+    icon: 'pi pi-database',
+  },
+  {
+    layer: 'Distributed Task Queue',
+    tech: 'Celery 5 + RabbitMQ 3.13',
+    desc: 'Dedicated queues for scan analytics, image rendering, and batch generation without blocking HTTP requests.',
+    icon: 'pi pi-sync',
+  },
+  {
+    layer: 'Scheduled Automation',
+    tech: 'Celery Beat Daemon',
+    desc: 'Periodic lifecycle cleanup sweeping expired export files (24h retention) and monitoring volume storage capacity.',
+    icon: 'pi pi-clock',
+  },
+  {
+    layer: 'Gateway & Reverse Proxy',
+    tech: 'Nginx Alpine',
+    desc: 'High-performance reverse proxy with SSL termination, HTTP/2 compression, and direct static storage volume serving.',
+    icon: 'pi pi-shield',
   },
 ]
 </script>
@@ -33,7 +154,19 @@ const features = [
   <div class="home-page">
     <!-- ── Top Nav ───────────────────────────────── -->
     <header class="home-nav">
-      <RouterLink to="/" class="home-brand">PointQR</RouterLink>
+      <div class="nav-left">
+        <RouterLink to="/" class="home-brand">
+          <span class="brand-text">PointQR</span>
+          <span class="brand-badge">v0.2.0</span>
+        </RouterLink>
+        <nav class="nav-menu">
+          <a href="#print-sheets" class="nav-link">Print Sheets</a>
+          <a href="#features" class="nav-link">Features</a>
+          <a href="#self-hosting" class="nav-link">Self-Hosting & Tech Stack</a>
+          <a href="#pricing" class="nav-link">Pricing</a>
+        </nav>
+      </div>
+
       <nav class="home-nav-links">
         <a
           href="https://github.com/derekleeth/pointqr"
@@ -45,7 +178,12 @@ const features = [
         >
           <i class="pi pi-github" />
         </a>
-        <button class="theme-toggle" @click="theme.toggle()" :title="theme.isDark ? 'Light mode' : 'Dark mode'">
+        <button
+          class="theme-toggle"
+          @click="theme.toggle()"
+          :title="theme.isDark ? 'Light mode' : 'Dark mode'"
+          :aria-label="theme.isDark ? 'Light mode' : 'Dark mode'"
+        >
           <i :class="theme.isDark ? 'pi pi-sun' : 'pi pi-moon'" />
         </button>
         <RouterLink to="/login" class="btn-ghost">Log in</RouterLink>
@@ -59,68 +197,286 @@ const features = [
       <div class="hero-content">
         <div class="hero-badge">
           <i class="pi pi-sparkles" style="font-size:0.75rem" />
-          New application in beta — Self-host for free with no limits!
+          <span>Multi-Up PDF Print Sheets & Full Self-Hosting Ready</span>
         </div>
         <h1 class="hero-title">
           QR Codes,<br />
-          <span class="text-gradient">Reimagined</span>
+          <span class="text-gradient">Engineered for Print & Scale</span>
         </h1>
         <p class="hero-subtitle">
-          Create stunning, trackable QR codes in seconds. Customize every pixel,
-          update destinations without reprinting, and understand exactly how people engage.
+          Design pixel-perfect static and dynamic QR codes with live 50ms previews,
+          sub-15ms redirect latency, and privacy-first analytics. Tile multiple codes on
+          printable PDF sheets with cut guides. Completely open source and self-hostable.
         </p>
         <div class="hero-cta">
           <button class="btn-primary btn-lg" @click="router.push('/register')">
             <i class="pi pi-user-plus" />
             Get Started Free
           </button>
-          <button class="btn-ghost btn-lg" @click="router.push('/login')">
-            Sign in →
-          </button>
+          <a href="#self-hosting" class="btn-ghost btn-lg">
+            <i class="pi pi-server" />
+            Self-Host Guide
+          </a>
+          <a
+            href="https://github.com/derekleeth/pointqr"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-ghost btn-lg"
+          >
+            <i class="pi pi-github" />
+            GitHub
+          </a>
+        </div>
+
+        <!-- Quick highlights pills -->
+        <div class="hero-pills">
+          <span class="hero-pill"><i class="pi pi-print" /> Multi-Up Print Sheets (300 DPI)</span>
+          <span class="hero-pill"><i class="pi pi-bolt" /> &lt;15ms Redirect Latency</span>
+          <span class="hero-pill"><i class="pi pi-pencil" /> Custom Outer Labels</span>
+          <span class="hero-pill"><i class="pi pi-server" /> 100% ARM64 & x86 Self-Hostable</span>
         </div>
       </div>
 
-      <!-- Logo visual -->
+      <!-- Hero visual -->
       <div class="hero-visual">
-        <img
-          :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
-          alt="PointQR"
-          class="hero-logo"
-        />
+        <div class="hero-visual-card">
+          <img
+            :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
+            alt="PointQR Logo"
+            class="hero-logo"
+          />
+          <div class="visual-badge">
+            <span class="pulse-dot" />
+            <span>Real-time Generator & Analytics Engine</span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- ── Features ───────────────────────────────── -->
-    <section class="features">
-      <p class="features-eyebrow">Everything you need</p>
-      <h2 class="features-title">Powerful tools, simple workflow</h2>
+    <!-- ── Print Sheet Spotlight ─────────────────── -->
+    <section id="print-sheets" class="spotlight-section">
+      <div class="spotlight-header">
+        <p class="features-eyebrow">The Missing Feature in Existing Tools</p>
+        <h2 class="spotlight-title">Multi-Up Repeating PDF Print Sheet Generator</h2>
+        <p class="spotlight-subtitle">
+          Most QR tools only export an isolated image file, leaving you to manually copy and arrange dozens
+          of codes in desktop publishing software. PointQR includes a first-class, client-side PDF print sheet
+          engine that tiles your QR code across standard paper with precision cut guides.
+        </p>
+      </div>
+
+      <div class="spotlight-container">
+        <!-- Left: Feature points -->
+        <div class="spotlight-features">
+          <div v-for="item in printSheetFeatures" :key="item.title" class="spotlight-feature-item">
+            <div class="spotlight-icon">
+              <i :class="item.icon" />
+            </div>
+            <div>
+              <h3 class="spotlight-item-title">{{ item.title }}</h3>
+              <p class="spotlight-item-desc">{{ item.desc }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Visual sheet mockup -->
+        <div class="sheet-preview-wrapper">
+          <div class="sheet-mockup">
+            <div class="sheet-mockup-header">
+              <div class="sheet-tag">US Letter (8.5 × 11 in)</div>
+              <div class="sheet-tag">3 × 4 Grid (12 Codes)</div>
+              <div class="sheet-tag sheet-tag-accent">300 DPI Print Quality</div>
+            </div>
+
+            <!-- Paper boundary -->
+            <div class="sheet-paper">
+              <div class="sheet-margin-guide">
+                <!-- 3x4 grid representation -->
+                <div class="sheet-grid-preview">
+                  <div v-for="n in 12" :key="n" class="mini-qr-cell">
+                    <span class="mini-crop-tl" />
+                    <span class="mini-crop-tr" />
+                    <span class="mini-crop-bl" />
+                    <span class="mini-crop-br" />
+                    <span class="mini-label-top">SCAN ME</span>
+                    <div class="mini-qr-box">
+                      <i class="pi pi-qrcode" />
+                    </div>
+                    <span class="mini-label-bot">pointqr.app</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="sheet-mockup-footer">
+              <span><i class="pi pi-check-circle" /> Precision Crop Marks</span>
+              <span><i class="pi pi-check-circle" /> Auto-Fit Margin Math</span>
+              <span><i class="pi pi-check-circle" /> Zero Server Queuing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── All Features Grid ─────────────────────── -->
+    <section id="features" class="features">
+      <div class="features-header">
+        <p class="features-eyebrow">Comprehensive Feature Set</p>
+        <h2 class="features-title">Everything you need to create, manage, and track QR codes</h2>
+        <p class="features-subtitle">
+          Designed for creators, marketers, businesses, and homelabbers who need professional versatility and absolute control.
+        </p>
+      </div>
+
       <div class="features-grid">
         <div v-for="f in features" :key="f.title" class="feature-card">
-          <div class="feature-icon">
-            <i :class="f.icon" />
+          <div class="feature-top">
+            <div class="feature-icon">
+              <i :class="f.icon" />
+            </div>
+            <span v-if="f.badge" class="feature-badge">{{ f.badge }}</span>
           </div>
+          <span class="feature-category">{{ f.category }}</span>
           <h3 class="feature-title">{{ f.title }}</h3>
           <p class="feature-desc">{{ f.desc }}</p>
         </div>
       </div>
     </section>
 
-    <!-- ── Pricing / Free Tier ────────────────────── -->
-    <section class="pricing">
-      <p class="features-eyebrow">Beta Access</p>
-      <h2 class="features-title">Simple, Transparent Free Tier</h2>
-      
-      <div class="pricing-card">
-        <h3 class="feature-title">Free Plan Includes:</h3>
-        <ul class="pricing-list">
-          <li><i class="pi pi-check"></i> <strong>5 Dynamic QR Codes</strong> (change destinations anytime)</li>
-          <li><i class="pi pi-check"></i> <strong>Unlimited Static QR Codes</strong></li>
-          <li><i class="pi pi-check"></i> <strong>200 Tracked Scans per month</strong></li>
-          <li><i class="pi pi-check"></i> Full access to the Live Design Editor & High-Res Exports</li>
-        </ul>
-        <div class="pricing-self-host">
-          <i class="pi pi-server"></i>
-          <p><strong>Want to run it yourself?</strong> <br/>PointQR is open source. <a href="https://github.com/derekleeth/pointqr" target="_blank">Self-host it for free</a> without any limits!</p>
+    <!-- ── Self-Hosting & Architecture ───────────── -->
+    <section id="self-hosting" class="self-host-section">
+      <div class="self-host-header">
+        <p class="features-eyebrow">Data Sovereignty & Independence</p>
+        <h2 class="self-host-title">Self-Host with Modern Infrastructure</h2>
+        <p class="self-host-subtitle">
+          PointQR is 100% open source under the MIT license. Deploy on your local server, home lab, or any cloud VPS
+          in minutes using standard Docker Compose. No telemetry, no feature gating, and unlimited dynamic QR codes.
+        </p>
+      </div>
+
+      <!-- Quick start bash snippet -->
+      <div class="terminal-container">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot dot-red" />
+            <span class="dot dot-yellow" />
+            <span class="dot dot-green" />
+          </div>
+          <span class="terminal-title">bash — Quick Start Self-Host</span>
+          <button class="terminal-copy-btn" @click="copySnippet">
+            <i :class="copied ? 'pi pi-check' : 'pi pi-copy'" />
+            <span>{{ copied ? 'Copied!' : 'Copy Commands' }}</span>
+          </button>
+        </div>
+        <pre class="terminal-code"><code>{{ bashSnippet }}</code></pre>
+      </div>
+
+      <!-- Tech Stack Breakdown -->
+      <div class="architecture-wrap">
+        <h3 class="arch-headline">Application Architecture & Components</h3>
+        <div class="tech-grid">
+          <div v-for="t in techStack" :key="t.tech" class="tech-card">
+            <div class="tech-card-header">
+              <i :class="t.icon" class="tech-icon" />
+              <div>
+                <span class="tech-layer">{{ t.layer }}</span>
+                <h4 class="tech-name">{{ t.tech }}</h4>
+              </div>
+            </div>
+            <p class="tech-desc">{{ t.desc }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deployment & Hardware Specs Callout -->
+      <div class="hardware-specs-grid">
+        <div class="spec-card">
+          <div class="spec-icon"><i class="pi pi-box" /></div>
+          <h4>ARM64 & x86-64 Native</h4>
+          <p>
+            Fully multi-arch compatible. Run effortlessly on ARM VPS instances (Hetzner CAX, AWS Graviton,
+            Oracle Ampere, Raspberry Pi) or traditional x86 servers (Hetzner CX, Netcup, Intel/AMD).
+          </p>
+        </div>
+        <div class="spec-card">
+          <div class="spec-icon"><i class="pi pi-sliders-v" /></div>
+          <h4>Ultra-Lean Resource Footprint</h4>
+          <p>
+            Idle footprint of only ~600–800 MB RAM across all 5 core containers (FastAPI, Postgres, RabbitMQ,
+            Celery, and Nginx). Runs smoothly on budget 4 GB VPS nodes under €5/mo.
+          </p>
+        </div>
+        <div class="spec-card">
+          <div class="spec-icon"><i class="pi pi-shield" /></div>
+          <h4>Automated Storage Lifecycle</h4>
+          <p>
+            A dedicated Celery Beat scheduler automatically purges transient export files older than 24 hours
+            and monitors volume disk utilization while safeguarding user assets in permanent storage.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Pricing / Comparison ──────────────────── -->
+    <section id="pricing" class="pricing">
+      <p class="features-eyebrow">Deployment Options</p>
+      <h2 class="features-title">Choose How You Run PointQR</h2>
+      <p class="pricing-subtitle">
+        Use our hosted beta for quick experimentation, or deploy your own self-hosted instance with zero limitations.
+      </p>
+
+      <div class="pricing-cards-container">
+        <!-- Hosted Beta Card -->
+        <div class="pricing-card">
+          <div class="pricing-badge">Hosted Beta</div>
+          <h3 class="plan-title">Cloud Edition</h3>
+          <p class="plan-desc">Great for quick testing and individual creators.</p>
+          <div class="plan-price">
+            <span class="price-val">Free</span>
+            <span class="price-term">/ during beta</span>
+          </div>
+          <ul class="pricing-list">
+            <li><i class="pi pi-check" /> <strong>5 Dynamic QR Codes</strong> (change URLs anytime)</li>
+            <li><i class="pi pi-check" /> <strong>Unlimited Static QR Codes</strong></li>
+            <li><i class="pi pi-check" /> <strong>200 Tracked Scans / month</strong></li>
+            <li><i class="pi pi-check" /> Full Live Design Canvas & Typography Controls</li>
+            <li><i class="pi pi-check" /> Multi-Up Repeating PDF Print Sheet Generator</li>
+            <li><i class="pi pi-check" /> Instant Client PNG & SVG Composite Downloads</li>
+            <li><i class="pi pi-check" /> Managed Cloud Hosting (Zero maintenance)</li>
+          </ul>
+          <button class="btn-ghost w-full" @click="router.push('/register')">
+            Get Started Free
+          </button>
+        </div>
+
+        <!-- Self-Hosted Card -->
+        <div class="pricing-card pricing-card-highlighted">
+          <div class="pricing-badge badge-highlight">Recommended · Open Source</div>
+          <h3 class="plan-title">Self-Hosted Community</h3>
+          <p class="plan-desc">Total independence, unlimited scale, and complete data privacy.</p>
+          <div class="plan-price">
+            <span class="price-val">$0</span>
+            <span class="price-term">/ forever (MIT License)</span>
+          </div>
+          <ul class="pricing-list">
+            <li><i class="pi pi-check" /> <strong>Unlimited Dynamic QR Codes</strong></li>
+            <li><i class="pi pi-check" /> <strong>Unlimited Static QR Codes</strong></li>
+            <li><i class="pi pi-check" /> <strong>Unlimited Tracked Scans</strong> (No monthly quotas)</li>
+            <li><i class="pi pi-check" /> <strong>100% Data Sovereignty</strong> (Data stays on your hardware)</li>
+            <li><i class="pi pi-check" /> Multi-Up Repeating PDF Print Sheet Generator</li>
+            <li><i class="pi pi-check" /> High-Res Background Vector Exports (PDF, EPS, SVG, PNG)</li>
+            <li><i class="pi pi-check" /> Live WebSocket Celery & RabbitMQ Admin Telemetry</li>
+            <li><i class="pi pi-check" /> Custom Domain, Custom SSL & Email Verification</li>
+          </ul>
+          <a
+            href="https://github.com/derekleeth/pointqr"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-primary w-full text-center justify-center"
+          >
+            <i class="pi pi-github" />
+            View Repository & Deploy
+          </a>
         </div>
       </div>
     </section>
@@ -128,46 +484,78 @@ const features = [
     <!-- ── CTA Banner ─────────────────────────────── -->
     <section class="cta-section">
       <div class="cta-card">
-        <h2 class="cta-title">Ready to get started?</h2>
-        <p class="cta-sub">Join teams using PointQR to power their QR code strategy.</p>
-        <button class="btn-primary btn-lg" @click="router.push('/register')">
-          Create your free account →
-        </button>
+        <h2 class="cta-title">Ready to take control of your QR codes?</h2>
+        <p class="cta-sub">
+          Create custom-styled dynamic codes, generate multi-up print sheets, and self-host on your own infrastructure.
+        </p>
+        <div class="cta-buttons">
+          <button class="btn-primary btn-lg" @click="router.push('/register')">
+            Create Free Account →
+          </button>
+          <a
+            href="https://github.com/derekleeth/pointqr"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-ghost btn-lg"
+          >
+            <i class="pi pi-github" />
+            Star on GitHub
+          </a>
+        </div>
       </div>
     </section>
 
     <!-- ── Footer ────────────────────────────────── -->
     <footer class="home-footer">
-      <span>© {{ new Date().getFullYear() }} PointQR</span>
-      <a href="https://github.com/derekleeth/pointqr" target="_blank" rel="noopener noreferrer">GitHub</a>
-      <RouterLink to="/login">Login</RouterLink>
-      <RouterLink to="/register">Register</RouterLink>
+      <div class="footer-content">
+        <div class="footer-left">
+          <span class="footer-brand">PointQR</span>
+          <span class="footer-copy">© {{ new Date().getFullYear() }} PointQR. Open source under MIT license.</span>
+        </div>
+        <div class="footer-links">
+          <a href="#print-sheets">Print Sheets</a>
+          <a href="#features">Features</a>
+          <a href="#self-hosting">Self-Hosting</a>
+          <a href="#pricing">Pricing</a>
+          <a href="https://github.com/derekleeth/pointqr" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="/api/docs" target="_blank" rel="noopener noreferrer">Swagger API</a>
+          <RouterLink to="/login">Login</RouterLink>
+          <RouterLink to="/register">Register</RouterLink>
+        </div>
+      </div>
     </footer>
   </div>
 </template>
 
 <style scoped>
-/* ── Page shell ─────────────────────────────── */
+/* ── Page Shell ──────────────────────────────── */
 .home-page {
   min-height: 100vh;
   background-color: var(--bg-base);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
+  scroll-behavior: smooth;
 }
 
-/* ── Nav ─────────────────────────────────────── */
+/* ── Top Nav ─────────────────────────────────── */
 .home-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 2.5rem;
+  padding: 0.875rem 2.5rem;
   border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  background: color-mix(in srgb, var(--bg-base) 85%, transparent);
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
 }
 
 .home-brand {
@@ -175,12 +563,38 @@ const features = [
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 800;
+  font-size: 1.125rem;
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
+.brand-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 99px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.nav-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.nav-link:hover {
+  color: var(--text-primary);
+}
 
 .home-nav-links {
   display: flex;
@@ -190,8 +604,8 @@ const features = [
 
 .theme-toggle,
 .nav-icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: none;
@@ -204,7 +618,10 @@ const features = [
   transition: all 0.15s;
 }
 .theme-toggle:hover,
-.nav-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
 
 /* ── Buttons ─────────────────────────────────── */
 .btn-primary {
@@ -220,26 +637,40 @@ const features = [
   border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s;
+  transition: all 0.15s ease;
 }
-.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  background: none;
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 500;
   border: 1px solid var(--border);
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
-.btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
-.btn-lg { padding: 0.75rem 1.5rem; font-size: 1rem; border-radius: 10px; }
+.btn-ghost:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--border));
+}
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  border-radius: 10px;
+}
+.w-full {
+  width: 100%;
+}
 
 /* ── Hero ────────────────────────────────────── */
 .hero {
@@ -247,34 +678,92 @@ const features = [
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6rem;
-  padding: 6rem 2.5rem 5rem;
+  gap: 4.5rem;
+  padding: 5rem 2.5rem 4.5rem;
   overflow: hidden;
-  flex: 1;
 }
 
 .hero-glow {
   position: absolute;
-  inset: -10%;
-  background: radial-gradient(ellipse 60% 60% at 50% 0%, var(--color-primary-soft) 0%, transparent 70%);
+  inset: -20% -10% auto;
+  height: 600px;
+  background: radial-gradient(ellipse 65% 55% at 50% 10%, var(--color-primary-soft) 0%, transparent 70%);
   pointer-events: none;
 }
 
 .hero-content {
   flex: 1;
-  max-width: 580px;
+  max-width: 620px;
   position: relative;
   z-index: 1;
 }
 
-.hero-logo {
-  max-width: 100%;
-  width: 340px;
-  height: auto;
-  display: block;
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--bg-card) 75%, transparent);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+.hero-badge i {
+  color: var(--color-primary);
 }
 
-/* ── Logo visual ─────────────────────────────── */
+.hero-title {
+  font-size: clamp(2.4rem, 4.5vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  margin: 0 0 1.25rem;
+  color: var(--text-primary);
+}
+
+.hero-subtitle {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 2rem;
+  max-width: 540px;
+}
+
+.hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.25rem;
+}
+
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78125rem;
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.hero-pill i {
+  color: var(--color-primary);
+  font-size: 0.75rem;
+}
+
 .hero-visual {
   position: relative;
   z-index: 1;
@@ -284,110 +773,351 @@ const features = [
   justify-content: center;
 }
 
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 99px;
+.hero-visual-card {
+  padding: 2.25rem;
+  border-radius: 24px;
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
 }
 
-.hero-title {
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  margin: 0 0 1.25rem;
-  color: var(--text-primary);
+.hero-logo {
+  width: 290px;
+  height: auto;
+  display: block;
 }
 
-.hero-subtitle {
-  font-size: 1.0625rem;
-  line-height: 1.7;
-  color: var(--text-secondary);
-  margin: 0 0 2.5rem;
-  max-width: 460px;
-}
-
-.hero-cta {
+.visual-badge {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.78125rem;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  animation: pulse 2s infinite;
+}
 
-/* ── Features ────────────────────────────────── */
-.features {
-  padding: 5rem 2.5rem;
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* ── Spotlight Section (Print Sheet Generator) ── */
+.spotlight-section {
+  padding: 5.5rem 2.5rem;
   background: var(--bg-card);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
 
-.features-eyebrow {
+.spotlight-header {
   text-align: center;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-primary);
-  margin: 0 0 0.75rem;
+  max-width: 820px;
+  margin: 0 auto 3.5rem;
 }
-.features-title {
-  text-align: center;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.025em;
+
+.spotlight-title {
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   color: var(--text-primary);
-  margin: 0 0 3rem;
+  margin: 0.5rem 0 1rem;
 }
 
-.features-grid {
+.spotlight-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.spotlight-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  max-width: 1100px;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5rem;
+  max-width: 1140px;
   margin: 0 auto;
+  align-items: center;
 }
 
-.feature-card {
-  padding: 1.75rem;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  transition: border-color 0.2s, transform 0.2s;
-}
-.feature-card:hover {
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
+.spotlight-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.feature-icon {
-  width: 40px;
-  height: 40px;
+.spotlight-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.125rem;
+}
+
+.spotlight-icon {
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   background: var(--color-primary-soft);
   color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.125rem;
-  margin-bottom: 1rem;
+  font-size: 1.15rem;
+  flex-shrink: 0;
 }
-.feature-title {
+
+.spotlight-item-title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
+  margin: 0 0 0.35rem;
+}
+
+.spotlight-item-desc {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Sheet Mockup ────────────────────────────── */
+.sheet-preview-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.sheet-mockup {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+
+.sheet-mockup-header {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.sheet-tag {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.sheet-tag-accent {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  font-weight: 600;
+}
+
+.sheet-paper {
+  background: #ffffff;
+  color: #111827;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  padding: 1rem;
+  aspect-ratio: 8.5 / 11;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-margin-guide {
+  flex: 1;
+  border: 1px dashed rgba(100, 116, 139, 0.35);
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.sheet-grid-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 0.45rem;
+  height: 100%;
+}
+
+.mini-qr-cell {
+  position: relative;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+}
+
+.mini-label-top,
+.mini-label-bot {
+  font-size: 0.45rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.mini-qr-box {
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  padding: 0.1rem 0;
+}
+
+.mini-crop-tl,
+.mini-crop-tr,
+.mini-crop-bl,
+.mini-crop-br {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-color: #94a3b8;
+}
+.mini-crop-tl { top: -2px; left: -2px; border-top: 1px solid; border-left: 1px solid; }
+.mini-crop-tr { top: -2px; right: -2px; border-top: 1px solid; border-right: 1px solid; }
+.mini-crop-bl { bottom: -2px; left: -2px; border-bottom: 1px solid; border-left: 1px solid; }
+.mini-crop-br { bottom: -2px; right: -2px; border-bottom: 1px solid; border-right: 1px solid; }
+
+.sheet-mockup-footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.sheet-mockup-footer i {
+  color: var(--color-primary);
+  margin-right: 0.25rem;
+}
+
+/* ── Features Grid ───────────────────────────── */
+.features {
+  padding: 5.5rem 2.5rem;
+  background: var(--bg-base);
+}
+
+.features-header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto 3.5rem;
+}
+
+.features-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
   margin: 0 0 0.5rem;
 }
+
+.features-title {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+}
+
+.features-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  padding: 1.75rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+.feature-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+}
+
+.feature-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.875rem;
+}
+
+.feature-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.feature-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.feature-category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.feature-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
 .feature-desc {
   font-size: 0.875rem;
   line-height: 1.6;
@@ -395,119 +1125,449 @@ const features = [
   margin: 0;
 }
 
-/* ── Pricing / Free Tier ─────────────────────── */
-.pricing {
-  padding: 5rem 2.5rem;
+/* ── Self-Hosting & Tech Stack ───────────────── */
+.self-host-section {
+  padding: 5.5rem 2.5rem;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.self-host-header {
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto 3rem;
+}
+
+.self-host-title {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin: 0.5rem 0 1rem;
+}
+
+.self-host-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Terminal */
+.terminal-container {
+  max-width: 820px;
+  margin: 0 auto 4rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.dot-red { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+.dot-green { background: #10b981; }
+
+.terminal-title {
+  font-size: 0.78125rem;
+  font-family: monospace;
+  color: #94a3b8;
+}
+
+.terminal-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.terminal-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.terminal-code {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: #38bdf8;
+}
+
+/* Architecture Wrap */
+.architecture-wrap {
+  max-width: 1140px;
+  margin: 0 auto 3rem;
+}
+
+.arch-headline {
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 2rem;
+}
+
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.tech-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.tech-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.tech-icon {
+  font-size: 1.35rem;
+  color: var(--color-primary);
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tech-layer {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+}
+
+.tech-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tech-desc {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Hardware specs */
+.hardware-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.spec-card {
+  padding: 1.75rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
   background: var(--bg-base);
 }
-.pricing-card {
+
+.spec-icon {
+  font-size: 1.25rem;
+  color: var(--color-primary);
+  margin-bottom: 0.75rem;
+}
+
+.spec-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.spec-card p {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Pricing ─────────────────────────────────── */
+.pricing {
+  padding: 5.5rem 2.5rem;
+  background: var(--bg-base);
+}
+
+.pricing-subtitle {
+  text-align: center;
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  margin: -1.5rem auto 3.5rem;
   max-width: 600px;
+}
+
+.pricing-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  max-width: 900px;
   margin: 0 auto;
+}
+
+.pricing-card {
   padding: 2.5rem;
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--bg-card);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
 }
+
+.pricing-card-highlighted {
+  border-color: var(--color-primary);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.pricing-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.badge-highlight {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.plan-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+}
+
+.plan-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 1.75rem;
+}
+
+.price-val {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.price-term {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
 .pricing-list {
   list-style: none;
   padding: 0;
-  margin: 1.5rem 0 2rem;
+  margin: 0 0 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
+  flex: 1;
 }
+
 .pricing-list li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
   color: var(--text-secondary);
 }
+
 .pricing-list li i {
   color: var(--color-primary);
-  font-size: 1.125rem;
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
 }
+
 .pricing-list strong {
   color: var(--text-primary);
-  font-weight: 600;
-}
-.pricing-self-host {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1.25rem;
-  border-radius: 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-.pricing-self-host i {
-  font-size: 1.25rem;
-  color: var(--text-primary);
-  margin-top: 0.25rem;
-}
-.pricing-self-host p { margin: 0; }
-.pricing-self-host a {
-  color: var(--color-primary);
-  text-decoration: none;
-  font-weight: 500;
-}
-.pricing-self-host a:hover {
-  text-decoration: underline;
 }
 
 /* ── CTA Banner ──────────────────────────────── */
 .cta-section {
   padding: 5rem 2.5rem;
 }
+
 .cta-card {
-  max-width: 600px;
+  max-width: 820px;
   margin: 0 auto;
   text-align: center;
-  padding: 3.5rem 2.5rem;
-  border-radius: 20px;
+  padding: 4rem 2.5rem;
+  border-radius: 24px;
   border: 1px solid var(--border);
   background: var(--bg-card);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.05);
 }
+
 .cta-title {
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 700;
+  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
+  font-weight: 800;
   letter-spacing: -0.025em;
   color: var(--text-primary);
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.875rem;
 }
+
 .cta-sub {
-  font-size: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
   color: var(--text-secondary);
-  margin: 0 0 2rem;
+  margin: 0 0 2.25rem;
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 /* ── Footer ──────────────────────────────────── */
 .home-footer {
+  padding: 2.5rem 2.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 0.8125rem;
+}
+
+.footer-content {
+  max-width: 1140px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 1.5rem;
-  padding: 1.5rem 2.5rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.8125rem;
-  color: var(--text-muted);
+  flex-wrap: wrap;
 }
-.home-footer a {
-  color: var(--text-muted);
-  text-decoration: none;
-}
-.home-footer a:hover { color: var(--text-secondary); }
 
-@media (max-width: 768px) {
-  .hero { flex-direction: column; padding: 3rem 1.5rem 2.5rem; text-align: center; }
-  .hero-subtitle { margin: 0 auto 2rem; }
-  .hero-cta { justify-content: center; }
-  .hero-visual { display: none; }
-  .home-nav { padding: 1rem 1.5rem; }
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-brand {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.footer-copy {
+  color: var(--text-muted);
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.footer-links a:hover {
+  color: var(--text-primary);
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 980px) {
+  .hero {
+    flex-direction: column;
+    padding: 3.5rem 1.5rem 2.5rem;
+    text-align: center;
+  }
+  .hero-subtitle {
+    margin: 0 auto 2rem;
+  }
+  .hero-cta {
+    justify-content: center;
+  }
+  .hero-pills {
+    justify-content: center;
+  }
+  .spotlight-container {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  .nav-menu {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-nav {
+    padding: 0.875rem 1.25rem;
+  }
+  .footer-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>
-
