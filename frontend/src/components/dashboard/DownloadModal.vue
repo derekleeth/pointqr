@@ -10,6 +10,7 @@ import {
   type QRCodeRead,
   type TextLabelOptions,
 } from '@/api/qrcodes'
+import PrintSheetModal from '@/components/editor/PrintSheetModal.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -29,6 +30,7 @@ const isDownloading = ref(false)
 const selectedFormat = ref<'png' | 'svg' | 'pdf' | 'eps'>('png')
 const pngResolution = ref<number>(1200)
 const includeLabels = ref(true)
+const showPrintSheet = ref(false)
 
 let previewInstance: QRCodeStyling | null = null
 
@@ -701,8 +703,31 @@ async function triggerDownload(format?: 'png' | 'svg' | 'pdf' | 'eps') {
           :loading="isDownloading"
           @click="triggerDownload()"
         />
+
+        <!-- Print Sheet Divider -->
+        <Divider class="my-1" />
+        <div class="flex flex-col items-center gap-1.5">
+          <p class="text-[11px] text-surface-400 text-center">
+            Need multiple copies on one page?
+          </p>
+          <Button
+            label="Print Sheet"
+            icon="pi pi-print"
+            size="small"
+            outlined
+            class="w-full"
+            @click="showPrintSheet = true"
+          />
+        </div>
       </div>
     </div>
+
+    <!-- Print Sheet Modal (nested — opens on top of DownloadModal) -->
+    <PrintSheetModal
+      v-model:visible="showPrintSheet"
+      :design-config="mergedConfig"
+      :title="qrCode?.title || 'qrcode'"
+    />
 
     <template #footer>
       <div class="flex items-center justify-between w-full">

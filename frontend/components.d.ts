@@ -28,6 +28,7 @@ declare module 'vue' {
     InputText: typeof import('primevue/inputtext')['default']
     Message: typeof import('primevue/message')['default']
     Password: typeof import('primevue/password')['default']
+    PrintSheetModal: typeof import('./src/components/editor/PrintSheetModal.vue')['default']
     ProgressSpinner: typeof import('primevue/progressspinner')['default']
     QRCanvas: typeof import('./src/components/editor/QRCanvas.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

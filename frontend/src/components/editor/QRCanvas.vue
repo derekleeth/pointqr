@@ -5,6 +5,8 @@ import QRCodeStyling from 'qr-code-styling'
 import { useQREditorStore } from '@/stores/qrEditor'
 import { useThemeStore } from '@/stores/theme'
 import { exportQRCode, startAsyncExport, getExportJob } from '@/api/qrcodes'
+import { measureLabelHeight, drawLabel } from '@/utils/qrRendering'
+import PrintSheetModal from '@/components/editor/PrintSheetModal.vue'
 
 const store = useQREditorStore()
 const themeStore = useThemeStore()
@@ -13,6 +15,7 @@ const toast = useToast()
 const canvasRef = ref<HTMLDivElement>()
 const isExporting = ref(false)
 const exportError = ref<string | null>(null)
+const showPrintSheet = ref(false)
 
 /** Build CSS style object for a text label. */
 function labelStyle(key: 'labelTop' | 'labelBottom') {
@@ -91,87 +94,8 @@ watch(
 )
 
 // ---------------------------------------------------------------------------
-// Downloads
+// Downloads (measureLabelHeight / drawLabel imported from @/utils/qrRendering)
 // ---------------------------------------------------------------------------
-
-/**
- * Measure how tall a label will be when rendered at `width` px.
- * We use an offscreen canvas to get font metrics.
- */
-function measureLabelHeight(
-  text: string,
-  fontFamily: string,
-  fontSize: number,
-  fontWeight: string,
-  width: number,
-  padding: number,
-): number {
-  if (!text) return 0
-  // Approximate line height as 1.4× font size
-  const lineHeight = fontSize * 1.4
-  const ctx = document.createElement('canvas').getContext('2d')!
-  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
-  const words = text.split('\n')
-  let lines = 0
-  for (const word of words) {
-    const measured = ctx.measureText(word).width
-    lines += Math.max(1, Math.ceil(measured / width))
-  }
-  return lines * lineHeight + padding * 2
-}
-
-/**
- * Draw a label's text onto a Canvas 2D context.
- * `y` is the top of the label band.
- */
-function drawLabel(
-  ctx: CanvasRenderingContext2D,
-  lbl: { text: string; fontFamily: string; fontSize: number; fontWeight: string; fontStyle: string; color: string; align: 'left' | 'center' | 'right'; letterSpacing: number; padding: number },
-  y: number,
-  width: number,
-) {
-  const lineHeight = lbl.fontSize * 1.4
-  ctx.font = `${lbl.fontStyle} ${lbl.fontWeight} ${lbl.fontSize}px ${lbl.fontFamily}`
-  ctx.fillStyle = lbl.color
-  ctx.textBaseline = 'top'
-
-  // Split by explicit newlines then word-wrap within `width`
-  const rawLines = lbl.text.split('\n')
-  const wrappedLines: string[] = []
-  for (const raw of rawLines) {
-    const words = raw.split(' ')
-    let cur = ''
-    for (const w of words) {
-      const test = cur ? `${cur} ${w}` : w
-      if (ctx.measureText(test).width > width - 8 && cur) {
-        wrappedLines.push(cur)
-        cur = w
-      } else {
-        cur = test
-      }
-    }
-    wrappedLines.push(cur)
-  }
-
-  let textY = y + lbl.padding
-  for (const line of wrappedLines) {
-    let x = 4
-    if (lbl.align === 'center') x = (width - ctx.measureText(line).width) / 2
-    else if (lbl.align === 'right') x = width - ctx.measureText(line).width - 4
-
-    // Manual letter spacing: draw char by char
-    if (lbl.letterSpacing !== 0) {
-      let cx = x
-      for (const char of line) {
-        ctx.fillText(char, cx, textY)
-        cx += ctx.measureText(char).width + lbl.letterSpacing
-      }
-    } else {
-      ctx.fillText(line, x, textY)
-    }
-    textY += lineHeight
-  }
-}
 
 /** Client-side composited PNG download (QR + labels). */
 async function downloadClient(ext: 'png' | 'svg') {
@@ -458,6 +382,22 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
       />
     </div>
 
+    <!-- Print sheet generator -->
+    <Divider />
+    <div class="flex flex-col items-center gap-2 -mt-2">
+      <p class="text-xs text-surface-400 text-center">
+        Print-ready multi-up sheet
+      </p>
+      <Button
+        label="Print Sheet"
+        icon="pi pi-print"
+        size="small"
+        outlined
+        :disabled="!store.hasContent"
+        @click="showPrintSheet = true"
+      />
+    </div>
+
     <!-- High-res server export (requires saved QR) -->
     <template v-if="store.currentQRCode">
       <Divider />
@@ -508,6 +448,9 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
         Save the QR code to unlock high-res server export
       </p>
     </template>
+
+    <!-- Print Sheet Modal -->
+    <PrintSheetModal v-model:visible="showPrintSheet" />
   </div>
 </template>
 

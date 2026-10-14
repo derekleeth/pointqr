@@ -1,6 +1,6 @@
 # PointQR – Progress, Bugs & Feature Tracker
 
-> Last Updated: 2026-10-06 · Phase 5 Rate Limiting Implemented
+> Last Updated: 2026-10-13 · Print Sheet Generator Implemented
 
 ---
 
@@ -179,7 +179,7 @@
 |---|--------|-------------|
 | 1 | ✅ Done | Toast notifications on QR code save success (new codes) and failure — added to `QREditorView.vue` with error detail extracted from Axios response |
 | 2 | ✅ Done | Customizable text labels above and below QR code with typography, alignment, letter-spacing, and padding options |
-| 3 | ⏳ Planned (Phase 6+) | Multi-up repeating PDF print sheet generator — allows repeating a styled QR code across a single printable PDF page (US Letter / A4) with cut guides and margins for print-and-cut |
+| 3 | ✅ Done | Multi-up repeating PDF print sheet generator — client-side via `jsPDF` + `qr-code-styling`. Configurable page size (Letter/A4), orientation, QR size (mm), margins, gutter spacing, cut guides (crop marks / dashed lines), optional text labels. Live sheet preview with auto-fit grid calculation. Renders at 300 DPI. New files: `PrintSheetModal.vue`, `printSheetGenerator.ts`, `qrRendering.ts` (shared utils extracted from `QRCanvas.vue`). |
 
 
 ---
