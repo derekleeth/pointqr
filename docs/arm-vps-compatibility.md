@@ -64,8 +64,8 @@ When ready to migrate, update `docker-compose.yml`:
     container_name: pointqr_mailhog
     restart: unless-stopped
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+      - "127.0.0.1:1025:1025"   # SMTP
+      - "127.0.0.1:8025:8025"   # Web UI
     networks:
       - pointqr_network
 ```
