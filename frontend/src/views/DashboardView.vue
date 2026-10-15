@@ -16,6 +16,7 @@ const perPage = 20
 
 const selectedQRCode = ref<QRCodeRead | null>(null)
 const downloadModalVisible = ref(false)
+const betaDismissed = ref(false)
 
 onMounted(async () => {
   if (!auth.user) await auth.initialize()
@@ -74,6 +75,46 @@ function formatDate(iso: string) {
         label="New QR Code"
         icon="pi pi-plus"
         @click="router.push('/editor')"
+      />
+    </div>
+
+    <!-- Beta Disclaimer Banner -->
+    <div
+      v-if="!betaDismissed"
+      class="flex items-start justify-between gap-4 p-4 rounded-xl border transition-all duration-200"
+      style="background-color: rgba(245, 158, 11, 0.06); border-color: rgba(245, 158, 11, 0.28);"
+      role="region"
+      aria-label="Beta Disclaimer"
+    >
+      <div class="flex items-start gap-3.5">
+        <span
+          class="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 mt-0.5"
+          style="background-color: rgba(245, 158, 11, 0.15); color: #d97706;"
+        >
+          <i class="pi pi-info-circle text-lg dark:text-amber-400" />
+        </span>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-semibold text-surface-900 dark:text-surface-0 text-sm sm:text-base">
+              Cloud Hosted Beta
+            </span>
+            <Tag value="BETA" severity="warn" class="text-xs font-bold tracking-wide" />
+          </div>
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
+            Please note that the cloud-hosted application is currently in beta. Features, APIs, and background processing are actively being developed and enhanced. You may encounter occasional updates and changes.
+          </p>
+        </div>
+      </div>
+      <Button
+        icon="pi pi-times"
+        severity="secondary"
+        text
+        rounded
+        size="small"
+        aria-label="Dismiss disclaimer"
+        title="Dismiss disclaimer"
+        class="flex-shrink-0 text-surface-500 hover:text-surface-700 dark:hover:text-surface-200"
+        @click="betaDismissed = true"
       />
     </div>
 
