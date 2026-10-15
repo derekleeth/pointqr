@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost"
     backend_url: str = "http://localhost/api"
     redirect_base_url: str = "http://localhost"  # base URL for dynamic QR redirects (e.g. https://qr.domain.com)
+
+    @field_validator("frontend_url", "backend_url", "redirect_base_url", mode="before")
+    @classmethod
+    def strip_trailing_slash(cls, value: str) -> str:
+        """Remove trailing slashes so f-string path joins never produce double slashes."""
+        if isinstance(value, str):
+            return value.rstrip("/")
+        return value
+
     cors_origins: str = "http://localhost,http://localhost:5173"
 
     # ---- Database -----------------------------------------------------------
