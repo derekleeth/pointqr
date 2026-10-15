@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import QRCodeStyling from 'qr-code-styling'
 import { useToast } from 'primevue/usetoast'
 import { useThemeStore } from '@/stores/theme'
 import {
-  exportQRCode,
+  startAsyncExport,
+  getExportJob,
   DEFAULT_DESIGN_CONFIG,
   type DesignConfig,
   type QRCodeRead,
@@ -33,6 +34,18 @@ const includeLabels = ref(true)
 const showPrintSheet = ref(false)
 
 let previewInstance: QRCodeStyling | null = null
+let pollInterval: ReturnType<typeof setInterval> | null = null
+
+function stopPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
+}
+
+onUnmounted(() => {
+  stopPolling()
+})
 
 // Merged config ensuring defaults for all fields
 const mergedConfig = computed<DesignConfig>(() => {
@@ -109,6 +122,7 @@ watch(
     if (visible && qr) {
       renderPreview()
     } else {
+      stopPolling()
       if (previewInstance && canvasRef.value) {
         canvasRef.value.innerHTML = ''
       }
@@ -410,23 +424,48 @@ async function downloadSVG(withLabels: boolean) {
   URL.revokeObjectURL(url)
 }
 
-// Server-side PDF / EPS export
-async function downloadServer(format: 'pdf' | 'eps') {
+// Server-side PDF / EPS export via async Celery job
+async function downloadServer(format: 'pdf' | 'eps'): Promise<void> {
   if (!props.qrCode) return
-  const res = await exportQRCode(props.qrCode.id, format)
-  const mimeTypes: Record<string, string> = {
-    pdf: 'application/pdf',
-    eps: 'application/postscript',
-  }
-  const blob = new Blob([res.data], { type: mimeTypes[format] || 'application/octet-stream' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${safeFilename(props.qrCode.title)}.${format}`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+
+  const { data: job } = await startAsyncExport(props.qrCode.id, format)
+
+  // Poll until COMPLETED, FAILED, or timeout (30 × 2 s = 60 s)
+  return new Promise<void>((resolve, reject) => {
+    let polls = 0
+    const MAX_POLLS = 30
+
+    pollInterval = setInterval(async () => {
+      polls++
+
+      if (polls > MAX_POLLS) {
+        stopPolling()
+        reject(new Error('Export timed out after 60 seconds. Please try again.'))
+        return
+      }
+
+      try {
+        const { data: status } = await getExportJob(job.id)
+
+        if (status.status === 'COMPLETED' && status.result_url) {
+          stopPolling()
+          const a = document.createElement('a')
+          a.href = status.result_url
+          a.download = `${safeFilename(props.qrCode!.title)}.${format}`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          resolve()
+        } else if (status.status === 'FAILED') {
+          stopPolling()
+          reject(new Error('Export failed on the server. Please try again.'))
+        }
+        // else PENDING / PROCESSING — keep polling
+      } catch {
+        // Network error during poll — keep going until timeout
+      }
+    }, 2000)
+  })
 }
 
 // Main download handler triggered by button

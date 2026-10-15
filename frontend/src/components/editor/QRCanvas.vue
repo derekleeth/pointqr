@@ -4,7 +4,7 @@ import { useToast } from 'primevue/usetoast'
 import QRCodeStyling from 'qr-code-styling'
 import { useQREditorStore } from '@/stores/qrEditor'
 import { useThemeStore } from '@/stores/theme'
-import { exportQRCode, startAsyncExport, getExportJob } from '@/api/qrcodes'
+import { startAsyncExport, getExportJob } from '@/api/qrcodes'
 import { measureLabelHeight, drawLabel } from '@/utils/qrRendering'
 import PrintSheetModal from '@/components/editor/PrintSheetModal.vue'
 
