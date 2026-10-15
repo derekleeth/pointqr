@@ -20,6 +20,20 @@ class Settings(BaseSettings):
     # ---- Application --------------------------------------------------------
     app_env: Literal["development", "staging", "production"] = "development"
     app_debug: bool = False
+
+    @field_validator("app_env", mode="before")
+    @classmethod
+    def normalize_app_env(cls, value: str) -> str:
+        """Normalize environment aliases (e.g. 'prod' -> 'production', 'dev' -> 'development')."""
+        if isinstance(value, str):
+            val = value.strip().lower()
+            if val in ("prod", "production"):
+                return "production"
+            if val in ("dev", "development"):
+                return "development"
+            if val in ("stage", "staging", "test", "testing"):
+                return "staging"
+        return value
     frontend_url: str = "http://localhost"
     backend_url: str = "http://localhost/api"
     redirect_base_url: str = "http://localhost"  # base URL for dynamic QR redirects (e.g. https://qr.domain.com)
