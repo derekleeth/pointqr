@@ -163,7 +163,7 @@ def generate_eps(design_config: dict) -> bytes:
     scale = _scale(qr, target_width)
     border = _border(design_config, scale)
 
-    buf = io.BytesIO()
+    buf = io.StringIO()
     qr.save(
         buf,
         kind="eps",
@@ -172,5 +172,5 @@ def generate_eps(design_config: dict) -> bytes:
         light=_bg_color(design_config),
         border=border,
     )
-    return buf.getvalue()
+    return buf.getvalue().encode("utf-8")
 
