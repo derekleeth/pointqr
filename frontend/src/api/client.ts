@@ -1,4 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 
 // Base URL points to /api which Nginx proxies to FastAPI
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api') + '/v1'
@@ -65,7 +67,8 @@ apiClient.interceptors.response.use(
       if (!refreshToken) {
         processQueue(error, null)
         isRefreshing = false
-        window.location.href = '/login'
+        useAuthStore().logout()
+        router.push({ name: 'login' })
         return Promise.reject(error)
       }
 
@@ -81,9 +84,8 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError, null)
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        window.location.href = '/login'
+        useAuthStore().logout()
+        router.push({ name: 'login' })
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
