@@ -1,6 +1,17 @@
+<p align="center">
+  <a href="https://www.pointqr.com/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="frontend/public/PointQR-Dark-v2.png">
+      <img alt="PointQR" src="frontend/public/PointQR-Light-v3.png" width="220" />
+    </picture>
+  </a>
+</p>
+
 # PointQR 📱
 
 A modern, scalable QR Code Generation Platform — create, customize, manage, and track static and dynamic QR codes.
+
+🌐 **Cloud Site:** [https://www.pointqr.com/](https://www.pointqr.com/)
 
 ## Features
 
@@ -50,9 +61,11 @@ pointqr/
 
 ## Quick Start
 
+> **Prefer the hosted version?** Use PointQR directly in the cloud at [https://www.pointqr.com/](https://www.pointqr.com/) without running local infrastructure.
+
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v24+)
+- [Docker](https://www.docker.com/)
 - [Git](https://git-scm.com/)
 
 ### 1. Clone & configure

@@ -252,7 +252,7 @@ function logout() {
   justify-content: center;
 }
 .brand-logo {
-  height: 90px;
+  height: 120px;
   width: auto;
   max-width: 130px;
   object-fit: contain;
