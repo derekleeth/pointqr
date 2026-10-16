@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,6 +62,13 @@ class PasswordResetRequest(BaseModel):
 
     token: str
     new_password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    """Payload for changing password while authenticated."""
+
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=128)
 
 
 # ---------------------------------------------------------------------------
@@ -408,3 +415,44 @@ async def reset_password(payload: PasswordResetRequest, db: DBSession) -> dict:
     await db.flush()
 
     return {"message": "Password reset successful. You can now log in with your new password."}
+
+
+# ---------------------------------------------------------------------------
+# PUT /auth/change-password
+# ---------------------------------------------------------------------------
+
+@router.put(
+    "/change-password",
+    summary="Change password for the currently authenticated user",
+)
+@limiter.limit("5/minute")
+async def change_password(
+    request: Request,
+    payload: ChangePasswordRequest,
+    current_user: CurrentUser,
+    db: DBSession,
+) -> dict:
+    """Change the authenticated user's password.
+
+    Requires the current password for verification before accepting
+    the new password.
+
+    Returns 400 if the current password is incorrect.
+    Returns 422 if the new password fails validation (too short/long).
+    """
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    if payload.current_password == payload.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password",
+        )
+
+    current_user.hashed_password = hash_password(payload.new_password)
+    await db.flush()
+
+    return {"message": "Password changed successfully"}

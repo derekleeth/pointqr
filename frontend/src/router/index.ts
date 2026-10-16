@@ -80,6 +80,12 @@ const router = createRouter({
       component: () => import('@/views/APIDocsView.vue'),
       meta: { layout: 'AppLayout', requiresAuth: true },
     },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/views/SettingsView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true },
+    },
 
     // ── Admin (sidebar layout, admin role required) ───────
     {
