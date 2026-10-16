@@ -27,26 +27,33 @@ settings = get_settings()
 # ---------------------------------------------------------------------------
 
 def _mark_job_processing(job_id: str) -> None:
-    """Set BatchJob status to PROCESSING."""
-    with task_session() as session:
-        job = session.execute(
-            select(BatchJob).where(BatchJob.id == uuid.UUID(job_id))
-        ).scalar_one_or_none()
-        if job is None:
-            raise ValueError(f"BatchJob {job_id} not found")
-        job.status = BatchJobStatus.processing
-        session.commit()
+    """Set BatchJob status to PROCESSING with retry resilience."""
+    import time
+    for attempt in range(5):
+        with task_session() as session:
+            job = session.execute(
+                select(BatchJob).where(BatchJob.id == uuid.UUID(job_id))
+            ).scalar_one_or_none()
+            if job is not None:
+                job.status = BatchJobStatus.processing
+                session.commit()
+                return
+        time.sleep(0.05 * (attempt + 1))
+    raise ValueError(f"BatchJob {job_id} not found")
 
 
 def _fetch_qr_design(qr_code_id: str) -> dict:
-    """Fetch design_config for the given QRCode id."""
-    with task_session() as session:
-        qr = session.execute(
-            select(QRCode).where(QRCode.id == uuid.UUID(qr_code_id))
-        ).scalar_one_or_none()
-        if qr is None:
-            raise ValueError(f"QRCode {qr_code_id} not found")
-        return dict(qr.design_config or {})
+    """Fetch design_config for the given QRCode id with retry resilience."""
+    import time
+    for attempt in range(5):
+        with task_session() as session:
+            qr = session.execute(
+                select(QRCode).where(QRCode.id == uuid.UUID(qr_code_id))
+            ).scalar_one_or_none()
+            if qr is not None:
+                return dict(qr.design_config or {})
+        time.sleep(0.05 * (attempt + 1))
+    raise ValueError(f"QRCode {qr_code_id} not found")
 
 
 def _mark_job_completed(job_id: str, result_url: str) -> None:

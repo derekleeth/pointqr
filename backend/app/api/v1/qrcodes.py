@@ -381,7 +381,7 @@ async def export_qrcode_async(
         processed_items=0,
     )
     db.add(job)
-    await db.flush()
+    await db.commit()
     await db.refresh(job)
 
     # Dispatch to the qr_export Celery queue (import here to avoid circular import

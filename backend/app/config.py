@@ -77,7 +77,7 @@ class Settings(BaseSettings):
 
     # ---- Admin user (seeded on startup) -------------------------------------
     admin_email: str = "admin@pointqr.dev"
-    admin_password: str = "ChangeMe!123"
+    admin_password: str = "bippitybopboo123!"
 
     # ---- Registration -------------------------------------------------------
     registration_enabled: bool = True
