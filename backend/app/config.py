@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     # ---- Storage ------------------------------------------------------------
     storage_path: str = "/app/storage"
 
+    # ---- GeoIP --------------------------------------------------------------
+    # Kept outside storage_path: that directory is publicly served at /static/.
+    geoip_db_path: str = "/app/geoip/city.mmdb"
+    # Set both to download MaxMind GeoLite2-City; otherwise DB-IP City Lite is used.
+    maxmind_account_id: str = ""
+    maxmind_license_key: str = ""
+
     # ---- Mail ---------------------------------------------------------------
     mail_host: str = "mailpit"
     mail_port: int = 1025

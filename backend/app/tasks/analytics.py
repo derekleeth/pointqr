@@ -89,6 +89,7 @@ def log_scan_event(
     user_agent: str | None,
     referer: str | None,
     timestamp: str,
+    geo: dict | None = None,
 ) -> None:
     """Record a QR code scan event and increment the scan counter.
 
@@ -98,11 +99,11 @@ def log_scan_event(
         user_agent: Raw User-Agent header value (may be None).
         referer:    Referer header value (may be None).
         timestamp:  ISO-8601 datetime string of when the scan occurred.
+        geo:        GeoIP result resolved in the redirect handler (country,
+                    region, city, latitude, longitude), or None if unknown.
     """
     try:
-        # TODO: Add GeoIP lookup (country/city) once geoip2 is added to dependencies
-        country: str | None = None
-        city: str | None = None
+        geo = geo or {}
 
         device_type = _parse_device_type(user_agent)
         os_name = _parse_os(user_agent)
@@ -151,8 +152,11 @@ def log_scan_event(
                 qr_code_id=qr_uuid,
                 timestamp=ts,
                 ip_hash=ip_hash,
-                country=country,
-                city=city,
+                country=geo.get("country"),
+                region=geo.get("region"),
+                city=geo.get("city"),
+                latitude=geo.get("latitude"),
+                longitude=geo.get("longitude"),
                 device_type=device_type,
                 os=os_name,
                 browser=browser,

@@ -37,6 +37,8 @@ dependencies = [
     "slowapi>=0.1.9",
     # Async SMTP (email verification, password reset)
     "aiosmtplib>=3.0.0",
+    # GeoIP lookup against a local .mmdb city database (DB-IP Lite / MaxMind GeoLite2)
+    "maxminddb>=2.6.0",
 ]
 
 [project.optional-dependencies]

@@ -52,3 +52,15 @@ class BreakdownResponse(BaseModel):
     """Full categorical breakdown response."""
 
     items: list[BreakdownItem]
+
+
+# ---------------------------------------------------------------------------
+# GeoIP
+# ---------------------------------------------------------------------------
+
+class GeoIPInfo(BaseModel):
+    """Which GeoIP database is loaded – drives the attribution shown in the UI."""
+
+    provider: str | None        # "maxmind" | "dbip" | None (no database loaded)
+    database_type: str | None
+    build_date: str | None      # YYYY-MM-DD

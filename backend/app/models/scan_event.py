@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, Float, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,7 +30,11 @@ class ScanEvent(Base):
     # One-way hashed IP for privacy compliance
     ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     country: Mapped[str | None] = mapped_column(String(2), nullable=True)   # ISO 3166-1 alpha-2
+    region: Mapped[str | None] = mapped_column(String(100), nullable=True)  # state / province
     city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # City-level coordinates from the GeoIP database (not precise device location)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     device_type: Mapped[str | None] = mapped_column(String(20), nullable=True)  # mobile/tablet/desktop
     os: Mapped[str | None] = mapped_column(String(50), nullable=True)
     browser: Mapped[str | None] = mapped_column(String(50), nullable=True)

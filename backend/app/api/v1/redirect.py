@@ -105,14 +105,20 @@ async def redirect_short_code(short_code: str, request: Request) -> RedirectResp
         # Extract client metadata
         from app.core.rate_limit import get_client_ip  # noqa: PLC0415
 
+        from app.services.geoip import lookup as geoip_lookup  # noqa: PLC0415
+
         raw_ip: str = get_client_ip(request)
         ip_hash = hashlib.sha256(raw_ip.encode()).hexdigest()
         user_agent: str | None = request.headers.get("User-Agent")
         referer: str | None = request.headers.get("Referer")
         timestamp: str = datetime.now(tz=timezone.utc).isoformat()
+        # Resolve location here (local mmdb, microseconds) so the raw IP never
+        # leaves this process – only the hash and coarse location are queued.
+        geo = geoip_lookup(raw_ip)
 
         log_scan_event.apply_async(
             args=[str(qr_id), ip_hash, user_agent, referer, timestamp],
+            kwargs={"geo": geo},
             queue="scan_analytics",
         )
     except Exception:

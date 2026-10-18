@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from celery import Celery
+from celery.signals import beat_init
 from celery.schedules import crontab
 
 from app.config import get_settings
@@ -28,6 +29,7 @@ celery_app = Celery(
         "app.tasks.analytics",
         "app.tasks.export",
         "app.tasks.cleanup",
+        "app.tasks.geoip",
         # "app.tasks.batch",
         # "app.tasks.notifications",
     ],
@@ -100,10 +102,29 @@ celery_app.conf.update(
             "task": "app.tasks.cleanup.reap_stale_jobs",
             "schedule": crontab(minute=0),
         },
+        # Refresh the local GeoIP city database if the provider has published
+        # a newer build (HEAD check first – no download when unchanged).
+        # Runs weekly on Wednesday 05:00 UTC.
+        "update-geoip-database-weekly": {
+            "task": "app.tasks.geoip.update_geoip_database",
+            "schedule": crontab(hour=5, minute=0, day_of_week=3),
+        },
     },
     # Beat schedule persistence – stored on disk in the beat service container
     beat_schedule_filename="/app/storage/celerybeat-schedule",
 )
+
+
+
+@beat_init.connect
+def _bootstrap_geoip_database(sender=None, **kwargs) -> None:
+    """Check the GeoIP database on every Beat start instead of waiting a week.
+
+    Covers first install and provider switches (MaxMind keys added/removed).
+    When nothing changed this is a single HEAD request.
+    """
+    celery_app.send_task("app.tasks.geoip.update_geoip_database", queue="default")
+
 
 # Convenience alias used by the Celery CLI: `celery -A app.celery_app worker`
 app = celery_app

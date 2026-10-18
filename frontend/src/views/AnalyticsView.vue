@@ -8,9 +8,12 @@ import {
   getByOS,
   getByBrowser,
   getByCountry,
+  getByCity,
+  getGeoIPInfo,
   type ScanSummary,
   type TimeSeriesResponse,
   type BreakdownResponse,
+  type GeoIPInfo,
 } from '@/api/analytics'
 import { listQRCodes, type QRCodeRead } from '@/api/qrcodes'
 
@@ -31,6 +34,8 @@ const byDevice  = ref<BreakdownResponse | null>(null)
 const byOS      = ref<BreakdownResponse | null>(null)
 const byBrowser = ref<BreakdownResponse | null>(null)
 const byCountry = ref<BreakdownResponse | null>(null)
+const byCity    = ref<BreakdownResponse | null>(null)
+const geoipInfo = ref<GeoIPInfo | null>(null)
 
 // QR code filter
 const qrCodes    = ref<QRCodeRead[]>([])
@@ -87,16 +92,18 @@ async function loadBreakdowns() {
   loadingBreakdown.value = true
   loadingCountry.value   = true
   try {
-    const [devRes, osRes, brRes, ctRes] = await Promise.all([
+    const [devRes, osRes, brRes, ctRes, cityRes] = await Promise.all([
       getByDevice({ qr_id: qrIdParam.value }),
       getByOS({ qr_id: qrIdParam.value }),
       getByBrowser({ qr_id: qrIdParam.value }),
       getByCountry({ qr_id: qrIdParam.value }),
+      getByCity({ qr_id: qrIdParam.value }),
     ])
     byDevice.value  = devRes.data
     byOS.value      = osRes.data
     byBrowser.value = brRes.data
     byCountry.value = ctRes.data
+    byCity.value    = cityRes.data
   } finally {
     loadingBreakdown.value = false
     loadingCountry.value   = false
@@ -114,6 +121,7 @@ onMounted(async () => {
     const { data } = await listQRCodes(1, 100)
     qrCodes.value = data.items
   } catch { /* ignore */ }
+  getGeoIPInfo().then(({ data }) => { geoipInfo.value = data }).catch(() => { /* ignore */ })
   await loadAll()
 })
 
@@ -236,19 +244,38 @@ const summaryCards = computed(() => [
 ])
 
 // ---------------------------------------------------------------------------
-// Country table helpers
+// Location table helpers
 // ---------------------------------------------------------------------------
 
-const countryRows = computed(() =>
-  (byCountry.value?.items ?? []).map((item, idx) => ({
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+
+function countryName(code: string): string {
+  if (code.length !== 2) return code   // '(unknown)'
+  try {
+    return regionNames.of(code) ?? code
+  } catch {
+    return code
+  }
+}
+
+function toLocationRows(items: BreakdownResponse['items'] | undefined, format = (l: string) => l) {
+  return (items ?? []).map((item, idx) => ({
     rank: idx + 1,
-    country: item.label,
+    location: format(item.label),
     scans: item.count,
     pct: summary.value?.total_scans
       ? ((item.count / summary.value.total_scans) * 100).toFixed(1) + '%'
       : '—',
   }))
-)
+}
+
+const countryRows = computed(() => toLocationRows(byCountry.value?.items, countryName))
+const cityRows    = computed(() => toLocationRows(byCity.value?.items))
+
+const locationTables = computed(() => [
+  { title: 'By Country', column: 'Country', rows: countryRows.value, empty: 'No country data available yet.' },
+  { title: 'By City',    column: 'City',    rows: cityRows.value,    empty: 'No city data available yet.' },
+])
 
 const hasData = computed(() => (summary.value?.total_scans ?? 0) > 0)
 </script>
@@ -414,67 +441,77 @@ const hasData = computed(() => (summary.value?.total_scans ?? 0) > 0)
         </div>
       </div>
 
-      <!-- ── By Country table ───────────────────────────── -->
-      <div
-        class="rounded-xl overflow-hidden border transition-colors duration-200"
-        style="background-color: var(--bg-card); border-color: var(--border);"
-      >
-        <div class="p-5 pb-0">
-          <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0">By Country</h2>
-          <p class="text-xs mt-0.5 mb-4" style="color: var(--text-muted)">
-            GeoIP lookup will be enabled in a future update — country data will populate once active.
-          </p>
-        </div>
-        <DataTable
-          :value="countryRows"
-          :loading="loadingCountry"
-          :rows="10"
-          paginator
-          paginator-template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-          current-page-report-template="{first}–{last} of {totalRecords}"
-          striped-rows
-          row-hover
-          responsive-layout="scroll"
-          :pt="{
-            root: { style: 'background: transparent' },
-            thead: { style: 'background: transparent' },
-            headerRow: { style: `background-color: var(--bg-elevated); border-bottom: 1px solid var(--border);` },
-            headerCell: { style: 'background: transparent; color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border: none; padding: 0.75rem 1rem;' },
-            bodyRow: { style: 'background: transparent; border-bottom: 1px solid var(--border);' },
-            emptyMessage: { style: 'background: transparent' },
-          }"
+      <!-- ── Location tables (GeoIP) ───────────────────── -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div
+          v-for="table in locationTables"
+          :key="table.title"
+          class="rounded-xl overflow-hidden border transition-colors duration-200"
+          style="background-color: var(--bg-card); border-color: var(--border);"
         >
-          <template #empty>
-            <div class="py-10 text-center text-surface-500 text-sm">
-              No country data available yet.
-            </div>
-          </template>
-
-          <Column field="rank" header="#" style="width: 50px">
-            <template #body="{ data }">
-              <span class="font-mono text-sm" style="color: var(--text-muted)">{{ data.rank }}</span>
+          <div class="p-5 pb-4">
+            <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0">{{ table.title }}</h2>
+          </div>
+          <DataTable
+            :value="table.rows"
+            :loading="loadingCountry"
+            :rows="10"
+            paginator
+            paginator-template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+            current-page-report-template="{first}–{last} of {totalRecords}"
+            striped-rows
+            row-hover
+            responsive-layout="scroll"
+            :pt="{
+              root: { style: 'background: transparent' },
+              thead: { style: 'background: transparent' },
+              headerRow: { style: `background-color: var(--bg-elevated); border-bottom: 1px solid var(--border);` },
+              headerCell: { style: 'background: transparent; color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border: none; padding: 0.75rem 1rem;' },
+              bodyRow: { style: 'background: transparent; border-bottom: 1px solid var(--border);' },
+              emptyMessage: { style: 'background: transparent' },
+            }"
+          >
+            <template #empty>
+              <div class="py-10 text-center text-surface-500 text-sm">
+                {{ table.empty }}
+              </div>
             </template>
-          </Column>
 
-          <Column field="country" header="Country" sortable>
-            <template #body="{ data }">
-              <span class="font-medium text-surface-900 dark:text-surface-0">{{ data.country }}</span>
-            </template>
-          </Column>
+            <Column field="rank" header="#" style="width: 50px">
+              <template #body="{ data }">
+                <span class="font-mono text-sm" style="color: var(--text-muted)">{{ data.rank }}</span>
+              </template>
+            </Column>
 
-          <Column field="scans" header="Scans" sortable style="width: 110px">
-            <template #body="{ data }">
-              <span class="font-mono">{{ data.scans.toLocaleString() }}</span>
-            </template>
-          </Column>
+            <Column field="location" :header="table.column" sortable>
+              <template #body="{ data }">
+                <span class="font-medium text-surface-900 dark:text-surface-0">{{ data.location }}</span>
+              </template>
+            </Column>
 
-          <Column field="pct" header="Share" style="width: 90px">
-            <template #body="{ data }">
-              <span style="color: var(--text-secondary)">{{ data.pct }}</span>
-            </template>
-          </Column>
-        </DataTable>
+            <Column field="scans" header="Scans" sortable style="width: 110px">
+              <template #body="{ data }">
+                <span class="font-mono">{{ data.scans.toLocaleString() }}</span>
+              </template>
+            </Column>
+
+            <Column field="pct" header="Share" style="width: 90px">
+              <template #body="{ data }">
+                <span style="color: var(--text-secondary)">{{ data.pct }}</span>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
       </div>
+      <!-- Attribution required by both the DB-IP Lite (CC BY 4.0) and GeoLite2 licences -->
+      <p class="text-xs -mt-4" style="color: var(--text-muted)">
+        Locations are approximate (city-level, based on IP address).
+        <template v-if="geoipInfo?.provider === 'maxmind'">
+          This product includes GeoLite2 data created by MaxMind, available from
+          <a href="https://www.maxmind.com" target="_blank" rel="noopener" class="underline">https://www.maxmind.com</a>.
+        </template>
+        <a v-else-if="geoipInfo?.provider === 'dbip'" href="https://db-ip.com" target="_blank" rel="noopener" class="underline">IP Geolocation by DB-IP</a>
+      </p>
 
     </template>
   </div>

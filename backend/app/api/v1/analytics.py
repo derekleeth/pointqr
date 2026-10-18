@@ -14,6 +14,7 @@ from app.models.scan_event import ScanEvent
 from app.schemas.analytics import (
     BreakdownItem,
     BreakdownResponse,
+    GeoIPInfo,
     ScanSummary,
     TimeSeriesPoint,
     TimeSeriesResponse,
@@ -265,9 +266,66 @@ async def get_by_country(
 ) -> BreakdownResponse:
     """Return scan counts grouped by ISO 3166-1 alpha-2 ``country`` code.
 
-    Note: this field is populated once GeoIP lookup is wired into the Celery
-    analytics task (Phase 5). Until then most rows will appear as '(unknown)'.
+    Location is resolved from a local GeoIP database at scan time; scans from
+    private/unknown addresses (or before GeoIP was enabled) appear as '(unknown)'.
     """
     qr_ids = await _user_qr_ids(current_user.id, db)
     scan_ids = [qr_id] if qr_id else qr_ids
     return await _breakdown("country", scan_ids, db)
+
+
+# ---------------------------------------------------------------------------
+# GET /v1/analytics/by-city
+# ---------------------------------------------------------------------------
+
+@router.get("/by-city", response_model=BreakdownResponse, summary="Scans by city")
+async def get_by_city(
+    current_user: CurrentUser,
+    db: DBSession,
+    qr_id: uuid.UUID | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> BreakdownResponse:
+    """Return the top cities by scan count, labelled ``"City, Region, CC"``.
+
+    Scans without a resolved city are grouped under '(unknown)'.
+    """
+    from sqlalchemy import text
+
+    qr_ids = await _user_qr_ids(current_user.id, db)
+    scan_ids = [qr_id] if qr_id else qr_ids
+    if not scan_ids:
+        return BreakdownResponse(items=[])
+
+    stmt = text("""
+        SELECT
+            CASE WHEN city IS NULL THEN '(unknown)'
+                 ELSE concat_ws(', ', city, region, country)
+            END AS label,
+            COUNT(*)::int AS count
+        FROM scan_events
+        WHERE qr_code_id = ANY(:ids)
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT :limit
+    """)
+    result = await db.execute(stmt, {"ids": [str(i) for i in scan_ids], "limit": limit})
+    return BreakdownResponse(
+        items=[BreakdownItem(label=row.label, count=row.count) for row in result.fetchall()]
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /v1/analytics/geoip-info
+# ---------------------------------------------------------------------------
+
+@router.get("/geoip-info", response_model=GeoIPInfo, summary="Loaded GeoIP database")
+async def get_geoip_info(current_user: CurrentUser) -> GeoIPInfo:
+    """Return the provider and build date of the GeoIP database in use."""
+    from app.services.geoip import database_info
+
+    info = database_info() or {}
+    return GeoIPInfo(
+        provider=info.get("provider"),
+        database_type=info.get("database_type"),
+        build_date=info.get("build_date"),
+    )

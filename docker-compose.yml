@@ -63,6 +63,8 @@ services:
       METRICS_INTERVAL_S: ${METRICS_INTERVAL_S:-3}
     volumes:
       - storage:/app/storage
+      # GeoIP .mmdb lives in its own volume – storage is publicly served at /static/
+      - geoip_data:/app/geoip
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,6 +96,7 @@ services:
       PYTHONPATH: /app
     volumes:
       - storage:/app/storage
+      - geoip_data:/app/geoip   # written by app.tasks.geoip.update_geoip_database
     depends_on:
       postgres:
         condition: service_healthy
@@ -202,6 +205,8 @@ volumes:
   postgres_data:
     driver: local
   storage:
+    driver: local
+  geoip_data:
     driver: local
 
 # -----------------------------------------------------------------------------

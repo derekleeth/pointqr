@@ -74,3 +74,16 @@ export const getByBrowser = (params?: AnalyticsParams) =>
 /** Scan counts by country (ISO 3166-1 alpha-2). */
 export const getByCountry = (params?: AnalyticsParams) =>
   apiClient.get<BreakdownResponse>('/analytics/by-country', { params })
+
+/** Top cities by scan count, labelled "City, Region, CC". */
+export const getByCity = (params?: AnalyticsParams) =>
+  apiClient.get<BreakdownResponse>('/analytics/by-city', { params })
+
+export interface GeoIPInfo {
+  provider: 'maxmind' | 'dbip' | null
+  database_type: string | null
+  build_date: string | null
+}
+
+/** Which GeoIP database the backend has loaded (for attribution). */
+export const getGeoIPInfo = () => apiClient.get<GeoIPInfo>('/analytics/geoip-info')
