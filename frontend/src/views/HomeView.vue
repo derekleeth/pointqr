@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 
-const router = useRouter()
 const theme = useThemeStore()
 const copied = ref(false)
 const apiCopied = ref(false)
@@ -291,7 +289,7 @@ const techStack = [
           <span class="brand-text">PointQR</span>
           <span class="brand-badge">v0.2.0</span>
         </RouterLink>
-        <nav class="nav-menu">
+        <nav class="nav-menu" aria-label="Page sections">
           <a href="#print-sheets" class="nav-link">Print Sheets</a>
           <a href="#features" class="nav-link">Features</a>
           <a href="#automation" class="nav-link">API & Automation</a>
@@ -300,7 +298,7 @@ const techStack = [
         </nav>
       </div>
 
-      <nav class="home-nav-links">
+      <nav class="home-nav-links" aria-label="Account">
         <a
           href="https://github.com/derekleeth/pointqr"
           target="_blank"
@@ -324,16 +322,17 @@ const techStack = [
       </nav>
     </header>
 
+    <main>
     <!-- ── Hero ──────────────────────────────────── -->
-    <section class="hero">
+    <section class="hero" aria-labelledby="hero-title">
       <div class="hero-glow" />
       <div class="hero-content">
         <div class="hero-badge">
           <i class="pi pi-sparkles" style="font-size:0.75rem" />
           <span>Multi-Up PDF Print Sheets & Full REST API Automation</span>
         </div>
-        <h1 class="hero-title">
-          QR Codes,<br />
+        <h1 id="hero-title" class="hero-title">
+          Dynamic QR Codes,<br />
           <span class="text-gradient">Engineered for Print & Scale</span>
         </h1>
         <p class="hero-subtitle">
@@ -342,10 +341,10 @@ const techStack = [
           printable PDF sheets with cut guides, or automate workflows directly via the REST API.
         </p>
         <div class="hero-cta">
-          <button class="btn-primary btn-lg" @click="router.push('/register')">
+          <RouterLink to="/register" class="btn-primary btn-lg">
             <i class="pi pi-user-plus" />
             Get Started Free
-          </button>
+          </RouterLink>
           <a href="#automation" class="btn-ghost btn-lg">
             <i class="pi pi-code" />
             API & Automation
@@ -380,8 +379,11 @@ const techStack = [
         <div class="hero-visual-card">
           <img
             :src="theme.isDark ? '/PointQR-Light-v3.png' : '/PointQR-Dark-v2.png'"
-            alt="PointQR Logo"
+            alt="PointQR logo – geometric pointer dog with a QR code"
             class="hero-logo"
+            width="290"
+            height="290"
+            fetchpriority="high"
           />
           <div class="visual-badge">
             <span class="pulse-dot" />
@@ -392,10 +394,10 @@ const techStack = [
     </section>
 
     <!-- ── Print Sheet Spotlight ─────────────────── -->
-    <section id="print-sheets" class="spotlight-section">
+    <section id="print-sheets" class="spotlight-section" aria-labelledby="print-sheets-title">
       <div class="spotlight-header">
         <p class="features-eyebrow">The Missing Feature in Existing Tools</p>
-        <h2 class="spotlight-title">Multi-Up Repeating PDF Print Sheet Generator</h2>
+        <h2 id="print-sheets-title" class="spotlight-title">Multi-Up Repeating PDF Print Sheet Generator</h2>
         <p class="spotlight-subtitle">
           Most QR tools only export an isolated image file, leaving you to manually copy and arrange dozens
           of codes in desktop publishing software. PointQR includes a first-class, client-side PDF print sheet
@@ -457,10 +459,10 @@ const techStack = [
     </section>
 
     <!-- ── All Features Grid ─────────────────────── -->
-    <section id="features" class="features">
+    <section id="features" class="features" aria-labelledby="features-title">
       <div class="features-header">
         <p class="features-eyebrow">Comprehensive Feature Set</p>
-        <h2 class="features-title">Everything you need to create, manage, and track QR codes</h2>
+        <h2 id="features-title" class="features-title">Everything you need to create, manage, and track QR codes</h2>
         <p class="features-subtitle">
           Designed for creators, developers, marketers, and homelabbers who need professional versatility and absolute control.
         </p>
@@ -482,10 +484,10 @@ const techStack = [
     </section>
 
     <!-- ── Developer & Automation Section ────────── -->
-    <section id="automation" class="api-section">
+    <section id="automation" class="api-section" aria-labelledby="automation-title">
       <div class="api-header">
         <p class="features-eyebrow">Developer First & Scriptable</p>
-        <h2 class="api-title">Automate Everything Directly via REST API</h2>
+        <h2 id="automation-title" class="api-title">Automate Everything Directly via REST API</h2>
         <p class="api-subtitle">
           Don't just use PointQR in the browser. Integrate dynamic QR creation, real-time destination swaps,
           asynchronous background vector exports, and scan analytics extraction straight into your backend
@@ -564,10 +566,10 @@ const techStack = [
     </section>
 
     <!-- ── Self-Hosting & Architecture ───────────── -->
-    <section id="self-hosting" class="self-host-section">
+    <section id="self-hosting" class="self-host-section" aria-labelledby="self-hosting-title">
       <div class="self-host-header">
         <p class="features-eyebrow">Data Sovereignty & Independence</p>
-        <h2 class="self-host-title">Self-Host with Modern Infrastructure</h2>
+        <h2 id="self-hosting-title" class="self-host-title">Self-Host with Modern Infrastructure</h2>
         <p class="self-host-subtitle">
           PointQR is 100% open source under the MIT license. Deploy on your local server, home lab, or any cloud VPS
           in minutes using standard Docker Compose. No telemetry, no feature gating, and unlimited dynamic QR codes.
@@ -612,7 +614,7 @@ const techStack = [
       <div class="hardware-specs-grid">
         <div class="spec-card">
           <div class="spec-icon"><i class="pi pi-box" /></div>
-          <h4>ARM64 & x86-64 Native</h4>
+          <h3>ARM64 & x86-64 Native</h3>
           <p>
             Fully multi-arch compatible. Run effortlessly on ARM VPS instances (Hetzner CAX, AWS Graviton,
             Oracle Ampere, Raspberry Pi) or traditional x86 servers (Hetzner CX, Netcup, Intel/AMD).
@@ -620,7 +622,7 @@ const techStack = [
         </div>
         <div class="spec-card">
           <div class="spec-icon"><i class="pi pi-sliders-v" /></div>
-          <h4>Ultra-Lean Resource Footprint</h4>
+          <h3>Ultra-Lean Resource Footprint</h3>
           <p>
             Idle footprint of only ~600–800 MB RAM across all 5 core containers (FastAPI, Postgres, RabbitMQ,
             Celery, and Nginx). Runs smoothly on budget 4 GB VPS nodes under $6/mo.
@@ -628,7 +630,7 @@ const techStack = [
         </div>
         <div class="spec-card">
           <div class="spec-icon"><i class="pi pi-shield" /></div>
-          <h4>Automated Storage Lifecycle</h4>
+          <h3>Automated Storage Lifecycle</h3>
           <p>
             A dedicated Celery Beat scheduler automatically purges transient export files older than 24 hours
             and monitors volume disk utilization while safeguarding user assets in permanent storage.
@@ -638,9 +640,9 @@ const techStack = [
     </section>
 
     <!-- ── Pricing / Comparison ──────────────────── -->
-    <section id="pricing" class="pricing">
+    <section id="pricing" class="pricing" aria-labelledby="pricing-title">
       <p class="features-eyebrow">Deployment Options</p>
-      <h2 class="features-title">Choose How You Run PointQR</h2>
+      <h2 id="pricing-title" class="features-title">Choose How You Run PointQR</h2>
       <p class="pricing-subtitle">
         Use our hosted beta for quick experimentation, or deploy your own self-hosted instance with zero limitations.
       </p>
@@ -664,9 +666,9 @@ const techStack = [
             <li><i class="pi pi-check" /> Instant Client PNG & SVG Composite Downloads</li>
             <li><i class="pi pi-check" /> Managed Cloud Hosting (Zero maintenance)</li>
           </ul>
-          <button class="btn-ghost w-full" @click="router.push('/register')">
+          <RouterLink to="/register" class="btn-ghost w-full text-center justify-center">
             Get Started Free
-          </button>
+          </RouterLink>
         </div>
 
         <!-- Self-Hosted Card -->
@@ -710,9 +712,9 @@ const techStack = [
           Create custom-styled dynamic codes, generate multi-up print sheets, and automate workflows via the REST API.
         </p>
         <div class="cta-buttons">
-          <button class="btn-primary btn-lg" @click="router.push('/register')">
+          <RouterLink to="/register" class="btn-primary btn-lg">
             Create Free Account →
-          </button>
+          </RouterLink>
           <a
             href="https://github.com/derekleeth/pointqr"
             target="_blank"
@@ -725,6 +727,7 @@ const techStack = [
         </div>
       </div>
     </section>
+    </main>
 
     <!-- ── Footer ────────────────────────────────── -->
     <footer class="home-footer">
@@ -733,7 +736,7 @@ const techStack = [
           <span class="footer-brand">PointQR</span>
           <span class="footer-copy">© {{ new Date().getFullYear() }} PointQR. Open source under MIT license.</span>
         </div>
-        <div class="footer-links">
+        <nav class="footer-links" aria-label="Footer">
           <a href="#print-sheets">Print Sheets</a>
           <a href="#features">Features</a>
           <a href="#automation">API & Automation</a>
@@ -743,7 +746,7 @@ const techStack = [
           <a href="/api/docs" target="_blank" rel="noopener noreferrer">Swagger API</a>
           <RouterLink to="/login">Login</RouterLink>
           <RouterLink to="/register">Register</RouterLink>
-        </div>
+        </nav>
       </div>
     </footer>
   </div>
@@ -1768,7 +1771,7 @@ const techStack = [
   margin-bottom: 0.75rem;
 }
 
-.spec-card h4 {
+.spec-card h3 {
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);

@@ -128,6 +128,21 @@ docker compose exec backend alembic downgrade -1
 
 Both the backend (Uvicorn `--reload`) and frontend (Vite HMR) support hot reload automatically via the `docker-compose.override.yml` volume mounts.
 
+### Production deployment
+
+`docker compose up` applies `docker-compose.override.yml` automatically, which runs the Vite dev server and Uvicorn with `--reload`. In production, use only the base file so the frontend is served as an optimized static build. Set this in the production server's `.env`:
+
+```bash
+COMPOSE_FILE=docker-compose.yml
+```
+
+Then deploy with:
+
+```bash
+docker compose up -d --build
+docker compose restart nginx   # pick up nginx.conf changes and new container IPs
+```
+
 ## Environment Variables
 
 See [`.env.example`](.env.example) for all available configuration options.

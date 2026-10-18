@@ -32,6 +32,16 @@ services:
         --concurrency=2
         --prefetch-multiplier=1
 
+  # Vite dev server with HMR instead of the production nginx build.
+  # Listens on port 80 to match the upstream in nginx/nginx.conf.
   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       - VITE_API_BASE_URL=/api
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,.pointqr.com,monkey-v-1,all}
+    command: ["pnpm", "dev", "--host", "0.0.0.0", "--port", "80"]

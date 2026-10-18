@@ -141,24 +141,21 @@ services:
 
 
   # ---------------------------------------------------------------------------
-  # Vue 3 Frontend (Vite dev server)
+  # Vue 3 Frontend (production build served by nginx)
+  # docker-compose.override.yml swaps this for the Vite dev server locally.
   # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
     container_name: pointqr_frontend
     restart: unless-stopped
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_BASE_URL=/api
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,.pointqr.com,monkey-v-1,all}
     networks:
       - pointqr_network
     expose:
-      - "5173"
+      - "80"
 
   # ---------------------------------------------------------------------------
   # Nginx – Reverse Proxy

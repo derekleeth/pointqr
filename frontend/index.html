@@ -2,12 +2,115 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PointQR – QR Code Generator</title>
+
+    <!-- Primary SEO -->
+    <title>PointQR – Free Dynamic QR Code Generator with Print Sheets &amp; API</title>
+    <meta
+      name="description"
+      content="Create custom-styled static and dynamic QR codes with logos, labels, and scan analytics. Print multi-up PDF sheets with cut guides, automate via REST API, or self-host free (MIT)."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://www.pointqr.com/" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/PointQR-Light-v3.png" />
+    <link rel="apple-touch-icon" href="/PointQR-Light-v3.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PointQR" />
+    <meta property="og:url" content="https://www.pointqr.com/" />
+    <meta property="og:title" content="PointQR – Dynamic QR Codes, Engineered for Print & Scale" />
+    <meta
+      property="og:description"
+      content="Design branded QR codes, change destinations without reprinting, print multi-up PDF sheets, and automate everything via REST API. Open source and self-hostable."
+    />
+    <meta property="og:image" content="https://www.pointqr.com/PointQR-Light-v1.png" />
+    <meta property="og:image:width" content="1408" />
+    <meta property="og:image:height" content="768" />
+    <meta property="og:image:alt" content="PointQR logo – a geometric pointer dog with a QR code" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PointQR – Dynamic QR Codes, Engineered for Print & Scale" />
+    <meta
+      name="twitter:description"
+      content="Branded dynamic QR codes, multi-up PDF print sheets, scan analytics, and a full REST API. Open source and self-hostable."
+    />
+    <meta name="twitter:image" content="https://www.pointqr.com/PointQR-Light-v1.png" />
+    <meta name="twitter:image:alt" content="PointQR logo – a geometric pointer dog with a QR code" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://www.pointqr.com/#organization",
+            "name": "PointQR",
+            "url": "https://www.pointqr.com/",
+            "logo": "https://www.pointqr.com/PointQR-Light-v3.png",
+            "sameAs": ["https://github.com/derekleeth/pointqr"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://www.pointqr.com/#website",
+            "url": "https://www.pointqr.com/",
+            "name": "PointQR",
+            "publisher": { "@id": "https://www.pointqr.com/#organization" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://www.pointqr.com/#software",
+            "name": "PointQR",
+            "url": "https://www.pointqr.com/",
+            "description": "Dynamic QR code generator with live design canvas, custom text labels, multi-up PDF print sheets, scan analytics, and a full REST API. Open source and self-hostable under the MIT license.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, Linux (Docker)",
+            "image": "https://www.pointqr.com/PointQR-Light-v1.png",
+            "license": "https://opensource.org/licenses/MIT",
+            "codeRepository": "https://github.com/derekleeth/pointqr",
+            "publisher": { "@id": "https://www.pointqr.com/#organization" },
+            "featureList": [
+              "Static and dynamic QR codes",
+              "Custom dot patterns, gradients, and embedded logos",
+              "Custom top and bottom text labels",
+              "Multi-up repeating PDF print sheets with cut guides",
+              "Scan analytics by device, OS, browser, and country",
+              "PNG, SVG, PDF, and EPS exports",
+              "REST API with OpenAPI documentation",
+              "Self-hosting with Docker Compose"
+            ],
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
+    <noscript>
+      <h1>PointQR – Dynamic QR Code Generator</h1>
+      <p>
+        Design custom-styled static and dynamic QR codes with logos and text labels, print multi-up PDF
+        sheets with cut guides, track scans, and automate everything via a REST API. Open source under the
+        MIT license and self-hostable with Docker Compose.
+      </p>
+      <p>
+        <a href="/register">Get started free</a> ·
+        <a href="/login">Log in</a> ·
+        <a href="https://github.com/derekleeth/pointqr">Source code on GitHub</a>
+      </p>
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

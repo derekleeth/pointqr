@@ -12,6 +12,10 @@ declare module 'vue-router' {
     requiresAuth?: boolean
     /** Redirect authenticated users to /dashboard. */
     guestOnly?: boolean
+    /** Restrict the route to admin users. */
+    requiresAdmin?: boolean
+    /** Allow search engines to index this route (all others get noindex). */
+    indexable?: boolean
   }
 }
 

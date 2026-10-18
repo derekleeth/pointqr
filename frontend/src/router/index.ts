@@ -10,6 +10,7 @@ const router = createRouter({
       name: 'home',
       component: () => import('@/views/HomeView.vue'),
       // No layout – HomeView is self-contained with its own nav
+      meta: { indexable: true },
     },
     {
       path: '/login',
@@ -131,6 +132,25 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAdmin && auth.user?.role !== 'admin') {
     return { name: 'dashboard' }
+  }
+})
+
+// SEO: only the public home page should be indexed. Every other route gets a
+// generic title and a noindex robots tag (the home page's tags live in index.html).
+const HOME_TITLE = document.title
+
+router.afterEach((to) => {
+  const robots = document.querySelector('meta[name="robots"]')
+  if (to.meta.indexable) {
+    document.title = HOME_TITLE
+    robots?.setAttribute('content', 'index, follow, max-image-preview:large')
+  } else {
+    const label = String(to.name ?? '')
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+    document.title = label ? `${label} – PointQR` : 'PointQR'
+    robots?.setAttribute('content', 'noindex, nofollow')
   }
 })
 
