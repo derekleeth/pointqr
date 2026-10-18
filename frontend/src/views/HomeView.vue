@@ -117,6 +117,48 @@ const features = [
   },
 ]
 
+const activeScreenshot = ref('editor')
+
+const screenshots = [
+  {
+    id: 'editor',
+    icon: 'pi pi-palette',
+    label: 'QR Code Editor',
+    path: '/qrcodes/edit',
+    src: '/screen-shot-edit-qr-code.png',
+    alt: 'PointQR QR code editor with design controls on the left and a live preview of a branded dynamic QR code on the right',
+    headline: 'Design with a Live, Real-Time Preview',
+    desc: 'Tweak dot styles, corner shapes, backgrounds, logos, and text labels while the preview updates instantly. Download PNG/SVG or jump straight into a multi-up print sheet.',
+    highlights: ['Collapsible design panels', 'Embedded logo sizing', 'Top & bottom text labels', 'One-click Print Sheet'],
+  },
+  {
+    id: 'analytics',
+    icon: 'pi pi-chart-bar',
+    label: 'Scan Analytics',
+    path: '/analytics',
+    src: '/screen-shot-scan-analytics.png',
+    alt: 'PointQR scan analytics dashboard showing total scans, unique visitors, a scans-over-time chart, and device, browser, and OS breakdowns',
+    headline: 'See How Every Code Performs',
+    desc: 'Summary cards, a scans-over-time chart with hourly, daily, or monthly bucketing, and device, browser, and OS breakdowns, filterable per QR code and date range.',
+    highlights: ['Total & unique scans', 'Hour / Day / Month bucketing', 'Per-code filtering', 'Device, browser & OS charts'],
+  },
+  {
+    id: 'map',
+    icon: 'pi pi-map',
+    label: 'Scan Map',
+    path: '/analytics',
+    src: '/screen-shot-scan-map.png',
+    alt: 'PointQR scan map plotting scan locations worldwide, with by-country and by-city tables below',
+    headline: 'Know Where Your Scans Happen',
+    desc: 'Privacy-friendly GeoIP enrichment plots scans on an interactive world map, with sortable country and city tables showing share of total scans.',
+    highlights: ['Interactive world map', 'Country & city rankings', 'Sortable scan share', 'No raw IPs stored'],
+  },
+]
+
+const currentScreenshot = computed(() => {
+  return screenshots.find(s => s.id === activeScreenshot.value) || screenshots[0]
+})
+
 const apiTabs = [
   {
     id: 'update',
@@ -479,6 +521,70 @@ const techStack = [
           <span class="feature-category">{{ f.category }}</span>
           <h3 class="feature-title">{{ f.title }}</h3>
           <p class="feature-desc">{{ f.desc }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Product Tour / Screenshots ────────────── -->
+    <section id="interface" class="tour-section" aria-labelledby="tour-title">
+      <div class="tour-header">
+        <p class="features-eyebrow">A Look Inside</p>
+        <h2 id="tour-title" class="tour-title">A Clean, Focused Dashboard for Your QR Codes</h2>
+        <p class="tour-subtitle">
+          Sign in and everything is one click away: design and edit codes, watch scans roll in,
+          and see where your audience is scanning from, all from a single sidebar.
+        </p>
+      </div>
+
+      <div class="tour-container">
+        <div class="tour-tabs" role="tablist" aria-label="Interface screenshots">
+          <button
+            v-for="shot in screenshots"
+            :key="shot.id"
+            role="tab"
+            class="tour-tab-btn"
+            :class="{ active: activeScreenshot === shot.id }"
+            :aria-selected="activeScreenshot === shot.id"
+            @click="activeScreenshot = shot.id"
+          >
+            <i :class="shot.icon" />
+            <span>{{ shot.label }}</span>
+          </button>
+        </div>
+
+        <div class="tour-frame">
+          <div class="tour-frame-bar">
+            <div class="terminal-dots">
+              <span class="dot dot-red" />
+              <span class="dot dot-yellow" />
+              <span class="dot dot-green" />
+            </div>
+            <span class="tour-frame-url">
+              <i class="pi pi-lock" />
+              pointqr.app{{ currentScreenshot.path }}
+            </span>
+          </div>
+          <img
+            :key="currentScreenshot.id"
+            :src="currentScreenshot.src"
+            :alt="currentScreenshot.alt"
+            class="tour-image"
+            width="2560"
+            height="1229"
+            loading="lazy"
+          />
+        </div>
+
+        <div class="tour-caption">
+          <div>
+            <h3 class="tour-caption-title">{{ currentScreenshot.headline }}</h3>
+            <p class="tour-caption-desc">{{ currentScreenshot.desc }}</p>
+          </div>
+          <ul class="tour-highlights">
+            <li v-for="h in currentScreenshot.highlights" :key="h">
+              <i class="pi pi-check-circle" /> {{ h }}
+            </li>
+          </ul>
         </div>
       </div>
     </section>
@@ -1350,6 +1456,170 @@ const techStack = [
   margin: 0;
 }
 
+/* ── Product Tour / Screenshots ──────────────── */
+.tour-section {
+  padding: 5.5rem 2.5rem;
+  background: var(--bg-base);
+  border-top: 1px solid var(--border);
+}
+
+.tour-header {
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto 2.5rem;
+}
+
+.tour-title {
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin: 0.5rem 0 1rem;
+}
+
+.tour-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.tour-container {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.tour-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tour-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tour-tab-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.tour-tab-btn.active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+.tour-frame {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: #0f172a;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.18);
+}
+
+.tour-frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tour-frame-url {
+  flex: 1;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tour-frame-url i {
+  font-size: 0.65rem;
+  color: #10b981;
+}
+
+.tour-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: tour-fade 0.25s ease;
+}
+
+@keyframes tour-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tour-caption {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 2rem;
+  align-items: center;
+  margin-top: 1.75rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.tour-caption-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.4rem;
+}
+
+.tour-caption-desc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.tour-highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 1rem;
+}
+
+.tour-highlights li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.tour-highlights i {
+  color: var(--color-primary);
+  font-size: 0.85rem;
+}
+
 /* ── Developer & Automation Hub ──────────────── */
 .api-section {
   padding: 5.5rem 2.5rem;
@@ -2024,6 +2294,10 @@ const techStack = [
     flex-direction: column;
     align-items: flex-start;
   }
+  .tour-caption {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2037,6 +2311,12 @@ const techStack = [
   .api-code-header {
     flex-direction: column;
     gap: 0.75rem;
+  }
+  .tour-section {
+    padding: 4rem 1.25rem;
+  }
+  .tour-highlights {
+    grid-template-columns: 1fr;
   }
 }
 </style>
