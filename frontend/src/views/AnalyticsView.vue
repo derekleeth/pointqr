@@ -10,12 +10,15 @@ import {
   getByCountry,
   getByCity,
   getGeoIPInfo,
+  getScanLocations,
   type ScanSummary,
   type TimeSeriesResponse,
   type BreakdownResponse,
   type GeoIPInfo,
+  type ScanLocationsResponse,
 } from '@/api/analytics'
 import { listQRCodes, type QRCodeRead } from '@/api/qrcodes'
+import ScanMap from '@/components/analytics/ScanMap.vue'
 
 const auth = useAuthStore()
 
@@ -36,6 +39,7 @@ const byBrowser = ref<BreakdownResponse | null>(null)
 const byCountry = ref<BreakdownResponse | null>(null)
 const byCity    = ref<BreakdownResponse | null>(null)
 const geoipInfo = ref<GeoIPInfo | null>(null)
+const scanLocations = ref<ScanLocationsResponse | null>(null)
 
 // QR code filter
 const qrCodes    = ref<QRCodeRead[]>([])
@@ -92,18 +96,20 @@ async function loadBreakdowns() {
   loadingBreakdown.value = true
   loadingCountry.value   = true
   try {
-    const [devRes, osRes, brRes, ctRes, cityRes] = await Promise.all([
+    const [devRes, osRes, brRes, ctRes, cityRes, locRes] = await Promise.all([
       getByDevice({ qr_id: qrIdParam.value }),
       getByOS({ qr_id: qrIdParam.value }),
       getByBrowser({ qr_id: qrIdParam.value }),
       getByCountry({ qr_id: qrIdParam.value }),
       getByCity({ qr_id: qrIdParam.value }),
+      getScanLocations({ qr_id: qrIdParam.value }),
     ])
     byDevice.value  = devRes.data
     byOS.value      = osRes.data
     byBrowser.value = brRes.data
     byCountry.value = ctRes.data
     byCity.value    = cityRes.data
+    scanLocations.value = locRes.data
   } finally {
     loadingBreakdown.value = false
     loadingCountry.value   = false
@@ -439,6 +445,28 @@ const hasData = computed(() => (summary.value?.total_scans ?? 0) > 0)
             No data
           </div>
         </div>
+      </div>
+
+      <!-- ── Scan map (GeoIP) ──────────────────────────── -->
+      <div
+        class="p-5 rounded-xl border transition-colors duration-200"
+        style="background-color: var(--bg-card); border-color: var(--border);"
+      >
+        <div class="flex items-baseline justify-between flex-wrap gap-2 mb-4">
+          <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0">Scan Map</h2>
+          <span
+            v-if="scanLocations?.unlocated"
+            class="text-xs"
+            style="color: var(--text-muted)"
+          >
+            {{ scanLocations.unlocated.toLocaleString() }}
+            scan{{ scanLocations.unlocated === 1 ? '' : 's' }} without a known location
+          </span>
+        </div>
+        <div v-if="loadingCountry" class="flex justify-center items-center" style="height: 420px">
+          <ProgressSpinner style="width: 32px; height: 32px" />
+        </div>
+        <ScanMap v-else :locations="scanLocations?.locations ?? []" />
       </div>
 
       <!-- ── Location tables (GeoIP) ───────────────────── -->

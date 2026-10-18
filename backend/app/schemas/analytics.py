@@ -55,6 +55,28 @@ class BreakdownResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Map locations
+# ---------------------------------------------------------------------------
+
+class ScanLocation(BaseModel):
+    """Scans aggregated at one city-level coordinate."""
+
+    latitude: float
+    longitude: float
+    city: str | None
+    region: str | None
+    country: str | None   # ISO 3166-1 alpha-2
+    count: int
+
+
+class ScanLocationsResponse(BaseModel):
+    """All scan locations for the map, plus how many scans had no coordinates."""
+
+    locations: list[ScanLocation]
+    unlocated: int
+
+
+# ---------------------------------------------------------------------------
 # GeoIP
 # ---------------------------------------------------------------------------
 

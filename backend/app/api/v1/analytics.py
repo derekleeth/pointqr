@@ -15,6 +15,8 @@ from app.schemas.analytics import (
     BreakdownItem,
     BreakdownResponse,
     GeoIPInfo,
+    ScanLocation,
+    ScanLocationsResponse,
     ScanSummary,
     TimeSeriesPoint,
     TimeSeriesResponse,
@@ -311,6 +313,56 @@ async def get_by_city(
     result = await db.execute(stmt, {"ids": [str(i) for i in scan_ids], "limit": limit})
     return BreakdownResponse(
         items=[BreakdownItem(label=row.label, count=row.count) for row in result.fetchall()]
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /v1/analytics/locations
+# ---------------------------------------------------------------------------
+
+@router.get("/locations", response_model=ScanLocationsResponse, summary="Scan locations for the map")
+async def get_locations(
+    current_user: CurrentUser,
+    db: DBSession,
+    qr_id: uuid.UUID | None = Query(default=None),
+) -> ScanLocationsResponse:
+    """Return scan counts grouped by city-level coordinates.
+
+    Coordinates are rounded to 2 decimals (~1 km) so that scans resolved to
+    the same city collapse into one point regardless of tiny database jitter.
+    """
+    from sqlalchemy import text
+
+    qr_ids = await _user_qr_ids(current_user.id, db)
+    scan_ids = [qr_id] if qr_id else qr_ids
+    if not scan_ids:
+        return ScanLocationsResponse(locations=[], unlocated=0)
+
+    params = {"ids": [str(i) for i in scan_ids]}
+
+    rows = (await db.execute(text("""
+        SELECT
+            round(latitude::numeric, 2)::float  AS latitude,
+            round(longitude::numeric, 2)::float AS longitude,
+            min(city)    AS city,
+            min(region)  AS region,
+            min(country) AS country,
+            COUNT(*)::int AS count
+        FROM scan_events
+        WHERE qr_code_id = ANY(:ids) AND latitude IS NOT NULL
+        GROUP BY 1, 2
+        ORDER BY count DESC
+        LIMIT 5000
+    """), params)).fetchall()
+
+    unlocated = (await db.execute(text("""
+        SELECT COUNT(*)::int FROM scan_events
+        WHERE qr_code_id = ANY(:ids) AND latitude IS NULL
+    """), params)).scalar_one()
+
+    return ScanLocationsResponse(
+        locations=[ScanLocation(**row._mapping) for row in rows],
+        unlocated=unlocated,
     )
 
 

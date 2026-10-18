@@ -33,6 +33,7 @@ declare module 'vue' {
     QRCanvas: typeof import('./src/components/editor/QRCanvas.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    ScanMap: typeof import('./src/components/analytics/ScanMap.vue')['default']
     Select: typeof import('primevue/select')['default']
     SelectButton: typeof import('primevue/selectbutton')['default']
     Slider: typeof import('primevue/slider')['default']

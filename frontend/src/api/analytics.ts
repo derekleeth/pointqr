@@ -87,3 +87,22 @@ export interface GeoIPInfo {
 
 /** Which GeoIP database the backend has loaded (for attribution). */
 export const getGeoIPInfo = () => apiClient.get<GeoIPInfo>('/analytics/geoip-info')
+
+export interface ScanLocation {
+  latitude: number
+  longitude: number
+  city: string | null
+  region: string | null
+  country: string | null
+  count: number
+}
+
+export interface ScanLocationsResponse {
+  locations: ScanLocation[]
+  /** Scans with no resolvable location (private IPs, pre-GeoIP scans). */
+  unlocated: number
+}
+
+/** Scan counts grouped by city-level coordinates, for the map. */
+export const getScanLocations = (params?: AnalyticsParams) =>
+  apiClient.get<ScanLocationsResponse>('/analytics/locations', { params })
