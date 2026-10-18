@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
@@ -33,6 +34,7 @@ from app.services.site_settings import get_email_verification_required, get_regi
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Schemas
@@ -101,6 +103,7 @@ async def register(
     """
     reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
     if not reg_enabled:
+        logger.warning(f"Registration attempt while registration is disabled: {payload.email}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Registration is currently disabled. Please contact the administrator.",
@@ -128,17 +131,20 @@ async def register(
 
     if verification_required:
         token = create_email_verification_token(user.id)
+        logger.info(f"Sending verification email to {user.email}")
         background_tasks.add_task(
             send_verification_email,
             to=user.email,
             token=token,
             frontend_url=settings.frontend_url,
         )
+        logger.info(f"Verification email sent to {user.email}")
         return RegisterResponse(
             email_verification_required=True,
             message="Verification email sent. Please check your inbox to activate your account.",
         )
 
+    logger.info(f"User registered and verified: {user.email}")
     return RegisterResponse(
         email_verification_required=False,
         user=UserRead.model_validate(user),
@@ -169,12 +175,14 @@ async def login(
     user = result.scalar_one_or_none()
 
     if user is None or not verify_password(form_data.password, user.hashed_password):
+        logger.warning(f"Failed login attempt for email: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if not user.is_active:
+        logger.warning(f"Login attempt with inactive account: {user.email}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive",
@@ -193,6 +201,7 @@ async def login(
             },
         )
 
+    logger.info(f"User logged in successfully: {user.email}")
     return Token(
         access_token=create_access_token(user.id, user.role),
         refresh_token=create_refresh_token(user.id, user.role),
@@ -222,6 +231,7 @@ async def refresh(payload: RefreshRequest, db: DBSession) -> Token:
     user = result.scalar_one_or_none()
 
     if user is None or not user.is_active:
+        logger.warning(f"Refresh token attempt for non-existent or inactive user ID: {token_data.sub}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
@@ -262,6 +272,7 @@ async def registration_status(db: DBSession) -> dict:
     REGISTRATION_ENABLED env var if no DB override exists.
     """
     reg_enabled = await get_registration_enabled(db, settings.registration_enabled)
+    logger.info(f"Registration status checked: {reg_enabled}")
     return {"registration_enabled": reg_enabled}
 
 
