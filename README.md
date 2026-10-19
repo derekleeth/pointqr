@@ -170,4 +170,4 @@ See [`docs/project-plan.md`](docs/project-plan.md) for the full project plan.
 
 ## License
 
-MIT
+GNU General Public License v3.0 (see [LICENSE](LICENSE)).

@@ -677,7 +677,7 @@ const techStack = [
         <p class="features-eyebrow">Data Sovereignty & Independence</p>
         <h2 id="self-hosting-title" class="self-host-title">Self-Host with Modern Infrastructure</h2>
         <p class="self-host-subtitle">
-          PointQR is 100% open source under the MIT license. Deploy on your local server, home lab, or any cloud VPS
+          PointQR is 100% open source under the GNU General Public License v3. Deploy on your local server, home lab, or any cloud VPS
           in minutes using standard Docker Compose. No telemetry, no feature gating, and unlimited dynamic QR codes.
         </p>
       </div>
@@ -784,7 +784,7 @@ const techStack = [
           <p class="plan-desc">Total independence, unlimited scale, and complete data privacy.</p>
           <div class="plan-price">
             <span class="price-val">$0</span>
-            <span class="price-term">/ forever (MIT License)</span>
+            <span class="price-term">/ forever (GPL-3.0)</span>
           </div>
           <ul class="pricing-list">
             <li><i class="pi pi-check" /> <strong>Unlimited Dynamic QR Codes</strong></li>
@@ -840,7 +840,7 @@ const techStack = [
       <div class="footer-content">
         <div class="footer-left">
           <span class="footer-brand">PointQR</span>
-          <span class="footer-copy">© {{ new Date().getFullYear() }} PointQR. Open source under MIT license.</span>
+          <span class="footer-copy">© {{ new Date().getFullYear() }} PointQR. Open source under the GNU GPL v3.</span>
         </div>
         <nav class="footer-links" aria-label="Footer">
           <a href="#print-sheets">Print Sheets</a>
