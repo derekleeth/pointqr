@@ -5,7 +5,7 @@ from app.models.user import UserTier
 TIER_LIMITS = {
     UserTier.free: {
         "max_dynamic_qrs": 3,
-        "max_scans_per_month": 200,
+        "max_scans_per_month": 300,
     },
     UserTier.pro: {
         "max_dynamic_qrs": 100,
