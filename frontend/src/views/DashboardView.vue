@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { listQRCodes, deleteQRCode, type QRCodeRead } from '@/api/qrcodes'
 import DownloadModal from '@/components/dashboard/DownloadModal.vue'
@@ -101,7 +101,11 @@ function formatDate(iso: string) {
             <Tag value="BETA" severity="warn" class="text-xs font-bold tracking-wide" />
           </div>
           <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
-            Please note that the cloud-hosted application is currently in beta. Features, APIs, and background processing are actively being developed and enhanced. You may encounter occasional updates and changes.
+            Please note that the cloud-hosted application is currently in beta. Features, APIs, and background processing are actively being developed and enhanced. You may encounter occasional updates and changes — you can submit feedback and suggestions anytime on the
+            <RouterLink
+              to="/feedback"
+              class="font-medium text-amber-700 dark:text-amber-400 underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
+            >feedback page</RouterLink>.
           </p>
         </div>
       </div>
