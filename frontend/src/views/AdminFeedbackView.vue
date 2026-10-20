@@ -59,7 +59,8 @@ const filteredItems = computed(() => {
       (item) =>
         item.subject.toLowerCase().includes(q) ||
         item.message.toLowerCase().includes(q) ||
-        item.user_email.toLowerCase().includes(q),
+        item.user_email.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q),
     )
   }
   if (typeFilter.value) {
@@ -177,6 +178,27 @@ async function saveDetail() {
   }
 }
 
+function copySubmissionId(id: string) {
+  navigator.clipboard
+    .writeText(id)
+    .then(() => {
+      toast.add({
+        severity: 'success',
+        summary: 'Copied',
+        detail: 'Submission ID copied',
+        life: 2000,
+      })
+    })
+    .catch(() => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to copy submission ID',
+        life: 3000,
+      })
+    })
+}
+
 function confirmDelete(id: string) {
   confirmDeleteId.value = id
 }
@@ -229,7 +251,7 @@ onMounted(loadItems)
         <InputIcon class="pi pi-search" />
         <InputText
           v-model="searchQuery"
-          placeholder="Search feedback…"
+          placeholder="Search feedback or submission ID…"
           size="small"
         />
       </IconField>
@@ -406,6 +428,24 @@ onMounted(loadItems)
             class="capitalize"
           />
           <span class="meta-date">{{ formatDate(selectedItem.created_at) }}</span>
+        </div>
+
+        <!-- Submission ID (matches the ID shown on GitHub issues) -->
+        <div class="detail-field">
+          <label>Submission ID</label>
+          <div class="submission-id">
+            <code>{{ selectedItem.id }}</code>
+            <Button
+              icon="pi pi-copy"
+              text
+              rounded
+              size="small"
+              severity="secondary"
+              aria-label="Copy submission ID"
+              v-tooltip="'Copy'"
+              @click="copySubmissionId(selectedItem.id)"
+            />
+          </div>
         </div>
 
         <!-- From -->
@@ -735,6 +775,18 @@ onMounted(loadItems)
   background: var(--bg-elevated);
   max-height: 200px;
   overflow-y: auto;
+}
+
+.submission-id {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.submission-id code {
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
 }
 
 .github-detail-link {

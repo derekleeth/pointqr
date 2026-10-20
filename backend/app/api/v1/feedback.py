@@ -56,7 +56,7 @@ async def submit_feedback(
             subject=payload.subject,
             message=payload.message,
             feedback_type=payload.type.value,
-            user_email=user.email,
+            submission_id=str(submission.id),
         )
         if result:
             submission.github_issue_url = result["url"]

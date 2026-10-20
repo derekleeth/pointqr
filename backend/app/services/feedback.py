@@ -7,6 +7,7 @@ misconfigured token or webhook never blocks a user-facing request.
 from __future__ import annotations
 
 import logging
+import re
 
 import httpx
 
@@ -25,14 +26,25 @@ _GITHUB_LABEL_MAP = {
     "feature_request": "enhancement",
 }
 
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+
+
+def _redact_emails(text: str) -> str:
+    """Mask email addresses so they aren't published on a public issue."""
+    return _EMAIL_RE.sub("[email redacted]", text)
+
 
 async def create_github_issue(
     subject: str,
     message: str,
     feedback_type: str,
-    user_email: str,
+    submission_id: str,
 ) -> dict | None:
     """Create an issue on GitHub and return ``{"url": ..., "number": ...}``.
+
+    Issues may be public, so the submitter's email is never included and any
+    email addresses typed into the subject or message are redacted. The
+    submission ID lets admins look up the submitter in the admin panel.
 
     Returns ``None`` if GitHub integration is not configured or the API call
     fails.  Errors are logged but never raised (fire-and-forget).
@@ -45,9 +57,9 @@ async def create_github_issue(
     labels = [label] if label else []
 
     body = (
-        f"**Submitted by:** {user_email}\n"
-        f"**Type:** {feedback_type}\n\n"
-        f"---\n\n{message}"
+        f"**Type:** {feedback_type}\n"
+        f"**Submission ID:** `{submission_id}`\n\n"
+        f"---\n\n{_redact_emails(message)}"
     )
 
     url = f"https://api.github.com/repos/{settings.github_repo}/issues"
@@ -56,8 +68,9 @@ async def create_github_issue(
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
+    type_label = feedback_type.replace("_", " ").title()
     payload = {
-        "title": f"[{feedback_type.replace('_', ' ').title()}] {subject}",
+        "title": f"[{type_label}] {_redact_emails(subject)}",
         "body": body,
         "labels": labels,
     }
