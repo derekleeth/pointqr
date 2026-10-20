@@ -60,7 +60,7 @@ async function handleRoleChange(user: AdminUser, newRole: string) {
 
 async function handleTierChange(user: AdminUser, newTier: string) {
   const original = user.tier
-  user.tier = newTier as 'free' | 'pro' | 'enterprise'
+  user.tier = newTier as 'free' | 'pro' | 'max'
   try {
     const updated = await adminApi.updateTier(user.id, newTier)
     Object.assign(user, updated)
@@ -208,7 +208,7 @@ onMounted(loadUsers)
           <template #body="{ data }">
             <Select
               :model-value="data.tier"
-              :options="['free', 'pro', 'enterprise']"
+              :options="['free', 'pro', 'max']"
               size="small"
               class="full-select"
               @change="(e: any) => handleTierChange(data, e.value)"
@@ -294,7 +294,7 @@ onMounted(loadUsers)
           </div>
           <div class="form-field">
             <label>Tier</label>
-            <Select v-model="newUser.tier" :options="['free', 'pro', 'enterprise']" fluid />
+            <Select v-model="newUser.tier" :options="['free', 'pro', 'max']" fluid />
           </div>
         </div>
       </div>

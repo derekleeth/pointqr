@@ -91,7 +91,7 @@ celery_app.conf.update(
             "schedule": crontab(hour=3, minute=0),
         },
         # Delete scan events beyond per-tier retention windows
-        # (free=90d / pro=365d / enterprise=730d).  Runs weekly on Sunday 04:00 UTC.
+        # (free=90d / pro=365d / max=730d).  Runs weekly on Sunday 04:00 UTC.
         "purge-old-scan-events-weekly": {
             "task": "app.tasks.cleanup.purge_old_scan_events",
             "schedule": crontab(hour=4, minute=0, day_of_week=0),

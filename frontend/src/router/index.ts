@@ -3,6 +3,12 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  // Support cross-page anchor links like /developers#self-hosting
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, top: 80, behavior: 'smooth' }
+    return { top: 0 }
+  },
   routes: [
     // ── Public ───────────────────────────────────────────
     {
@@ -11,6 +17,13 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
       // No layout – HomeView is self-contained with its own nav
       meta: { indexable: true },
+    },
+    {
+      path: '/developers',
+      name: 'developers',
+      component: () => import('@/views/DevelopersView.vue'),
+      // Self-contained like HomeView
+      meta: { indexable: true, title: 'PointQR for Developers – REST API & Self-Hosting' },
     },
     {
       path: '/login',
@@ -147,14 +160,14 @@ router.beforeEach(async (to) => {
   }
 })
 
-// SEO: only the public home page should be indexed. Every other route gets a
+// SEO: only the public marketing pages should be indexed. Every other route gets a
 // generic title and a noindex robots tag (the home page's tags live in index.html).
 const HOME_TITLE = document.title
 
 router.afterEach((to) => {
   const robots = document.querySelector('meta[name="robots"]')
   if (to.meta.indexable) {
-    document.title = HOME_TITLE
+    document.title = (to.meta.title as string | undefined) ?? HOME_TITLE
     robots?.setAttribute('content', 'index, follow, max-image-preview:large')
   } else {
     const label = String(to.name ?? '')

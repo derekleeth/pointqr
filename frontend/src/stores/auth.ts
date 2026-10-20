@@ -6,7 +6,7 @@ export interface User {
   id: string
   email: string
   role: 'admin' | 'user'
-  tier: 'free' | 'pro' | 'enterprise'
+  tier: 'free' | 'pro' | 'max'
   is_active: boolean
   is_verified: boolean
   created_at: string

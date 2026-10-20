@@ -13,7 +13,7 @@ Four scheduled tasks run automatically via Celery Beat:
       Deletes ScanEvent rows beyond per-tier retention windows:
         free       → SCAN_EVENT_RETENTION_DAYS_FREE       (default 90 days)
         pro        → SCAN_EVENT_RETENTION_DAYS_PRO        (default 365 days)
-        enterprise → SCAN_EVENT_RETENTION_DAYS_ENTERPRISE (default 730 days, -1 = keep forever)
+        max → SCAN_EVENT_RETENTION_DAYS_MAX (default 730 days, -1 = keep forever)
 
   reap_stale_jobs         – every hour
       Marks BatchJob rows stuck in PENDING / PROCESSING for more than
@@ -226,8 +226,8 @@ def purge_old_scan_events(self) -> dict:
     Retention windows (all configurable via env / Settings):
         - free       → ``scan_event_retention_days_free``       (default  90 days)
         - pro        → ``scan_event_retention_days_pro``        (default 365 days)
-        - enterprise → ``scan_event_retention_days_enterprise`` (default 730 days)
-          Set to ``-1`` to keep enterprise events forever.
+        - max → ``scan_event_retention_days_max`` (default 730 days)
+          Set to ``-1`` to keep max-tier events forever.
 
     The delete is tier-aware: scan_events are joined through qr_codes → users
     to identify which tier governs each event.
@@ -242,7 +242,7 @@ def purge_old_scan_events(self) -> dict:
     tier_config = [
         (UserTier.free, settings.scan_event_retention_days_free),
         (UserTier.pro, settings.scan_event_retention_days_pro),
-        (UserTier.enterprise, settings.scan_event_retention_days_enterprise),
+        (UserTier.max, settings.scan_event_retention_days_max),
     ]
 
     logger.info("purge_old_scan_events: starting")

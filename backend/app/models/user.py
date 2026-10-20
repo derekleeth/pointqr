@@ -22,7 +22,7 @@ class UserRole(str, enum.Enum):
 class UserTier(str, enum.Enum):
     free = "free"
     pro = "pro"
-    enterprise = "enterprise"
+    max = "max"
 
 
 class User(Base):

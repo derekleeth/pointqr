@@ -11,8 +11,8 @@ TIER_LIMITS = {
         "max_dynamic_qrs": 100,
         "max_scans_per_month": 10000,
     },
-    UserTier.enterprise: {
-        "max_dynamic_qrs": -1,
+    UserTier.max: {
+        "max_dynamic_qrs": 1000,
         "max_scans_per_month": -1,
     },
 }

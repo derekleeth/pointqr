@@ -6,7 +6,7 @@ export interface AdminUser {
   is_active: boolean
   is_verified: boolean
   role: 'admin' | 'user'
-  tier: 'free' | 'pro' | 'enterprise'
+  tier: 'free' | 'pro' | 'max'
   created_at: string
   qr_code_count: number
   total_scans: number

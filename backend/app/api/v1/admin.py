@@ -200,7 +200,7 @@ async def update_user_tier(
     _admin: AdminUser,
     db: DBSession,
 ) -> User:
-    """Update a user's tier (free / pro / enterprise)."""
+    """Update a user's tier (free / pro / max)."""
     user = await _get_user_or_404(user_id, db)
     user.tier = payload.tier
     await db.flush()
