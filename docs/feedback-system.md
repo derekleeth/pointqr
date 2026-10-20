@@ -15,15 +15,15 @@ User submits feedback → POST /v1/feedback
                             │
                             ├─ If bug/feature_request → Create GitHub Issue (via PAT)
                             │
-                            └─ If feedback/question → Send Slack notification (via webhook)
+                            └─ Always → Send Slack notification (via webhook, with GitHub link if created)
 ```
 
 ## Submission Types
 
 | Type | Routing | GitHub Label |
 |------|---------|-------------|
-| `bug` | GitHub Issues | `bug` |
-| `feature_request` | GitHub Issues | `enhancement` |
+| `bug` | GitHub Issues + Slack | `bug` |
+| `feature_request` | GitHub Issues + Slack | `enhancement` |
 | `feedback` | Slack Webhook | — |
 | `question` | Slack Webhook | — |
 

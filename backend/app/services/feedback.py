@@ -93,6 +93,7 @@ async def send_slack_notification(
     message: str,
     feedback_type: str,
     user_email: str,
+    github_issue_url: str | None = None,
 ) -> bool:
     """Send a message to Slack via incoming webhook.
 
@@ -107,9 +108,11 @@ async def send_slack_notification(
     text = (
         f"{emoji} *New {feedback_type.replace('_', ' ').title()}*\n"
         f"*From:* {user_email}\n"
-        f"*Subject:* {subject}\n\n"
-        f">>> {message[:1500]}"
+        f"*Subject:* {subject}\n"
     )
+    if github_issue_url:
+        text += f"*GitHub:* <{github_issue_url}|View issue>\n"
+    text += f"\n>>> {message[:1500]}"
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:

@@ -64,17 +64,18 @@ async def submit_feedback(
             await db.flush()
             await db.refresh(submission)
 
-    if payload.type in (FeedbackType.feedback, FeedbackType.question):
-        sent = await send_slack_notification(
-            subject=payload.subject,
-            message=payload.message,
-            feedback_type=payload.type.value,
-            user_email=user.email,
-        )
-        if sent:
-            submission.slack_notified = True
-            await db.flush()
-            await db.refresh(submission)
+    # Always notify Slack; include the GitHub issue link when one was created
+    sent = await send_slack_notification(
+        subject=payload.subject,
+        message=payload.message,
+        feedback_type=payload.type.value,
+        user_email=user.email,
+        github_issue_url=submission.github_issue_url,
+    )
+    if sent:
+        submission.slack_notified = True
+        await db.flush()
+        await db.refresh(submission)
 
     return submission
 
