@@ -89,6 +89,13 @@ class Settings(BaseSettings):
     # ---- Registration -------------------------------------------------------
     registration_enabled: bool = True
 
+    # ---- Feedback integrations ----------------------------------------------
+    # GitHub: personal access token + owner/repo for issue creation
+    github_token: str = ""
+    github_repo: str = ""  # e.g. "derekleeth/pointqr"
+    # Slack: incoming webhook URL for feedback/question notifications
+    slack_webhook_url: str = ""
+
     # ---- Cleanup / Storage Lifecycle ----------------------------------------
     # Number of days to keep completed/failed export files and their BatchJob rows.
     export_retention_days: int = 7

@@ -87,6 +87,12 @@ const router = createRouter({
       component: () => import('@/views/SettingsView.vue'),
       meta: { layout: 'AppLayout', requiresAuth: true },
     },
+    {
+      path: '/feedback',
+      name: 'feedback',
+      component: () => import('@/views/FeedbackView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true },
+    },
 
     // ── Admin (sidebar layout, admin role required) ───────
     {
@@ -105,6 +111,12 @@ const router = createRouter({
       path: '/admin/monitor',
       name: 'admin-monitor',
       component: () => import('@/views/AdminMonitorView.vue'),
+      meta: { layout: 'AppLayout', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/feedback',
+      name: 'admin-feedback',
+      component: () => import('@/views/AdminFeedbackView.vue'),
       meta: { layout: 'AppLayout', requiresAuth: true, requiresAdmin: true },
     },
   ],

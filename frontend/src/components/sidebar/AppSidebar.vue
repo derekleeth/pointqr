@@ -59,6 +59,7 @@ const navGroups = computed<NavGroup[]>(() => {
         { label: 'API Keys', icon: 'pi pi-key', to: '/api-keys' },
         { label: 'API Docs', icon: 'pi pi-book', to: '/api-docs' },
         { label: 'Settings', icon: 'pi pi-cog', to: '/settings' },
+        { label: 'Feedback', icon: 'pi pi-comments', to: '/feedback' },
       ],
     },
   ]
@@ -71,6 +72,7 @@ const navGroups = computed<NavGroup[]>(() => {
         { label: 'Users', icon: 'pi pi-users', to: '/admin/users' },
         { label: 'Site Settings', icon: 'pi pi-sliders-h', to: '/admin/settings' },
         { label: 'Queue Monitor', icon: 'pi pi-chart-line', to: '/admin/monitor' },
+        { label: 'Feedback', icon: 'pi pi-comments', to: '/admin/feedback' },
       ],
     })
   }
