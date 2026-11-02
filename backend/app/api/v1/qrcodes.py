@@ -17,9 +17,10 @@ from app.config import get_settings
 from app.core.dependencies import CurrentUser, DBSession
 from app.core.rate_limit import limiter
 from app.models.batch_job import BatchJob, BatchJobStatus
-from app.models.qrcode import QRCode, QRCodeType
+from app.models.qrcode import QRCode, QRCodeType, QRContentType
 from app.schemas.batch_job import BatchJobRead
 from app.schemas.qrcode import (
+    ContactData,
     DesignConfig,
     QRCodeCreate,
     QRCodeListResponse,
@@ -27,6 +28,7 @@ from app.schemas.qrcode import (
     QRCodeUpdate,
 )
 from app.services.qr_generator import generate_eps, generate_pdf, generate_png, generate_svg
+from app.services.vcard import build_contact_payload
 
 router = APIRouter(prefix="/qrcodes", tags=["qrcodes"])
 settings = get_settings()
@@ -54,6 +56,30 @@ async def _get_qr_or_404(qr_id: uuid.UUID, user: object, db: object) -> QRCode:
     if qr is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR code not found")
     return qr
+
+
+def _check_contact_for_type(contact: ContactData, qr_type: QRCodeType) -> None:
+    """Reject hosted-page-only contact fields on static codes, which have no hosted page."""
+    if qr_type == QRCodeType.static:
+        extra = contact.dynamic_only_fields()
+        if extra:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"{', '.join(extra)} only apply to dynamic contact codes.",
+            )
+
+
+def _server_owned_content(qr: QRCode) -> str | None:
+    """Return the content the server encodes for this code, or None if the client's content is used.
+
+    Dynamic codes always encode the redirect URL. Static contact codes encode a
+    vCard/MECARD regenerated from content_data, so the two can never drift apart.
+    """
+    if qr.type == QRCodeType.dynamic and qr.short_code:
+        return f"{settings.redirect_base_url}/r/{qr.short_code}"
+    if qr.content_type == QRContentType.vcard and qr.content_data:
+        return build_contact_payload(ContactData.model_validate(qr.content_data))
+    return None
 
 
 def _resolve_logo_path(design_config: dict) -> Path | None:
@@ -160,22 +186,30 @@ async def create_qrcode(
                 detail="Failed to generate a unique short code – please try again",
             )
 
-    # For dynamic codes the encoded content is the future redirect URL
-    # For static codes target_url equals the encoded content
-    design = payload.design_config.model_dump()
-    if payload.type == QRCodeType.dynamic and payload.target_url:
-        # Encode the redirect service URL so scanners hit /r/{short_code}
-        # which tracks the scan and forwards to the real target_url
-        design["content"] = f"{settings.redirect_base_url}/r/{short_code}"
+    is_contact = payload.content_type == QRContentType.vcard
+    if is_contact:
+        _check_contact_for_type(payload.content_data, payload.type)
 
     qr = QRCode(
         user_id=current_user.id,
         title=payload.title,
         type=payload.type,
         short_code=short_code,
-        target_url=payload.target_url,
-        design_config=design,
+        # Contact codes have no destination URL – the payload lives in content_data
+        target_url=None if is_contact else payload.target_url,
+        content_type=payload.content_type,
+        content_data=payload.content_data.model_dump(mode="json") if is_contact else None,
     )
+
+    # For dynamic codes the encoded content is the redirect URL, so scanners hit
+    # /r/{short_code}, which tracks the scan and forwards to the real target.
+    # For static contact codes it's the vCard built from content_data.
+    # Dynamic URL codes created without a target keep the client's content.
+    design = payload.design_config.model_dump()
+    if payload.type == QRCodeType.static or payload.target_url or is_contact:
+        design["content"] = _server_owned_content(qr) or design["content"]
+    qr.design_config = design
+
     db.add(qr)
     await db.flush()
     await db.refresh(qr)
@@ -198,28 +232,54 @@ async def update_qrcode(
     current_user: CurrentUser,
     db: DBSession,
 ) -> QRCode:
-    """Partially update title, target URL, design config, or active state."""
+    """Partially update title, target URL, content, design config, or active state."""
     qr = await _get_qr_or_404(qr_id, current_user, db)
+
+    content_type = payload.content_type or qr.content_type
+    if content_type == QRContentType.vcard:
+        contact = payload.content_data
+        if contact is None and qr.content_data:
+            contact = ContactData.model_validate(qr.content_data)
+        if contact is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="content_data is required when content_type is VCARD",
+            )
+        _check_contact_for_type(contact, qr.type)
+        qr.content_data = contact.model_dump(mode="json")
+        qr.target_url = None
+    elif payload.content_data is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="content_data is only supported when content_type is VCARD",
+        )
+    else:
+        qr.content_data = None
+    qr.content_type = content_type
 
     if payload.title is not None:
         qr.title = payload.title
-    if payload.target_url is not None:
+    if payload.target_url is not None and content_type != QRContentType.vcard:
         qr.target_url = payload.target_url
-        # For dynamic QRs keep the encoded content pointing at the redirect service
-        if qr.type == QRCodeType.dynamic and qr.short_code:
-            existing_design = dict(qr.design_config or {})
-            existing_design["content"] = f"{settings.redirect_base_url}/r/{qr.short_code}"
-            qr.design_config = existing_design
     if payload.design_config is not None:
         # Merge with existing config so logo src is preserved unless explicitly overwritten
         existing = dict(qr.design_config or {})
-        updated = payload.design_config.model_dump()
-        existing.update(updated)
-        # For dynamic QRs, always restore the redirect URL – never let the client
-        # overwrite content with the raw destination URL.
-        if qr.type == QRCodeType.dynamic and qr.short_code:
-            existing["content"] = f"{settings.redirect_base_url}/r/{qr.short_code}"
+        existing.update(payload.design_config.model_dump())
         qr.design_config = existing
+
+    content_changed = (
+        payload.target_url is not None
+        or payload.design_config is not None
+        or payload.content_type is not None
+        or payload.content_data is not None
+    )
+    if content_changed:
+        # Never let the client overwrite server-owned content (redirect URL or vCard)
+        owned = _server_owned_content(qr)
+        if owned is not None:
+            design = dict(qr.design_config or {})
+            design["content"] = owned
+            qr.design_config = design
     if payload.is_active is not None:
         qr.is_active = payload.is_active
 

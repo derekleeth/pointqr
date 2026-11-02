@@ -1,7 +1,7 @@
 # Feature Plan: Contact QR Codes (vCard)
 
 > Added: 2026-11-01
-> Status: **Planning**
+> Status: **In progress** (Phase 1 done)
 > Owner: Derek Leeth
 
 ## Overview
@@ -113,14 +113,14 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### Phase 1: Backend foundation
 
-- [ ] Add `QRContentType` enum and `content_type` / `content_data` columns to `QRCode` model
-- [ ] Alembic migration `009_add_qr_content_type.py` (create enum, add columns, backfill `URL`, downgrade path)
-- [ ] `ContactData` Pydantic schemas with validation (phone/email/URL formats, list caps, at least one name field)
-- [ ] Add `content_type` + `content_data` to `QRCodeCreate`, `QRCodeUpdate`, `QRCodeRead`
-- [ ] `services/vcard.py`: `build_vcard(contact) -> str` and `build_mecard(contact) -> str`
-- [ ] Unit tests for the encoder: escaping, folding, CRLF, UTF-8 names, empty-field omission, FN derivation
-- [ ] On create/update of a static `VCARD` code, regenerate `design_config.content` from `content_data`
-- [ ] API tests in `tests/test_qrcodes.py` for create/update/read of static and dynamic contact codes
+- [x] Add `QRContentType` enum and `content_type` / `content_data` columns to `QRCode` model
+- [x] Alembic migration `009_add_qr_content_type.py` (create enum, add columns, backfill `URL`, downgrade path)
+- [x] `ContactData` Pydantic schemas with validation (phone/email/URL formats, list caps, at least one name field)
+- [x] Add `content_type` + `content_data` to `QRCodeCreate`, `QRCodeUpdate`, `QRCodeRead`
+- [x] `services/vcard.py`: `build_vcard(contact) -> str` and `build_mecard(contact) -> str`
+- [x] Unit tests for the encoder: escaping, folding, CRLF, UTF-8 names, empty-field omission, FN derivation
+- [x] On create/update of a static `VCARD` code, regenerate `design_config.content` from `content_data`
+- [x] API tests in `tests/test_qrcodes.py` for create/update/read of static and dynamic contact codes
 
 ### Phase 2: Editor UI
 
@@ -185,3 +185,4 @@ Test with a name that has accents (e.g. `José Ñúñez`), a comma in the organi
 | Date | Update |
 |---|---|
 | 2026-11-01 | Plan created. |
+| 2026-11-01 | Phase 1 done. `content_type` / `content_data` columns (migration 009), `ContactData` schemas, `services/vcard.py` (vCard 3.0 + MECARD), and the server now owns `design_config.content` for static contact codes. Choices made along the way: MECARD is selected with `content_data.encoding`; static codes reject `social_links` / `photo_url` / `theme_color` with a 422; contact codes always store `target_url = NULL`; for now, `PATCH` lets a code switch between URL and VCARD (open question 3 is still open). |

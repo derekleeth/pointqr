@@ -18,6 +18,14 @@ class QRCodeType(str, enum.Enum):
     dynamic = "DYNAMIC"
 
 
+class QRContentType(str, enum.Enum):
+    """What kind of payload the QR code carries."""
+
+    url = "URL"
+    text = "TEXT"
+    vcard = "VCARD"
+
+
 class QRCode(Base):
     __tablename__ = "qr_codes"
 
@@ -42,6 +50,15 @@ class QRCode(Base):
     )
     # Target URL for dynamic codes or the encoded content for static codes
     target_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Payload kind – drives how content is encoded and how /r/{short_code} responds
+    content_type: Mapped[QRContentType] = mapped_column(
+        Enum(QRContentType, name="qrcontenttype", values_callable=lambda objs: [e.value for e in objs]),
+        default=QRContentType.url,
+        server_default=QRContentType.url.value,
+        nullable=False,
+    )
+    # Structured fields for non-URL content types (e.g. contact details for VCARD)
+    content_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # QR design configuration stored as JSONB for flexibility
     design_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
