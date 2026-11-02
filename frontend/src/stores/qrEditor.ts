@@ -4,6 +4,7 @@ import {
   createQRCode,
   updateQRCode,
   DEFAULT_DESIGN_CONFIG,
+  type ContactData,
   type DesignConfig,
   type QRCodeRead,
   type QRContentType,
@@ -18,6 +19,7 @@ import {
   hasContactName,
   normalizeContact,
   validateContact,
+  withoutHostedFields,
   type ContactFormState,
 } from '@/utils/vcard'
 
@@ -59,22 +61,46 @@ export const useQREditorStore = defineStore('qrEditor', () => {
     }
     return designConfig.value.content.trim().length > 0 && !density.value.isTooLarge
   })
-  const contactErrors = computed(() => validateContact(contact.value))
+  // Hosted-page fields are hidden on static codes, so they can't be what blocks saving
+  const contactErrors = computed(() =>
+    validateContact(
+      qrType.value === 'STATIC' ? { ...contact.value, social_links: [] } : contact.value,
+    ),
+  )
   const canSave = computed(
     () =>
       hasContent.value &&
       (contentType.value !== 'VCARD' || !hasContactErrors(contactErrors.value)),
+  )
+  // A dynamic code's short link doesn't exist until it's saved, and the preview is only a placeholder
+  const canDownload = computed(
+    () => hasContent.value && (qrType.value !== 'DYNAMIC' || !!currentQRCode.value),
   )
 
   // -------------------------------------------------------------------------
   // Contact form sync
   // -------------------------------------------------------------------------
 
-  /** Static contact codes encode the vCard itself, so rebuild it for the live preview. */
+  /** The contact as it gets saved, which depends on whether there's a hosted page. */
+  function contactToSave(): ContactData {
+    const normalized = normalizeContact(contact.value)
+    return qrType.value === 'STATIC'
+      ? withoutHostedFields(normalized)
+      : { ...normalized, encoding: 'vcard' }
+  }
+
+  /**
+   * Static contact codes encode the vCard itself, so rebuild it for the live preview.
+   * Dynamic ones encode the redirect URL the server assigns on the first save.
+   */
   function syncContactContent(): void {
-    if (contentType.value !== 'VCARD' || qrType.value !== 'STATIC') return
+    if (contentType.value !== 'VCARD') return
+    if (qrType.value === 'DYNAMIC') {
+      if (!currentQRCode.value) designConfig.value.content = ''
+      return
+    }
     designConfig.value.content = hasContactName(contact.value)
-      ? buildContactPayload(normalizeContact(contact.value))
+      ? buildContactPayload(contactToSave())
       : ''
   }
 
@@ -110,6 +136,8 @@ export const useQREditorStore = defineStore('qrEditor', () => {
     },
     { deep: true, flush: 'sync' },
   )
+
+  watch(qrType, syncContactContent, { flush: 'sync' })
 
   // -------------------------------------------------------------------------
   // Actions
@@ -164,10 +192,12 @@ export const useQREditorStore = defineStore('qrEditor', () => {
   function setContentType(next: QRContentType): void {
     if (next === contentType.value) return
     const leavingContact = contentType.value === 'VCARD'
-    if (next === 'VCARD') plainContent.value = designConfig.value.content
+    // A saved dynamic code keeps encoding its redirect URL, whatever it points to
+    const keepsContent = qrType.value === 'DYNAMIC' && !!currentQRCode.value
+    if (next === 'VCARD' && !keepsContent) plainContent.value = designConfig.value.content
     contentType.value = next
     if (next === 'VCARD') syncContactContent()
-    else if (leavingContact) designConfig.value.content = plainContent.value
+    else if (leavingContact && !keepsContent) designConfig.value.content = plainContent.value
     syncContactTitle()
     isDirty.value = true
   }
@@ -176,6 +206,14 @@ export const useQREditorStore = defineStore('qrEditor', () => {
   function updateConfig(patch: Partial<DesignConfig>): void {
     designConfig.value = { ...designConfig.value, ...patch }
     isDirty.value = true
+  }
+
+  /** Apply a photo the server has already saved, without touching unsaved form edits. */
+  function applySavedPhoto(qr: QRCodeRead): void {
+    currentQRCode.value = qr
+    replacingContact = true
+    contact.value.photo_url = qr.content_data?.photo_url ?? null
+    replacingContact = false
   }
 
   /** Update the encoded QR content and mark dirty. */
@@ -194,7 +232,7 @@ export const useQREditorStore = defineStore('qrEditor', () => {
         type: qrType.value,
         target_url: isContact ? undefined : targetUrl.value || undefined,
         content_type: contentType.value,
-        content_data: isContact ? normalizeContact(contact.value) : undefined,
+        content_data: isContact ? contactToSave() : undefined,
         design_config: designConfig.value,
       }
 
@@ -235,10 +273,13 @@ export const useQREditorStore = defineStore('qrEditor', () => {
     hasContent,
     contactErrors,
     canSave,
+    canDownload,
     // actions
     loadFromQRCode,
     resetToDefaults,
     setContentType,
+    contactToSave,
+    applySavedPhoto,
     updateConfig,
     setContent,
     save,

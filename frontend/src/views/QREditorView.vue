@@ -145,6 +145,12 @@ async function handleSave() {
             <i class="pi pi-link text-xs" />
             Dynamic QR — Redirect URL will be encoded automatically
           </p>
+          <p
+            v-if="store.qrType === 'DYNAMIC' && !store.isEditing"
+            class="self-start text-xs text-surface-400"
+          >
+            This preview is a placeholder. Save the code to get the real one and download it.
+          </p>
           <QRCanvas />
         </div>
       </div>

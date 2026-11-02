@@ -20,6 +20,10 @@ const suggestions = computed(() => {
   if (store.contentType === 'VCARD' && store.contact.encoding === 'vcard') {
     items.push('Turn on the compact format.')
   }
+  // A code's type is fixed once it's saved
+  if (store.contentType === 'VCARD' && !store.isEditing) {
+    items.push('Use a dynamic code, which stays small however much you add.')
+  }
   return items
 })
 </script>

@@ -30,10 +30,8 @@ const isDynamic = computed({
   },
 })
 
-// Text can't redirect, and hosted contact pages don't exist until /r/{short_code}
-// learns to serve them (Phase 3 of docs/features/contact-qr-codes.md). A dynamic
-// contact code printed before then would scan to an empty redirect.
-const canBeDynamic = computed(() => store.contentType === 'URL')
+// Text has nothing to redirect to or host
+const canBeDynamic = computed(() => store.contentType !== 'TEXT')
 
 const contentTypeOptions = computed(() =>
   [
@@ -42,7 +40,7 @@ const contentTypeOptions = computed(() =>
     { label: 'Contact', value: 'VCARD' },
   ].map((option) => ({
     ...option,
-    disabled: isDynamic.value && option.value !== store.contentType,
+    disabled: isDynamic.value && option.value === 'TEXT',
   })),
 )
 </script>
@@ -118,7 +116,7 @@ const contentTypeOptions = computed(() =>
             Dynamic
           </p>
           <p class="text-xs mt-0.5" :class="isDynamic ? 'text-primary-500 dark:text-primary-400' : 'text-surface-500'">
-            Redirect URL editable anytime
+            Editable anytime without reprinting
           </p>
         </div>
       </div>
@@ -140,11 +138,8 @@ const contentTypeOptions = computed(() =>
       <p v-if="store.isEditing" class="text-xs text-surface-400">
         Static or dynamic can't be changed once a code is created.
       </p>
-      <p v-else-if="isDynamic" class="text-xs text-surface-400">
-        Dynamic codes currently support URLs only.
-      </p>
       <p v-else-if="!canBeDynamic" class="text-xs text-surface-400">
-        {{ store.contentType === 'TEXT' ? 'Text' : 'Contact' }} codes are static only for now.
+        Text codes are always static.
       </p>
     </div>
 
@@ -178,6 +173,10 @@ const contentTypeOptions = computed(() =>
     <Message v-if="isDynamic && store.contentType === 'URL'" severity="info" :closable="false" class="text-sm">
       <span class="font-semibold">Dynamic QR</span> → Redirect URL will be encoded automatically.
       You can update the destination URL at any time without reprinting.
+    </Message>
+    <Message v-else-if="isDynamic" severity="info" :closable="false" class="text-sm">
+      <span class="font-semibold">Dynamic QR</span> → Scans open a contact page with a Save contact button.
+      You can update the details at any time without reprinting.
     </Message>
   </div>
 </template>

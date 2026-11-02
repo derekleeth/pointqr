@@ -1,7 +1,8 @@
-"""QR code CRUD, export, and logo upload endpoints."""
+"""QR code CRUD, export, and logo and contact photo upload endpoints."""
 
 from __future__ import annotations
 
+import io
 import math
 import secrets
 import uuid
@@ -11,6 +12,8 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, Response, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
+from PIL import Image, ImageOps
 from sqlalchemy import func, select
 
 from app.config import get_settings
@@ -35,6 +38,10 @@ settings = get_settings()
 
 ALLOWED_LOGO_CONTENT_TYPES = {"image/png", "image/svg+xml", "image/jpeg", "image/webp"}
 MAX_LOGO_BYTES = 500 * 1024  # 500 KB
+# Larger than the logo limit because photos come straight off a phone; they are shrunk on upload
+MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
+MAX_PHOTO_PIXELS = 50_000_000
+PHOTO_SIZE_PX = 512
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +97,46 @@ def _resolve_logo_path(design_config: dict) -> Path | None:
         candidate = Path(settings.storage_path) / rel
         return candidate if candidate.exists() else None
     return None
+
+
+def _qr_storage_dir(qr: QRCode) -> Path:
+    """Per-code upload directory. purge_orphaned_logos removes it once the code is deleted."""
+    return Path(settings.storage_path) / "logos" / str(qr.user_id) / str(qr.id)
+
+
+def _sync_photo_files(qr: QRCode) -> None:
+    """Delete uploaded photos the contact no longer uses, so a removed photo stops being public."""
+    photo_url = (qr.content_data or {}).get("photo_url") or ""
+    photo_dir = _qr_storage_dir(qr)
+    if not photo_dir.exists():
+        return
+    for path in photo_dir.glob("photo-*.webp"):
+        if not photo_url.endswith(f"/{path.name}"):
+            path.unlink(missing_ok=True)
+
+
+def _reencode_image(raw: bytes, *, image_format: str, max_size_px: int, **save_options: object) -> bytes:
+    """Shrink and re-encode an uploaded image. Raises ValueError if it isn't a usable image.
+
+    Uploads are publicly served, so what gets stored is always freshly encoded image
+    data, never the uploaded bytes. That also drops EXIF data, such as the GPS location
+    phones record.
+    """
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            if img.format not in {"PNG", "JPEG", "WEBP"}:
+                raise ValueError("unsupported image format")
+            if img.width * img.height > MAX_PHOTO_PIXELS:
+                raise ValueError("image dimensions are too large")
+            photo = ImageOps.exif_transpose(img)
+            has_alpha = "A" in photo.getbands() or "transparency" in photo.info
+            photo = photo.convert("RGBA" if has_alpha else "RGB")
+            photo.thumbnail((max_size_px, max_size_px))
+            out = io.BytesIO()
+            photo.save(out, format=image_format, **save_options)
+            return out.getvalue()
+    except (OSError, SyntaxError, Image.DecompressionBombError) as exc:
+        raise ValueError("not a readable image") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -283,6 +330,8 @@ async def update_qrcode(
     if payload.is_active is not None:
         qr.is_active = payload.is_active
 
+    _sync_photo_files(qr)
+
     await db.flush()
     await db.refresh(qr)
     return qr
@@ -298,9 +347,16 @@ async def delete_qrcode(
     current_user: CurrentUser,
     db: DBSession,
 ) -> None:
-    """Mark a QR code as inactive (soft delete). Scan history is preserved."""
+    """Mark a QR code as inactive (soft delete). Scan history is preserved.
+
+    Contact details are personal data, so they are erased rather than kept with the row.
+    """
     qr = await _get_qr_or_404(qr_id, current_user, db)
     qr.is_active = False
+    if qr.content_type == QRContentType.vcard:
+        qr.content_data = None
+        qr.design_config = {**(qr.design_config or {}), "content": ""}
+        _sync_photo_files(qr)
     await db.flush()
 
 
@@ -401,6 +457,63 @@ async def upload_logo(
     img_opts["src"] = static_url
     design["imageOptions"] = img_opts
     qr.design_config = design
+
+    await db.flush()
+    await db.refresh(qr)
+    return qr
+
+
+@router.post(
+    "/{qr_id}/photo",
+    response_model=QRCodeRead,
+    summary="Upload a photo for a dynamic contact code's hosted page",
+)
+@limiter.limit("10/minute")
+async def upload_contact_photo(
+    request: Request,
+    qr_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DBSession,
+    file: UploadFile = File(...),
+) -> QRCode:
+    """Save a contact photo and store its static URL in content_data.photo_url.
+
+    Takes PNG, JPEG or WebP. SVG isn't accepted, since these files are served publicly.
+    """
+    qr = await _get_qr_or_404(qr_id, current_user, db)
+    if qr.content_type != QRContentType.vcard or qr.type != QRCodeType.dynamic or not qr.content_data:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Photos only apply to dynamic contact codes.",
+        )
+
+    raw = await file.read()
+    if len(raw) > MAX_PHOTO_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Photo exceeds the 5 MB limit.",
+        )
+    try:
+        photo = await run_in_threadpool(
+            _reencode_image, raw, image_format="WEBP", max_size_px=PHOTO_SIZE_PX, quality=85
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Upload a PNG, JPEG or WebP image.",
+        ) from exc
+
+    # A new name each time, because /static/ files are cached as immutable
+    name = f"photo-{secrets.token_hex(8)}.webp"
+    photo_dir = _qr_storage_dir(qr)
+    photo_dir.mkdir(parents=True, exist_ok=True)
+    (photo_dir / name).write_bytes(photo)
+
+    qr.content_data = {
+        **qr.content_data,
+        "photo_url": f"/static/logos/{qr.user_id}/{qr.id}/{name}",
+    }
+    _sync_photo_files(qr)
 
     await db.flush()
     await db.refresh(qr)

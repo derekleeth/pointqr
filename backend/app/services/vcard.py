@@ -10,6 +10,10 @@ with the client-side builder used for the editor's live preview.
 
 from __future__ import annotations
 
+import re
+import unicodedata
+from urllib.parse import quote
+
 from app.schemas.qrcode import ContactData
 
 CRLF = "\r\n"
@@ -116,6 +120,9 @@ def build_vcard(contact: ContactData) -> str:
     # URL is a URI value, not TEXT, so it isn't escaped (that would corrupt query strings).
     if contact.website:
         lines.append(f"URL:{contact.website}")
+    for link in contact.social_links:
+        label = re.sub(r"[^A-Za-z0-9]", "", link.label).upper()
+        lines.append(f"URL;TYPE={label}:{link.url}" if label else f"URL:{link.url}")
 
     if contact.address:
         addr = contact.address
@@ -130,6 +137,16 @@ def build_vcard(contact: ContactData) -> str:
 
     lines.append("END:VCARD")
     return CRLF.join(_fold(line) for line in lines) + CRLF
+
+
+def vcf_content_disposition(contact: ContactData) -> str:
+    """Return an attachment header naming the file after the contact (RFC 6266)."""
+    # Letters, digits, spaces, dots and dashes only, so a name can't inject a header or a path
+    name = re.sub(r"[^\w .-]", "", display_name(contact)).strip(" .")[:100] or "contact"
+    ascii_name = re.sub(
+        r"[^\w .-]", "", unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    ).strip(" .") or "contact"
+    return f"attachment; filename=\"{ascii_name}.vcf\"; filename*=UTF-8''{quote(name)}.vcf"
 
 
 # ---------------------------------------------------------------------------

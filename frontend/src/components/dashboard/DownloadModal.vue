@@ -4,6 +4,7 @@ import QRCodeStyling from 'qr-code-styling'
 import { useToast } from 'primevue/usetoast'
 import { useThemeStore } from '@/stores/theme'
 import { toQRData } from '@/utils/qrData'
+import { contactDisplayName } from '@/utils/vcard'
 import {
   startAsyncExport,
   getExportJob,
@@ -78,6 +79,13 @@ const qrContent = computed(() => {
     return `${window.location.origin}/r/${props.qrCode.short_code}`
   }
   return props.qrCode.target_url || 'https://pointqr.app'
+})
+
+// What the code holds, for the label under the preview. A static contact's vCard isn't readable.
+const contentLabel = computed(() => {
+  const contact = props.qrCode?.content_data
+  if (contact && props.qrCode?.type === 'STATIC') return contactDisplayName(contact)
+  return qrContent.value.replace(/^https?:\/\//, '')
 })
 
 // Options for QRCodeStyling
@@ -563,8 +571,8 @@ async function triggerDownload(format?: 'png' | 'svg' | 'pdf' | 'eps') {
             />
             <span class="font-mono">{{ qrCode.scan_count }} scans</span>
           </div>
-          <span class="truncate max-w-[120px]" :title="qrContent">
-            {{ qrContent.replace(/^https?:\/\//, '') }}
+          <span class="truncate max-w-[120px]" :title="contentLabel">
+            {{ contentLabel }}
           </span>
         </div>
 

@@ -377,7 +377,7 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
         icon="pi pi-download"
         size="small"
         severity="secondary"
-        :disabled="!store.hasContent"
+        :disabled="!store.canDownload"
         @click="downloadClient('png')"
       />
       <Button
@@ -385,7 +385,7 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
         icon="pi pi-download"
         size="small"
         severity="secondary"
-        :disabled="!store.hasContent"
+        :disabled="!store.canDownload"
         @click="downloadClient('svg')"
       />
     </div>
@@ -401,7 +401,7 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
         icon="pi pi-print"
         size="small"
         outlined
-        :disabled="!store.hasContent"
+        :disabled="!store.canDownload"
         @click="showPrintSheet = true"
       />
     </div>

@@ -1,7 +1,7 @@
 # Feature Plan: Contact QR Codes (vCard)
 
 > Added: 2026-11-01
-> Status: **In progress** (Phases 1-2 built; Phase 2 tested in desktop browsers, phone testing pending)
+> Status: **In progress** (Phases 1-3 built; tested in desktop browsers and phone emulation, real-device testing pending)
 > Owner: Derek Leeth
 
 ## Overview
@@ -97,7 +97,9 @@ Why a landing page rather than serving the `.vcf` directly: iOS Safari shows a c
 
 - Contact data is PII. Hosted contact pages send `X-Robots-Tag: noindex, nofollow`, and `/r/` stays out of `sitemap.xml` and is disallowed in `robots.txt`.
 - An inactive code (`is_active = false`) returns 404 and doesn't show the contact data.
-- Deleting a QR code removes its `content_data` with it (it's on the same row, so this is already true).
+- Deleting a QR code erases its `content_data`, vCard payload and photo. Deletes are soft (the row stays for scan history), so this has to be done explicitly.
+- Contact details are read fresh for every request instead of going through the redirect cache, so deactivating a code takes effect immediately.
+- Uploaded photos are re-encoded, which removes EXIF data such as GPS location. A removed or replaced photo file is deleted right away.
 - Escape every field on the landing page (no raw HTML), and validate `website`/`social_links` as `http(s)` URLs only. That blocks `javascript:` links.
 
 ### 6. Scannability
@@ -135,14 +137,14 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### Phase 3: Dynamic contact pages
 
-- [ ] Carry `content_type` through the redirect cache; branch `/r/{short_code}` for `VCARD`
-- [ ] Hosted contact landing page template (mobile-first, light/dark, uses `theme_color`)
-- [ ] `.vcf` download endpoint with correct headers and filename sanitizing
-- [ ] Optional contact photo upload (reuse logo upload limits & storage under `/storage/logos/`)
-- [ ] `noindex` headers; confirm `robots.txt` / sitemap exclusions
-- [ ] Scan event fires once per landing view, not on `.vcf` download
-- [ ] Respect tier limits for dynamic contact codes
-- [ ] Enable Dynamic for contact codes in `ContentPanel.vue` (`canBeDynamic`) and add "use a dynamic code" to the suggestions in `DensityMeter.vue`
+- [x] Carry `content_type` through the redirect cache; branch `/r/{short_code}` for `VCARD`
+- [x] Hosted contact landing page template (mobile-first, light/dark, uses `theme_color`)
+- [x] `.vcf` download endpoint with correct headers and filename sanitizing
+- [x] Optional contact photo upload (reuse logo upload limits & storage under `/storage/logos/`)
+- [x] `noindex` headers; confirm `robots.txt` / sitemap exclusions
+- [x] Scan event fires once per landing view, not on `.vcf` download
+- [x] Respect tier limits for dynamic contact codes
+- [x] Enable Dynamic for contact codes in `ContentPanel.vue` (`canBeDynamic`) and add "use a dynamic code" to the suggestions in `DensityMeter.vue`
 
 ### Phase 4: QA & device testing
 
@@ -151,11 +153,12 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [ ] Logo + ECC `H` + full contact still scans on the static path at 300 px and in print
 - [ ] Accessibility pass on the contact form and landing page (labels, focus order, contrast)
 - [ ] Test the contact form on real phones (reminder from Derek): layout and usability of the form fields, not just scanning
-- [ ] Show the contact name instead of raw vCard text (`BEGIN:VCARD VERSI...`) in the dashboard download modal (`DownloadModal.vue`)
+- [x] Show the contact name instead of raw vCard text (`BEGIN:VCARD VERSI...`) in the dashboard download modal (`DownloadModal.vue`)
 - [ ] Phone layout depends on the app shell work in [mobile-responsive-ui.md](mobile-responsive-ui.md); decide whether real-phone form testing waits for it
 
 ### Phase 5: Docs & launch
 
+- [ ] **Before launch:** fix the PNG export crash for codes with an SVG logo. It returns a 500 because Pillow can't open SVG files in `_embed_logo` (`qr_generator.py`). Also check the async export and whether the logo appears in SVG, PDF and EPS exports
 - [ ] Add the "Contact" use case to `HomeView.vue` and the product tour
 - [ ] Document new fields in `APIDocsView.vue` / OpenAPI examples
 - [ ] Update `docs/project-plan.md` schema table and `docs/changelog.md`
@@ -179,9 +182,9 @@ Test with a name that has accents (e.g. `José Ñúñez`), a comma in the organi
 
 ## Open Questions
 
-1. Should `TEXT` become its own content type in this work, or stay as "URL with non-URL content" the way it works today?
-2. For the hosted contact page: server-rendered template from FastAPI, or a lightweight public route in the Vue SPA served by nginx?
-3. Should a dynamic contact code be able to switch to a URL code later (and the reverse), or is `content_type` fixed once the code is created?
+1. ~~Should `TEXT` become its own content type?~~ Yes, static only (Phase 2).
+2. ~~Server-rendered template or a public SPA route for the hosted page?~~ Server-rendered with Jinja2, which adds one dependency. The page needs no JavaScript, so it loads fast and can ship a strict Content-Security-Policy.
+3. ~~Can a dynamic contact code switch to a URL code later, and the reverse?~~ Yes, in the editor. Repointing a printed code is what dynamic codes are for, and the QR stays the same.
 4. Is the photo on dynamic contact pages available on every tier, or Pro and up only?
 
 ## Progress Log
@@ -192,3 +195,4 @@ Test with a name that has accents (e.g. `José Ñúñez`), a comma in the organi
 | 2026-11-01 | Phase 1 done. `content_type` / `content_data` columns (migration 009), `ContactData` schemas, `services/vcard.py` (vCard 3.0 + MECARD), and the server now owns `design_config.content` for static contact codes. Choices made along the way: MECARD is selected with `content_data.encoding`; static codes reject `social_links` / `photo_url` / `theme_color` with a 422; contact codes always store `target_url = NULL`; for now, `PATCH` lets a code switch between URL and VCARD (open question 3 is still open). |
 | 2026-11-01 | Phase 2 built: not yet tested in a browser. Choices made along the way: the editor only offers Dynamic for URL codes until Phase 3, because `/r/{short_code}` would send a dynamic contact code to an empty redirect; Static/Dynamic is locked once a code is saved, because the API ignores changes to it; `TEXT` is its own content type (open question 1), static only; the dashboard filter runs on the loaded rows, since the dashboard only loads the first 20. UTF-8 fix: `qr-code-styling` encoded each character as one byte and `segno` preferred Latin-1, so `toQRData` and `encoding="utf-8"` now produce UTF-8 in the preview, downloads, print sheet and server exports. |
 | 2026-11-01 | Editor polish from local testing: a new contact code takes its title from the contact until the user types their own, and saved titles stay put. The form panel now gets 3/5 of the editor, with a 23rem minimum for the preview so the 300 px QR fits. Contact form rows wrap instead of overflowing. |
+| 2026-11-02 | Phase 3 built. `/r/{short_code}` shows a server-rendered contact page for `VCARD` codes and `/r/{short_code}.vcf` serves the file; the editor offers Dynamic for contacts, with a Contact page section for the photo, theme color and social links. Changes from the original plan: photos allow up to 5 MB rather than the 500 KB logo limit, because they come straight off a phone and are shrunk to 512 px on upload; SVG is not accepted for photos. Deleting now erases contact data (see Privacy & safety). Unsaved dynamic codes can no longer be downloaded, for URL codes too, since their preview is only a placeholder. The page leaves out the birthday, and the `.vcf` leaves out the photo. Requires rebuilding the backend image for the new Jinja2 dependency. |

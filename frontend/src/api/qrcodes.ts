@@ -255,6 +255,14 @@ export function getExportJob(jobId: string) {
   return apiClient.get<BatchJobRead>(`/qrcodes/jobs/${jobId}`)
 }
 
+export const uploadContactPhoto = (id: string, file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  return apiClient.post<QRCodeRead>(`/qrcodes/${id}/photo`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
 export const uploadLogo = (id: string, file: File) => {
   const form = new FormData()
   form.append('file', file)

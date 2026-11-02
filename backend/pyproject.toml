@@ -25,6 +25,8 @@ dependencies = [
     # Task queue
     "celery>=5.4.0",
     "aio-pika>=9.4.0",
+    # Hosted contact pages
+    "jinja2>=3.1.0",
     # File uploads
     "python-multipart>=0.0.12",
     # HTTP client (used in tests + SSRF validation later)

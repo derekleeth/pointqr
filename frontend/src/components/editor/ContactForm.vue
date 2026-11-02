@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { uploadContactPhoto } from '@/api/qrcodes'
 import { useQREditorStore } from '@/stores/qrEditor'
 import {
   MAX_EMAILS,
   MAX_PHONES,
+  MAX_SOCIAL_LINKS,
   buildVCard,
   contactDisplayName,
   hasContactErrors,
   hasContactName,
-  normalizeContact,
 } from '@/utils/vcard'
 
 const store = useQREditorStore()
@@ -42,7 +43,7 @@ const useMecard = computed({
 
 /** Let users check the contact on their own phone before printing. */
 function downloadVcf() {
-  const contact = normalizeContact(store.contact)
+  const contact = store.contactToSave()
   const name = contactDisplayName(contact).replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || 'contact'
   const url = URL.createObjectURL(new Blob([buildVCard(contact)], { type: 'text/vcard;charset=utf-8' }))
   const a = document.createElement('a')
@@ -50,6 +51,33 @@ function downloadVcf() {
   a.download = `${name}.vcf`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+const DEFAULT_THEME_COLOR = '#4f46e5'
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024
+
+// The live page, once the code is saved. It's the same URL the QR code encodes.
+const hostedPageUrl = computed(() =>
+  store.qrType === 'DYNAMIC' && store.currentQRCode?.short_code ? store.designConfig.content : '',
+)
+
+const photoUploading = ref(false)
+const photoError = ref('')
+
+async function handlePhotoSelect(event: { files: File[] }) {
+  const file = event.files[0]
+  if (!file || !store.currentQRCode) return
+
+  photoUploading.value = true
+  photoError.value = ''
+  try {
+    const { data } = await uploadContactPhoto(store.currentQRCode.id, file)
+    store.applySavedPhoto(data)
+  } catch {
+    photoError.value = 'Upload failed. Use a PNG, JPEG, or WebP image under 5 MB.'
+  } finally {
+    photoUploading.value = false
+  }
 }
 </script>
 
@@ -277,7 +305,112 @@ function downloadVcf() {
           </div>
         </AccordionContent>
       </AccordionPanel>
+
+      <!-- Contact page: only dynamic codes have one -->
+      <AccordionPanel v-if="store.qrType === 'DYNAMIC'" value="page">
+        <AccordionHeader>Contact page</AccordionHeader>
+        <AccordionContent>
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <span class="text-sm font-medium text-surface-700 dark:text-surface-300">Photo</span>
+              <template v-if="store.contact.photo_url">
+                <div class="flex items-center gap-3">
+                  <img :src="store.contact.photo_url" alt="Contact photo" class="h-16 w-16 rounded-full object-cover" />
+                  <Button label="Remove photo" severity="danger" text size="small" @click="store.contact.photo_url = null" />
+                </div>
+              </template>
+              <template v-else-if="store.currentQRCode">
+                <FileUpload
+                  mode="basic"
+                  accept="image/png,image/jpeg,image/webp"
+                  :max-file-size="MAX_PHOTO_BYTES"
+                  choose-label="Upload photo"
+                  :auto="true"
+                  :disabled="photoUploading"
+                  @select="handlePhotoSelect"
+                />
+                <p class="text-xs text-surface-400">PNG, JPEG, or WebP · max 5 MB. Location data is removed.</p>
+              </template>
+              <p v-else class="text-xs text-surface-400">Save the code first, then add a photo.</p>
+              <p v-if="photoError" class="text-xs text-red-500">{{ photoError }}</p>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label for="contact-theme-color" class="text-sm font-medium text-surface-700 dark:text-surface-300">Theme color</label>
+              <div class="flex items-center gap-3">
+                <input
+                  id="contact-theme-color"
+                  type="color"
+                  :value="store.contact.theme_color ?? DEFAULT_THEME_COLOR"
+                  class="h-10 w-14 cursor-pointer rounded"
+                  @input="store.contact.theme_color = ($event.target as HTMLInputElement).value"
+                />
+                <Button
+                  v-if="store.contact.theme_color"
+                  label="Use default"
+                  severity="secondary"
+                  text
+                  size="small"
+                  @click="store.contact.theme_color = null"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <span class="text-sm font-medium text-surface-700 dark:text-surface-300">Social links</span>
+              <div v-for="(link, i) in store.contact.social_links" :key="i" class="flex flex-col gap-1">
+                <div class="flex flex-wrap gap-2">
+                  <InputText
+                    v-model="link.label"
+                    maxlength="50"
+                    placeholder="LinkedIn"
+                    :aria-label="`Link ${i + 1} label`"
+                    class="w-32 flex-shrink-0"
+                  />
+                  <InputText
+                    v-model="link.url"
+                    type="url"
+                    maxlength="2048"
+                    placeholder="https://"
+                    :aria-label="`Link ${i + 1} URL`"
+                    :invalid="!!store.contactErrors.socialLinks[i]"
+                    class="flex-1 min-w-40"
+                  />
+                  <Button
+                    icon="pi pi-times"
+                    severity="secondary"
+                    text
+                    :aria-label="`Remove link ${i + 1}`"
+                    @click="store.contact.social_links.splice(i, 1)"
+                  />
+                </div>
+                <p v-if="store.contactErrors.socialLinks[i]" class="text-xs text-red-500">{{ store.contactErrors.socialLinks[i] }}</p>
+              </div>
+              <Button
+                label="Add link"
+                icon="pi pi-plus"
+                size="small"
+                severity="secondary"
+                text
+                class="self-start"
+                :disabled="store.contact.social_links.length >= MAX_SOCIAL_LINKS"
+                @click="store.contact.social_links.push({ label: '', url: '' })"
+              />
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionPanel>
     </Accordion>
+
+    <a
+      v-if="hostedPageUrl"
+      :href="hostedPageUrl"
+      target="_blank"
+      rel="noopener"
+      class="self-start text-sm text-primary-600 dark:text-primary-400 underline"
+    >
+      Open contact page
+    </a>
 
     <!-- MECARD is only an option when the payload lives in the code itself -->
     <div v-if="store.qrType === 'STATIC'" class="flex flex-col gap-1">

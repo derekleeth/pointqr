@@ -12,6 +12,7 @@ export type ContactFormState = ContactData & { address: ContactAddress }
 
 export const MAX_PHONES = 5
 export const MAX_EMAILS = 3
+export const MAX_SOCIAL_LINKS = 10
 
 const CRLF = '\r\n'
 const MAX_LINE_OCTETS = 75
@@ -120,7 +121,15 @@ export function normalizeContact(form: ContactFormState): ContactData {
       : null,
     note: clean(form.note),
     birthday: clean(form.birthday),
+    social_links: form.social_links
+      .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+      .filter((l) => l.label || l.url),
   }
+}
+
+/** Static codes have no hosted page, so the fields only that page uses don't apply. */
+export function withoutHostedFields(contact: ContactData): ContactData {
+  return { ...contact, social_links: [], photo_url: null, theme_color: null }
 }
 
 export function hasContactName(form: ContactFormState): boolean {
@@ -131,11 +140,12 @@ export interface ContactErrors {
   phones: Record<number, string>
   emails: Record<number, string>
   website?: string
+  socialLinks: Record<number, string>
 }
 
 /** Field errors keyed by form row. Blank rows are ignored, since they are never saved. */
 export function validateContact(form: ContactFormState): ContactErrors {
-  const errors: ContactErrors = { phones: {}, emails: {} }
+  const errors: ContactErrors = { phones: {}, emails: {}, socialLinks: {} }
 
   form.phones.forEach((phone, i) => {
     const number = phone.number.trim()
@@ -155,6 +165,16 @@ export function validateContact(form: ContactFormState): ContactErrors {
   if (website && !HTTP_URL_PATTERN.test(website)) {
     errors.website = 'Enter a full URL starting with http:// or https://.'
   }
+  form.social_links.forEach((link, i) => {
+    const label = link.label.trim()
+    const url = link.url.trim()
+    if (!label && !url) return
+    if (!label) {
+      errors.socialLinks[i] = 'Enter a label for this link.'
+    } else if (!HTTP_URL_PATTERN.test(url)) {
+      errors.socialLinks[i] = 'Enter a full URL starting with http:// or https://.'
+    }
+  })
   return errors
 }
 
@@ -162,7 +182,8 @@ export function hasContactErrors(errors: ContactErrors): boolean {
   return (
     Object.keys(errors.phones).length > 0 ||
     Object.keys(errors.emails).length > 0 ||
-    !!errors.website
+    !!errors.website ||
+    Object.keys(errors.socialLinks).length > 0
   )
 }
 
@@ -236,6 +257,10 @@ export function buildVCard(contact: ContactData): string {
 
   // URL is a URI value, not TEXT, so it isn't escaped
   if (contact.website) lines.push(`URL:${contact.website}`)
+  for (const link of contact.social_links) {
+    const label = link.label.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+    lines.push(label ? `URL;TYPE=${label}:${link.url}` : `URL:${link.url}`)
+  }
 
   if (contact.address) {
     const addr = contact.address
