@@ -85,7 +85,7 @@ def generate_png(
     content = design_config.get("content", "")
     target_width = design_config.get("width", 300)
 
-    qr = segno.make(content, error=_error_level(design_config))
+    qr = segno.make(content, error=_error_level(design_config), encoding="utf-8")
     scale = _scale(qr, target_width)
     border = _border(design_config, scale)
 
@@ -115,7 +115,7 @@ def generate_svg(design_config: dict) -> str:
     content = design_config.get("content", "")
     target_width = design_config.get("width", 300)
 
-    qr = segno.make(content, error=_error_level(design_config))
+    qr = segno.make(content, error=_error_level(design_config), encoding="utf-8")
     scale = _scale(qr, target_width)
     border = _border(design_config, scale)
 
@@ -138,7 +138,7 @@ def generate_pdf(design_config: dict) -> bytes:
     content = design_config.get("content", "")
     target_width = design_config.get("width", 300)
 
-    qr = segno.make(content, error=_error_level(design_config))
+    qr = segno.make(content, error=_error_level(design_config), encoding="utf-8")
     scale = _scale(qr, target_width)
     border = _border(design_config, scale)
 
@@ -159,7 +159,7 @@ def generate_eps(design_config: dict) -> bytes:
     content = design_config.get("content", "")
     target_width = design_config.get("width", 300)
 
-    qr = segno.make(content, error=_error_level(design_config))
+    qr = segno.make(content, error=_error_level(design_config), encoding="utf-8")
     scale = _scale(qr, target_width)
     border = _border(design_config, scale)
 

@@ -6,6 +6,7 @@ import { useQREditorStore } from '@/stores/qrEditor'
 import { useThemeStore } from '@/stores/theme'
 import { startAsyncExport, getExportJob } from '@/api/qrcodes'
 import { measureLabelHeight, drawLabel } from '@/utils/qrRendering'
+import { toQRData } from '@/utils/qrData'
 import PrintSheetModal from '@/components/editor/PrintSheetModal.vue'
 
 const store = useQREditorStore()
@@ -46,7 +47,7 @@ function buildOptions() {
   return {
     width: 300,
     height: 300,
-    data: cfg.content || 'https://pointqr.app',
+    data: toQRData(cfg.content || 'https://pointqr.app'),
     margin: cfg.margin,
     qrOptions: cfg.qrOptions,
     dotsOptions: cfg.dotsOptions,

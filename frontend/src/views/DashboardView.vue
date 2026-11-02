@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { listQRCodes, deleteQRCode, type QRCodeRead } from '@/api/qrcodes'
+import { listQRCodes, deleteQRCode, type QRCodeRead, type QRContentType } from '@/api/qrcodes'
 import DownloadModal from '@/components/dashboard/DownloadModal.vue'
 
 const router = useRouter()
@@ -17,6 +17,22 @@ const perPage = 20
 const selectedQRCode = ref<QRCodeRead | null>(null)
 const downloadModalVisible = ref(false)
 const betaDismissed = ref(false)
+
+const CONTENT_TYPES: Record<QRContentType, { label: string; icon: string }> = {
+  URL: { label: 'URL', icon: 'pi-link' },
+  TEXT: { label: 'Text', icon: 'pi-align-left' },
+  VCARD: { label: 'Contact', icon: 'pi-id-card' },
+}
+const contentFilterOptions = [
+  { label: 'All', value: 'ALL' },
+  ...Object.entries(CONTENT_TYPES).map(([value, { label }]) => ({ label, value })),
+]
+const contentFilter = ref<QRContentType | 'ALL'>('ALL')
+const filteredQRCodes = computed(() =>
+  contentFilter.value === 'ALL'
+    ? qrCodes.value
+    : qrCodes.value.filter((q) => q.content_type === contentFilter.value),
+)
 
 onMounted(async () => {
   if (!auth.user) await auth.initialize()
@@ -150,13 +166,26 @@ function formatDate(iso: string) {
       </div>
     </div>
 
+    <!-- Content type filter -->
+    <SelectButton
+      v-if="qrCodes.length"
+      v-model="contentFilter"
+      :options="contentFilterOptions"
+      option-label="label"
+      option-value="value"
+      :allow-empty="false"
+      aria-label="Filter by content type"
+      size="small"
+      class="-mb-4 self-start"
+    />
+
     <!-- QR code DataTable -->
     <div
       class="rounded-xl overflow-hidden border transition-colors duration-200"
       style="background-color: var(--bg-card); border-color: var(--border);"
     >
       <DataTable
-        :value="qrCodes"
+        :value="filteredQRCodes"
         :loading="loading"
         striped-rows
         row-hover
@@ -173,7 +202,10 @@ function formatDate(iso: string) {
         }"
       >
         <template #empty>
-          <div class="flex flex-col items-center gap-4 py-16 text-center">
+          <div v-if="qrCodes.length" class="py-16 text-center text-surface-500">
+            No {{ CONTENT_TYPES[contentFilter as QRContentType]?.label }} QR codes yet.
+          </div>
+          <div v-else class="flex flex-col items-center gap-4 py-16 text-center">
             <span class="text-5xl">✨</span>
             <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">
               No QR codes yet
@@ -197,6 +229,15 @@ function formatDate(iso: string) {
               :value="data.type"
               :severity="data.type === 'DYNAMIC' ? 'info' : 'secondary'"
             />
+          </template>
+        </Column>
+
+        <Column field="content_type" header="Content" style="width: 120px">
+          <template #body="{ data }">
+            <span class="inline-flex items-center gap-1.5 text-sm" style="color: var(--text-secondary)">
+              <i :class="`pi ${CONTENT_TYPES[data.content_type as QRContentType].icon} text-xs`" />
+              {{ CONTENT_TYPES[data.content_type as QRContentType].label }}
+            </span>
           </template>
         </Column>
 

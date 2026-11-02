@@ -1,7 +1,7 @@
 # Feature Plan: Contact QR Codes (vCard)
 
 > Added: 2026-11-01
-> Status: **In progress** (Phase 1 done)
+> Status: **In progress** (Phases 1-2 built; Phase 2 tested in desktop browsers, phone testing pending)
 > Owner: Derek Leeth
 
 ## Overview
@@ -38,7 +38,7 @@ Dynamic contact codes count toward the user's `max_dynamic_qrs` tier limit ([lim
 - `QRCode` ([models/qrcode.py](../../backend/app/models/qrcode.py)) has only `type` (STATIC/DYNAMIC), `target_url` and `design_config.content`. There's no concept of a content type.
 - Dynamic codes always resolve through `GET /r/{short_code}` ([redirect.py](../../backend/app/api/v1/redirect.py)), which returns a 302 to `target_url` and caches the result for 60 s.
 - [ContentPanel.vue](../../frontend/src/components/editor/ContentPanel.vue) is a single textarea. Its label already says "URL, text, vCard…", so users can paste raw vCard text today, but nothing helps them write it.
-- Rendering: `qr-code-styling` on the frontend and `segno` on the backend. Both take an arbitrary string, so the renderers need no changes.
+- Rendering: `qr-code-styling` on the frontend and `segno` on the backend. Both take an arbitrary string, but neither defaulted to UTF-8, so non-ASCII contact data needed a fix (see the Phase 2 log entry).
 - The latest Alembic migration is `008_rename_enterprise_tier_to_max.py`.
 
 ---
@@ -124,14 +124,14 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ### Phase 2: Editor UI
 
-- [ ] Content type selector in `ContentPanel.vue` (URL / Text / Contact)
-- [ ] `ContactForm.vue` component (grouped, collapsible sections; repeatable phone/email rows)
-- [ ] Shared TS types + client-side vCard builder for live preview (mirrors `services/vcard.py`)
-- [ ] Extend `qrEditor` store with `contentType` / `contentData`; include them in `loadFromQRCode` / `resetToDefaults` / save
-- [ ] Density meter and too-dense warning
-- [ ] MECARD "compact" toggle (static only)
-- [ ] "Download .vcf" button in the editor so users can check the contact on their own phone
-- [ ] Dashboard: content-type icon/badge on QR cards and a filter
+- [x] Content type selector in `ContentPanel.vue` (URL / Text / Contact)
+- [x] `ContactForm.vue` component (grouped, collapsible sections; repeatable phone/email rows)
+- [x] Shared TS types + client-side vCard builder for live preview (mirrors `services/vcard.py`)
+- [x] Extend `qrEditor` store with `contentType` / `contentData`; include them in `loadFromQRCode` / `resetToDefaults` / save
+- [x] Density meter and too-dense warning
+- [x] MECARD "compact" toggle (static only)
+- [x] "Download .vcf" button in the editor so users can check the contact on their own phone
+- [x] Dashboard: content-type icon/badge on QR cards and a filter
 
 ### Phase 3: Dynamic contact pages
 
@@ -142,6 +142,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [ ] `noindex` headers; confirm `robots.txt` / sitemap exclusions
 - [ ] Scan event fires once per landing view, not on `.vcf` download
 - [ ] Respect tier limits for dynamic contact codes
+- [ ] Enable Dynamic for contact codes in `ContentPanel.vue` (`canBeDynamic`) and add "use a dynamic code" to the suggestions in `DensityMeter.vue`
 
 ### Phase 4: QA & device testing
 
@@ -149,6 +150,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [ ] Exports (PNG/SVG/PDF/EPS) and print sheet work with vCard payloads
 - [ ] Logo + ECC `H` + full contact still scans on the static path at 300 px and in print
 - [ ] Accessibility pass on the contact form and landing page (labels, focus order, contrast)
+- [ ] Test the contact form on real phones (reminder from Derek): layout and usability of the form fields, not just scanning
 
 ### Phase 5: Docs & launch
 
@@ -186,3 +188,5 @@ Test with a name that has accents (e.g. `José Ñúñez`), a comma in the organi
 |---|---|
 | 2026-11-01 | Plan created. |
 | 2026-11-01 | Phase 1 done. `content_type` / `content_data` columns (migration 009), `ContactData` schemas, `services/vcard.py` (vCard 3.0 + MECARD), and the server now owns `design_config.content` for static contact codes. Choices made along the way: MECARD is selected with `content_data.encoding`; static codes reject `social_links` / `photo_url` / `theme_color` with a 422; contact codes always store `target_url = NULL`; for now, `PATCH` lets a code switch between URL and VCARD (open question 3 is still open). |
+| 2026-11-01 | Phase 2 built: not yet tested in a browser. Choices made along the way: the editor only offers Dynamic for URL codes until Phase 3, because `/r/{short_code}` would send a dynamic contact code to an empty redirect; Static/Dynamic is locked once a code is saved, because the API ignores changes to it; `TEXT` is its own content type (open question 1), static only; the dashboard filter runs on the loaded rows, since the dashboard only loads the first 20. UTF-8 fix: `qr-code-styling` encoded each character as one byte and `segno` preferred Latin-1, so `toQRData` and `encoding="utf-8"` now produce UTF-8 in the preview, downloads, print sheet and server exports. |
+| 2026-11-01 | Editor polish from local testing: a new contact code takes its title from the contact until the user types their own, and saved titles stay put. The form panel now gets 3/5 of the editor, with a 23rem minimum for the preview so the 300 px QR fits. Contact form rows wrap instead of overflowing. |

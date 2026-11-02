@@ -11,6 +11,7 @@ import { jsPDF } from 'jspdf'
 import QRCodeStyling from 'qr-code-styling'
 import type { DesignConfig } from '@/api/qrcodes'
 import { renderQRCell } from '@/utils/qrRendering'
+import { toQRData } from '@/utils/qrData'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -160,7 +161,7 @@ export async function generatePrintSheetPDF(
   const qrOptions: Record<string, unknown> = {
     width: qrPx,
     height: qrPx,
-    data: designConfig.content || 'https://pointqr.app',
+    data: toQRData(designConfig.content || 'https://pointqr.app'),
     margin: designConfig.margin,
     qrOptions: designConfig.qrOptions,
     dotsOptions: designConfig.dotsOptions,

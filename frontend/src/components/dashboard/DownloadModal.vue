@@ -3,6 +3,7 @@ import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import QRCodeStyling from 'qr-code-styling'
 import { useToast } from 'primevue/usetoast'
 import { useThemeStore } from '@/stores/theme'
+import { toQRData } from '@/utils/qrData'
 import {
   startAsyncExport,
   getExportJob,
@@ -85,7 +86,7 @@ function buildOptions(size = 240) {
   return {
     width: size,
     height: size,
-    data: qrContent.value,
+    data: toQRData(qrContent.value),
     margin: cfg.margin,
     qrOptions: cfg.qrOptions,
     dotsOptions: cfg.dotsOptions,

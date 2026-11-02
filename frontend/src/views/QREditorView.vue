@@ -48,9 +48,11 @@ async function handleSave() {
   } catch (err: unknown) {
     console.error('Save failed', err)
     // Extract a human-readable message from the Axios error response if available
-    const detail =
-      (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-      'An unexpected error occurred. Please try again.'
+    // (FastAPI validation errors arrive as a list of { msg } objects rather than a string)
+    const raw = (err as { response?: { data?: { detail?: string | { msg: string }[] } } })?.response?.data?.detail
+    const detail = Array.isArray(raw)
+      ? raw.map((e) => e.msg).join(' ')
+      : raw ?? 'An unexpected error occurred. Please try again.'
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
@@ -85,7 +87,7 @@ async function handleSave() {
         :label="store.isSaving ? 'Saving…' : 'Save'"
         icon="pi pi-save"
         :loading="store.isSaving"
-        :disabled="!store.hasContent"
+        :disabled="!store.canSave"
         @click="handleSave"
       />
     </div>
@@ -93,9 +95,9 @@ async function handleSave() {
     <!-- ------------------------------------------------------------------ -->
     <!-- Two-panel editor layout                                             -->
     <!-- ------------------------------------------------------------------ -->
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(23rem,2fr)] gap-6 items-start">
       <!-- Left panel: tabs for Content + Design controls -->
-      <div class="lg:col-span-2">
+      <div class="min-w-0">
         <div
           class="rounded-xl overflow-hidden border transition-colors duration-200"
           style="background-color: var(--bg-card); border-color: var(--border);"
@@ -126,7 +128,7 @@ async function handleSave() {
       </div>
 
       <!-- Right panel: live QR preview + download actions -->
-      <div class="lg:col-span-3 flex justify-center">
+      <div class="min-w-0 flex justify-center">
         <div
           class="rounded-xl border p-8 w-full flex flex-col items-center gap-6 transition-colors duration-200"
           style="background-color: var(--bg-card); border-color: var(--border);"

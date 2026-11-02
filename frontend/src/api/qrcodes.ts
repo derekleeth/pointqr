@@ -68,6 +68,56 @@ export interface DesignConfig {
 }
 
 // ---------------------------------------------------------------------------
+// Contact (vCard) types – match ContactData in backend/app/schemas/qrcode.py
+// ---------------------------------------------------------------------------
+
+export type QRContentType = 'URL' | 'TEXT' | 'VCARD'
+
+export interface ContactPhone {
+  type: 'mobile' | 'work' | 'home' | 'fax' | 'other'
+  number: string
+}
+
+export interface ContactEmail {
+  type: 'work' | 'home' | 'other'
+  address: string
+}
+
+export interface ContactAddress {
+  type: 'work' | 'home'
+  street: string | null
+  city: string | null
+  region: string | null
+  postal_code: string | null
+  country: string | null
+}
+
+export interface ContactSocialLink {
+  label: string
+  url: string
+}
+
+export interface ContactData {
+  prefix: string | null
+  first_name: string | null
+  last_name: string | null
+  suffix: string | null
+  display_name: string | null
+  organization: string | null
+  job_title: string | null
+  phones: ContactPhone[]
+  emails: ContactEmail[]
+  website: string | null
+  address: ContactAddress | null
+  note: string | null
+  birthday: string | null
+  encoding: 'vcard' | 'mecard'
+  social_links: ContactSocialLink[]
+  photo_url: string | null
+  theme_color: string | null
+}
+
+// ---------------------------------------------------------------------------
 // QR code resource types
 // ---------------------------------------------------------------------------
 
@@ -78,6 +128,8 @@ export interface QRCodeRead {
   type: 'STATIC' | 'DYNAMIC'
   short_code: string | null
   target_url: string | null
+  content_type: QRContentType
+  content_data: ContactData | null
   design_config: DesignConfig | null
   is_active: boolean
   scan_count: number
@@ -97,12 +149,16 @@ export interface QRCodeCreate {
   title: string
   type: 'STATIC' | 'DYNAMIC'
   target_url?: string
+  content_type?: QRContentType
+  content_data?: ContactData
   design_config?: Partial<DesignConfig>
 }
 
 export interface QRCodeUpdate {
   title?: string
   target_url?: string
+  content_type?: QRContentType
+  content_data?: ContactData
   design_config?: Partial<DesignConfig>
   is_active?: boolean
 }
