@@ -7,6 +7,7 @@ import math
 import secrets
 import uuid
 import logging
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,13 @@ MAX_LOGO_BYTES = 500 * 1024  # 500 KB
 MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
 MAX_PHOTO_PIXELS = 50_000_000
 PHOTO_SIZE_PX = 512
+LOGO_MAX_SIZE_PX = 2048
+# SVG can carry scripts and external references, and logos never need these
+SVG_BLOCKED_ELEMENTS = {
+    "a", "animate", "animatemotion", "animatetransform", "embed", "foreignobject",
+    "handler", "iframe", "listener", "object", "script", "set",
+}
+SVG_SAFE_HREF_PREFIXES = ("#", "data:image/png", "data:image/jpeg", "data:image/webp")
 
 
 # ---------------------------------------------------------------------------
@@ -137,6 +145,33 @@ def _reencode_image(raw: bytes, *, image_format: str, max_size_px: int, **save_o
             return out.getvalue()
     except (OSError, SyntaxError, Image.DecompressionBombError) as exc:
         raise ValueError("not a readable image") from exc
+
+
+def _check_svg_logo(raw: bytes) -> None:
+    """Raise ValueError unless *raw* is an SVG with no active or external content."""
+    try:
+        # UTF-8 only, so the DOCTYPE check below can't be dodged with another encoding
+        text = raw.decode("utf-8")
+        if "<!doctype" in text.lower() or "<!entity" in text.lower():
+            raise ValueError("DOCTYPE and entities are not allowed")
+        root = ET.fromstring(text)
+    except (UnicodeDecodeError, ET.ParseError) as exc:
+        raise ValueError("not a readable SVG") from exc
+
+    def local_name(name: str) -> str:
+        return name.rsplit("}", 1)[-1].lower()
+
+    if local_name(root.tag) != "svg":
+        raise ValueError("not an SVG")
+    for element in root.iter():
+        if local_name(element.tag) in SVG_BLOCKED_ELEMENTS:
+            raise ValueError(f"<{local_name(element.tag)}> is not allowed")
+        for name, value in element.attrib.items():
+            attribute = local_name(name)
+            if attribute.startswith("on"):
+                raise ValueError(f"{attribute} is not allowed")
+            if attribute == "href" and not value.strip().lower().startswith(SVG_SAFE_HREF_PREFIXES):
+                raise ValueError("external links are not allowed")
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +462,9 @@ async def upload_logo(
 
     The file is saved to the shared storage volume and served at /static/logos/...
     The design_config.imageOptions.src is updated with the static URL.
+
+    The stored name and format come from the file's actual contents. The uploaded
+    filename and bytes aren't trusted: these files are served from the app's own origin.
     """
     qr = await _get_qr_or_404(qr_id, current_user, db)
 
@@ -443,12 +481,29 @@ async def upload_logo(
             detail="Logo file exceeds the 500 KB limit.",
         )
 
+    try:
+        if file.content_type == "image/svg+xml":
+            _check_svg_logo(raw)
+            logo, ext = raw, ".svg"
+        else:
+            logo = await run_in_threadpool(
+                _reencode_image, raw, image_format="PNG", max_size_px=LOGO_MAX_SIZE_PX
+            )
+            ext = ".png"
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Upload a valid PNG, SVG, JPEG or WebP image. SVGs can't contain scripts or links.",
+        ) from exc
+
     # Persist to storage volume
-    ext = Path(file.filename or "logo.png").suffix or ".png"
     logo_dir = Path(settings.storage_path) / "logos" / str(current_user.id) / str(qr_id)
     logo_dir.mkdir(parents=True, exist_ok=True)
+    # Replace any earlier logo, including one stored under a different extension
+    for old_logo in logo_dir.glob("logo.*"):
+        old_logo.unlink(missing_ok=True)
     logo_file = logo_dir / f"logo{ext}"
-    logo_file.write_bytes(raw)
+    logo_file.write_bytes(logo)
 
     # Store the static URL in design_config
     static_url = f"/static/logos/{current_user.id}/{qr_id}/logo{ext}"

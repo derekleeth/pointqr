@@ -10,6 +10,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+from starlette.types import Scope
 from sqlalchemy import select
 
 from app.api.v1.redirect import router as redirect_router
@@ -120,6 +122,28 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     # SQLAlchemy disposes connection pool automatically
 
 
+# Matches the /static/logos/ location in nginx/nginx.conf: nginx serves these files in
+# production, but the backend mount is reachable too, at /api/api/static/ through nginx.
+UPLOAD_HEADERS = {
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox",
+    "X-Content-Type-Options": "nosniff",
+}
+
+
+class UploadStaticFiles(StaticFiles):
+    """Static files that can't run scripts on the app's origin if opened directly.
+
+    Users choose what goes under logos/, and the app's login tokens live in browser
+    storage on this origin. Images embedded in a page aren't affected by these headers.
+    """
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        if path.replace("\\", "/").startswith("logos/"):
+            response.headers.update(UPLOAD_HEADERS)
+        return response
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     application = FastAPI(
@@ -155,7 +179,7 @@ def create_app() -> FastAPI:
     storage_path.mkdir(parents=True, exist_ok=True)
     application.mount(
         "/static",
-        StaticFiles(directory=str(storage_path)),
+        UploadStaticFiles(directory=str(storage_path)),
         name="static",
     )
 
