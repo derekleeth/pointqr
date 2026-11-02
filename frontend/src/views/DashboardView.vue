@@ -161,12 +161,13 @@ function formatDate(iso: string) {
         striped-rows
         row-hover
         responsive-layout="scroll"
+        @row-click="handleDownload($event.data)"
         :pt="{
           root: { style: 'background: transparent' },
           thead: { style: 'background: transparent' },
           headerRow: { style: `background-color: var(--bg-elevated); border-bottom: 1px solid var(--border);` },
           headerCell: { style: 'background: transparent; color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border: none; padding: 0.75rem 1rem;' },
-          bodyRow: { style: 'background: transparent; border-bottom: 1px solid var(--border);' },
+          bodyRow: { style: 'background: transparent; border-bottom: 1px solid var(--border); cursor: pointer;' },
           rowGroupFooter: { style: 'background: transparent' },
           emptyMessage: { style: 'background: transparent' },
         }"
@@ -213,7 +214,7 @@ function formatDate(iso: string) {
 
         <Column header="Actions" style="width: 140px">
           <template #body="{ data }">
-            <div class="flex gap-1">
+            <div class="flex gap-1" @click.stop>
               <Button
                 icon="pi pi-download"
                 severity="secondary"
