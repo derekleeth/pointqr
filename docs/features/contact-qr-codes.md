@@ -151,6 +151,8 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [ ] Logo + ECC `H` + full contact still scans on the static path at 300 px and in print
 - [ ] Accessibility pass on the contact form and landing page (labels, focus order, contrast)
 - [ ] Test the contact form on real phones (reminder from Derek): layout and usability of the form fields, not just scanning
+- [ ] Show the contact name instead of raw vCard text (`BEGIN:VCARD VERSI...`) in the dashboard download modal (`DownloadModal.vue`)
+- [ ] Phone layout depends on the app shell work in [mobile-responsive-ui.md](mobile-responsive-ui.md); decide whether real-phone form testing waits for it
 
 ### Phase 5: Docs & launch
 
