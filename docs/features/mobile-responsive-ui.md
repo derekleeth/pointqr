@@ -1,7 +1,7 @@
 # Feature Plan: Mobile & Responsive UI
 
 > Added: 2026-11-01
-> Status: **Planned** (start after contact QR codes ship, see [contact-qr-codes.md](contact-qr-codes.md))
+> Status: **In progress** (Phase 1 done 2026-11-06)
 > Owner: Derek Leeth
 
 ## Overview
@@ -83,13 +83,19 @@ Collapsing it by hand helps a lot: the sidebar drops to 64 px and the content ar
 
 The prerequisite for everything else.
 
-- [ ] Below 768 px, replace the sidebar with an off-canvas drawer and a top bar with a menu button
-- [ ] Close the drawer on navigation, on tapping outside it and with Escape; trap focus while it's open
-- [ ] Decide the 768-1024 px behavior (see open question 2)
-- [ ] Keep the saved desktop collapse preference separate from the drawer state, so using a phone doesn't change it
-- [ ] Use `100dvh` in `AppLayout` (#10)
-- [ ] Bring sidebar and drawer tap targets to 44 px (#5)
-- [ ] Recheck #4, #6 and #8 and close any this resolves
+- [x] Below 768 px, replace the sidebar with an off-canvas drawer and a top bar with a menu button
+- [x] Close the drawer on navigation, on tapping outside it and with Escape; trap focus while it's open
+- [x] Decide the 768-1024 px behavior (see open question 2): a fixed 64 px rail; its expand button opens the full sidebar as an overlay, which closes the same way as the drawer
+- [x] Keep the saved desktop collapse preference separate from the drawer state, so using a phone doesn't change it
+- [x] Use `100dvh` in `AppLayout` (#10), with a `100vh` fallback. Still needs a real-device check
+- [x] Bring sidebar and drawer tap targets to 44 px (#5). Desktop with a mouse keeps the compact rows; touch devices (`pointer: coarse`) get 44 px everywhere. The desktop collapse button keeps its 24 px look but has a 44 px hit area
+- [x] Recheck #4, #6 and #8 and close any this resolves (see the Phase 1 recheck below)
+
+**Phase 1 recheck (2026-11-06, emulated, mocked API):**
+
+- **#8 resolved.** Admin items scroll into view in the tablet rail (checked at 768x1024 and 1024x768) and in the phone drawer. On phones the whole drawer now scrolls as one column, so the footer no longer squeezes the nav.
+- **#4 partly resolved.** The content area is now the full screen width (360/390 px). First and last name fields are 106/121 px (were 89 px), and the phone row's remove button stays on the same line. The nested padding is still there, so Phase 2's padding item stays open.
+- **#6 not resolved.** The QR preview frame is 332 px (300 px canvas plus padding), which still overruns the card's padding at 390 px and sticks out about 2 px past the card's edges at 360 px. Still a Phase 2 item.
 
 ### Phase 2: Editor on phones
 
@@ -124,7 +130,7 @@ The prerequisite for everything else.
 ## Open Questions
 
 1. Should admin pages get the full mobile treatment, or is "reachable and not broken" enough? Recommendation: the latter, since admins will mostly use a desktop.
-2. Between 768 and 1024 px, should the sidebar use the drawer or default to the 64 px rail? Recommendation: the rail, since tablets have room for it.
+2. ~~Between 768 and 1024 px, should the sidebar use the drawer or default to the 64 px rail?~~ **Decided 2026-11-06:** the rail, since tablets have room for it.
 3. How should the phone editor show the preview: a sticky mini preview, a Form/Preview toggle, or a floating button that opens it? Recommendation: a Form/Preview toggle, since it's the simplest and a 300 px QR won't fit beside a form anyway.
 4. Should dashboard tables become cards on phones, or hide columns? Recommendation: cards for the dashboard, since it's the main screen, and sideways scrolling with a visible cue for admin tables.
 
@@ -133,3 +139,4 @@ The prerequisite for everything else.
 | Date | Update |
 |---|---|
 | 2026-11-01 | Plan created from an emulated-device audit of all routes. No fixes made yet. |
+| 2026-11-06 | Phase 1 done. Drawer below 768 px, rail with overlay at 768-1024 px, desktop unchanged. Checked with Playwright (headless Edge, mocked API) at 360, 390, 768, 1024 and 1440 px: drawer open/close, Escape, tap outside, close on navigation, focus trap and focus return, 44 px targets, saved preference untouched on phone/tablet. Not yet tried on a real phone. |

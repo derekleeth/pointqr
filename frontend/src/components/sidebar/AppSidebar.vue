@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useEventListener } from '@vueuse/core'
 import { useUIStore } from '@/stores/ui'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
@@ -11,7 +12,77 @@ const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
-const collapsed = computed(() => ui.sidebarCollapsed)
+const mode = computed(() => ui.shellMode)
+const collapsed = computed(() => ui.railCollapsed)
+
+// The drawer (mobile) and the expanded tablet overlay sit on top of the
+// content, so they behave like a modal: focus is trapped, Escape closes.
+const isModal = computed(() => ui.navOpen && mode.value !== 'desktop')
+
+const root = ref<HTMLElement | null>(null)
+const toggleBtn = ref<HTMLButtonElement | null>(null)
+
+const toggleLabel = computed(() => {
+  if (mode.value === 'mobile') return 'Close menu'
+  return collapsed.value ? 'Expand sidebar' : 'Collapse sidebar'
+})
+const toggleIcon = computed(() => {
+  if (mode.value === 'mobile') return 'pi pi-times'
+  return collapsed.value ? 'pi pi-chevron-right' : 'pi pi-chevron-left'
+})
+
+function onToggle() {
+  if (mode.value === 'desktop') ui.toggleSidebar() // saved preference
+  else ui.toggleNav()                              // never saved
+}
+
+// Close the drawer / overlay whenever the route changes
+watch(() => route.fullPath, () => ui.closeNav())
+
+// Move focus in when opened, give it back when closed
+let returnFocus: HTMLElement | null = null
+watch(isModal, async (open) => {
+  if (open) {
+    returnFocus = document.activeElement as HTMLElement | null
+    await nextTick()
+    toggleBtn.value?.focus()
+  } else if (returnFocus) {
+    const el = returnFocus
+    returnFocus = null
+    if (document.contains(el) && el.getClientRects().length) el.focus()
+  }
+})
+
+const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+function focusables(): HTMLElement[] {
+  if (!root.value) return []
+  return Array.from(root.value.querySelectorAll<HTMLElement>(FOCUSABLE))
+    .filter((el) => el.getClientRects().length > 0)
+}
+
+useEventListener(document, 'keydown', (e: KeyboardEvent) => {
+  if (!isModal.value) return
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    ui.closeNav()
+    return
+  }
+  if (e.key !== 'Tab') return
+  const items = focusables()
+  if (!items.length) return
+  const first = items[0]
+  const last = items[items.length - 1]
+  const active = document.activeElement as HTMLElement | null
+  const inside = !!active && !!root.value?.contains(active)
+  if (e.shiftKey && (active === first || !inside)) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && (active === last || !inside)) {
+    e.preventDefault()
+    first.focus()
+  }
+})
 
 interface NavItem {
   label: string
@@ -97,7 +168,16 @@ function logout() {
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ 'is-collapsed': collapsed }">
+  <aside
+    id="app-sidebar"
+    ref="root"
+    class="sidebar"
+    :class="[`mode-${mode}`, { 'is-collapsed': collapsed, 'is-open': ui.navOpen }]"
+    :role="isModal ? 'dialog' : undefined"
+    :aria-modal="isModal ? 'true' : undefined"
+    aria-label="Main navigation"
+    :inert="(mode === 'mobile' && !ui.navOpen) || undefined"
+  >
 
     <!-- ── Header ─────────────────────────── -->
     <div class="sidebar-header">
@@ -122,12 +202,16 @@ function logout() {
       </RouterLink>
 
       <button
+        ref="toggleBtn"
+        type="button"
         class="collapse-btn"
-        @click="ui.toggleSidebar()"
-        v-tooltip.right="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-        :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        @click="onToggle"
+        v-tooltip.right="mode === 'desktop' ? toggleLabel : undefined"
+        :aria-label="toggleLabel"
+        :aria-expanded="mode === 'desktop' ? undefined : ui.navOpen"
+        aria-controls="app-sidebar"
       >
-        <i :class="collapsed ? 'pi pi-chevron-right' : 'pi pi-chevron-left'" />
+        <i :class="toggleIcon" />
       </button>
     </div>
 
@@ -208,7 +292,7 @@ function logout() {
 .sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-sidebar);
@@ -222,6 +306,46 @@ function logout() {
 .sidebar.is-collapsed {
   width: var(--sidebar-wc);
   min-width: var(--sidebar-wc);
+}
+
+/* Tablet (768-1024 px): a fixed 64 px rail; expanding overlays the content */
+.sidebar.mode-tablet {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: auto;
+  z-index: 1000;
+}
+.sidebar.mode-tablet.is-open {
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.25);
+}
+
+/* Phone (< 768 px): an off-canvas drawer */
+.sidebar.mode-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: auto;
+  width: min(var(--sidebar-w) + 40px, 85vw);
+  min-width: 0;
+  z-index: 1000;
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.22s ease, visibility 0s linear 0.22s;
+}
+.sidebar.mode-mobile.is-open {
+  transform: none;
+  visibility: visible;
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.3);
+  transition: transform 0.22s ease, visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar.mode-mobile,
+  .sidebar.mode-mobile.is-open { transition: none; }
 }
 
 /* ── Header ─────────────────────────────────────────── */
@@ -284,6 +408,13 @@ function logout() {
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
+.collapse-btn { position: relative; }
+/* Keep the 24 px look but give it a 44 px hit area */
+.collapse-btn::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
 .collapse-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -296,6 +427,7 @@ function logout() {
 /* ── Navigation ─────────────────────────────────────── */
 .sidebar-nav {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0.375rem 0;
@@ -464,5 +596,35 @@ function logout() {
   margin: 0;
   text-transform: capitalize;
 }
-</style>
 
+/* ── Touch sizing: 44 px tap targets ────────────────── */
+/* Applies on phones and tablets, and on any touch-first device. Desktop
+   with a mouse keeps the compact rows. */
+.mode-mobile .nav-item,
+.mode-mobile .footer-row,
+.mode-tablet .nav-item,
+.mode-tablet .footer-row {
+  min-height: 44px;
+}
+/* Phones are short: scroll the whole drawer as one column rather than
+   pinning the footer and leaving a small scrolling nav in between */
+.sidebar.mode-mobile {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mode-mobile .sidebar-nav {
+  flex: none;
+  overflow: visible;
+}
+.mode-mobile .sidebar-header { height: 80px; }
+.mode-mobile .collapse-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 0.875rem;
+  border: none;
+}
+@media (pointer: coarse) {
+  .nav-item,
+  .footer-row { min-height: 44px; }
+}
+</style>
