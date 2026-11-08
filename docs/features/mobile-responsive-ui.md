@@ -1,7 +1,7 @@
 # Feature Plan: Mobile & Responsive UI
 
 > Added: 2026-11-01
-> Status: **In progress** (Phase 1 done 2026-11-06)
+> Status: **In progress** (Phases 1 and 2 done 2026-11-06)
 > Owner: Derek Leeth
 
 ## Overview
@@ -99,11 +99,17 @@ The prerequisite for everything else.
 
 ### Phase 2: Editor on phones
 
-- [ ] Make the preview visible while editing (see open question 3) (#3)
-- [ ] Make the QR preview scale down to its container, while keeping exports at full size (#6)
-- [ ] Reduce nested padding at phone width and keep the remove button on the same line as its field (#4)
-- [ ] Check the Design tab, color pickers and sliders by touch
-- [ ] Check the on-screen keyboard doesn't hide the field being typed in
+- [x] Make the preview visible while editing (see open question 3) (#3). Below 1024 px, where the editor is one column, a sticky bar has an Edit/Preview switch and Save, so Save is reachable from anywhere in the form and the downloads sit right under the preview. Each side keeps its own scroll position, and the form keeps its open tab. At 1024 px and up nothing changes
+- [x] Make the QR preview scale down to its container, while keeping exports at full size (#6). The on-screen copy shrinks with CSS `zoom`; the 300 px instance that downloads read from is unchanged (PNG export checked at 300x300 at every width)
+- [x] Reduce nested padding at phone width and keep the remove button on the same line as its field (#4). Below 640 px the tab and accordion padding drop to 12 px a side. In phone, email and link rows the field and its X are grouped, so when the row wraps the type select moves to its own line and the X stays with its field
+- [x] Check the Design tab, color pickers and sliders by touch. On touch devices (`pointer: coarse`) color swatches and the small B / I / alignment buttons are 44 px, and slider handles keep their look but have a 44 px grab area. Checked by emulation only
+- [ ] Check the on-screen keyboard doesn't hide the field being typed in. Needs a real phone. Added `interactive-widget=resizes-content` to the viewport meta so Android Chrome shrinks the app shell above the keyboard instead of overlaying it; iOS ignores this and pans to the field itself
+
+**Phase 2 check (2026-11-06, emulated, mocked API, 360/390/430/768 px touch and 1024/1440 px mouse):**
+
+- **#3 resolved.** Switch shows below 1024 px only and stays pinned to the top of the scroll area; switching back to Edit returns to the same scroll position and tab.
+- **#4 resolved.** First and last name fields are 134/149/169 px at 360/390/430 (were 106/121 px). The remove button stays on its field's line at every width.
+- **#6 resolved.** Preview is 272 px at 360 and full 300 px from 390 up, with no overrun of the card's padding at any width. This also fixes a smaller overrun at exactly 1024 px, where the two-column preview card was too narrow for the 332 px frame.
 
 ### Phase 3: Tables
 
@@ -131,7 +137,7 @@ The prerequisite for everything else.
 
 1. Should admin pages get the full mobile treatment, or is "reachable and not broken" enough? Recommendation: the latter, since admins will mostly use a desktop.
 2. ~~Between 768 and 1024 px, should the sidebar use the drawer or default to the 64 px rail?~~ **Decided 2026-11-06:** the rail, since tablets have room for it.
-3. How should the phone editor show the preview: a sticky mini preview, a Form/Preview toggle, or a floating button that opens it? Recommendation: a Form/Preview toggle, since it's the simplest and a 300 px QR won't fit beside a form anyway.
+3. ~~How should the phone editor show the preview: a sticky mini preview, a Form/Preview toggle, or a floating button that opens it?~~ **Decided 2026-11-06:** a Form/Preview toggle, as recommended, in a sticky bar with Save.
 4. Should dashboard tables become cards on phones, or hide columns? Recommendation: cards for the dashboard, since it's the main screen, and sideways scrolling with a visible cue for admin tables.
 
 ## Progress Log
@@ -140,3 +146,4 @@ The prerequisite for everything else.
 |---|---|
 | 2026-11-01 | Plan created from an emulated-device audit of all routes. No fixes made yet. |
 | 2026-11-06 | Phase 1 done. Drawer below 768 px, rail with overlay at 768-1024 px, desktop unchanged. Checked with Playwright (headless Edge, mocked API) at 360, 390, 768, 1024 and 1440 px: drawer open/close, Escape, tap outside, close on navigation, focus trap and focus return, 44 px targets, saved preference untouched on phone/tablet. Not yet tried on a real phone. |
+| 2026-11-06 | Phase 2 done, except the on-screen keyboard check, which needs a real phone. Edit/Preview switch below 1024 px, preview scales to fit, phone padding trimmed, 44 px touch targets in the editor. Checked with Playwright (headless Edge, mocked API) at 360, 390, 430, 768, 1024 and 1440 px. |

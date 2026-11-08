@@ -18,6 +18,24 @@ const isExporting = ref(false)
 const exportError = ref<string | null>(null)
 const showPrintSheet = ref(false)
 
+// The preview is drawn at the 300 px export size and scaled down to fit narrow
+// screens. Only the on-screen copy shrinks: downloads read from qrInstance,
+// which stays at 300 px.
+const PREVIEW_SIZE = 300
+const stageRef = ref<HTMLDivElement>()
+const matRef = ref<HTMLDivElement>()
+const previewScale = ref(1)
+let resizeObserver: ResizeObserver | null = null
+
+function fitPreview() {
+  const stage = stageRef.value
+  const mat = matRef.value
+  // Hidden (e.g. the phone editor is showing the form): keep the last scale
+  if (!stage || !mat || stage.clientWidth === 0) return
+  const pad = parseFloat(getComputedStyle(mat).paddingLeft) + parseFloat(getComputedStyle(mat).paddingRight)
+  previewScale.value = Math.min(1, Math.max(0.1, (stage.clientWidth - pad) / PREVIEW_SIZE))
+}
+
 /** Build CSS style object for a text label. */
 function labelStyle(key: 'labelTop' | 'labelBottom') {
   const lbl = store.designConfig[key]
@@ -30,7 +48,7 @@ function labelStyle(key: 'labelTop' | 'labelBottom') {
     textAlign: lbl.align,
     letterSpacing: `${lbl.letterSpacing}px`,
     padding: `${lbl.padding}px 0`,
-    width: '300px',
+    width: `${PREVIEW_SIZE}px`,
     display: 'block',
     lineHeight: '1.3',
     whiteSpace: 'pre-wrap' as const,
@@ -45,8 +63,8 @@ let pollInterval: ReturnType<typeof setInterval> | null = null
 function buildOptions() {
   const cfg = store.designConfig
   return {
-    width: 300,
-    height: 300,
+    width: PREVIEW_SIZE,
+    height: PREVIEW_SIZE,
     data: toQRData(cfg.content || 'https://pointqr.app'),
     margin: cfg.margin,
     qrOptions: cfg.qrOptions,
@@ -73,11 +91,17 @@ onMounted(() => {
   if (canvasRef.value) {
     qrInstance.append(canvasRef.value)
   }
+  if (stageRef.value) {
+    resizeObserver = new ResizeObserver(fitPreview)
+    resizeObserver.observe(stageRef.value)
+  }
+  fitPreview()
 })
 
 onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
   if (pollInterval) clearInterval(pollInterval)
+  resizeObserver?.disconnect()
   qrInstance = null
 })
 
@@ -329,9 +353,10 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
   <div class="flex flex-col items-center gap-6 w-full">
     <!-- QR canvas mat — checkerboard in dark mode so the white QR background
          reads as intentional rather than a bright intrusion into the dark UI -->
-    <div class="flex flex-col items-center gap-3 w-full">
+    <div ref="stageRef" class="flex flex-col items-center gap-3 w-full">
       <div
-        class="relative rounded-2xl p-4 transition-colors duration-200 flex flex-col items-center"
+        ref="matRef"
+        class="relative rounded-2xl p-3 sm:p-4 max-w-full transition-colors duration-200 flex flex-col items-center"
         :class="isDark
           ? 'qr-checkerboard ring-1 ring-surface-600'
           : 'bg-surface-50 ring-1 ring-surface-200'"
@@ -340,7 +365,10 @@ async function serverExport(format: 'png' | 'svg' | 'pdf' | 'eps') {
              so text is always readable regardless of theme or QR bg color -->
         <div
           class="flex flex-col items-center rounded-lg overflow-hidden shadow-sm"
-          :style="{ backgroundColor: store.designConfig.backgroundOptions.color || '#ffffff' }"
+          :style="{
+            backgroundColor: store.designConfig.backgroundOptions.color || '#ffffff',
+            zoom: previewScale < 1 ? previewScale : undefined,
+          }"
         >
           <!-- Top label -->
           <span

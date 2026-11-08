@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useQREditorStore } from '@/stores/qrEditor'
@@ -12,6 +12,29 @@ const route = useRoute()
 const router = useRouter()
 const store = useQREditorStore()
 const toast = useToast()
+
+// Below lg the editor is one column, so the form and the preview take turns
+// on screen. Both stay mounted (hidden with CSS) so the preview keeps
+// rendering, downloads keep working and the open tab is kept.
+type EditorPane = 'edit' | 'preview'
+const pane = ref<EditorPane>('edit')
+const paneOptions = [
+  { label: 'Edit', value: 'edit', icon: 'pi pi-pencil' },
+  { label: 'Preview', value: 'preview', icon: 'pi pi-eye' },
+]
+const rootRef = ref<HTMLElement>()
+// Each pane keeps its own scroll position, so peeking at the preview
+// returns you to the field you were on
+const paneScroll: Record<EditorPane, number> = { edit: 0, preview: 0 }
+
+async function setPane(next: EditorPane | null) {
+  if (!next || next === pane.value) return
+  const scroller = rootRef.value?.closest('.app-main') as HTMLElement | null
+  if (scroller) paneScroll[pane.value] = scroller.scrollTop
+  pane.value = next
+  await nextTick()
+  if (scroller) scroller.scrollTop = paneScroll[next]
+}
 
 onMounted(async () => {
   const qrId = route.params.id as string | undefined
@@ -64,7 +87,7 @@ async function handleSave() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <div ref="rootRef" class="qr-editor flex flex-col gap-4 lg:gap-6">
     <!-- ------------------------------------------------------------------ -->
     <!-- Header bar                                                          -->
     <!-- ------------------------------------------------------------------ -->
@@ -88,6 +111,35 @@ async function handleSave() {
         icon="pi pi-save"
         :loading="store.isSaving"
         :disabled="!store.canSave"
+        class="max-lg:!hidden"
+        @click="handleSave"
+      />
+    </div>
+
+    <!-- Single-column layouts: switch between the form and the preview,
+         with Save always in reach -->
+    <div class="editor-switcher">
+      <SelectButton
+        :model-value="pane"
+        :options="paneOptions"
+        option-label="label"
+        option-value="value"
+        :allow-empty="false"
+        aria-label="Show the form or the preview"
+        class="pane-toggle"
+        @update:model-value="setPane"
+      >
+        <template #option="{ option }">
+          <i :class="option.icon" class="text-sm" aria-hidden="true" />
+          <span>{{ option.label }}</span>
+        </template>
+      </SelectButton>
+      <Button
+        :label="store.isSaving ? 'Saving…' : 'Save'"
+        icon="pi pi-save"
+        :loading="store.isSaving"
+        :disabled="!store.canSave"
+        class="switcher-save"
         @click="handleSave"
       />
     </div>
@@ -97,7 +149,7 @@ async function handleSave() {
     <!-- ------------------------------------------------------------------ -->
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(23rem,2fr)] gap-6 items-start">
       <!-- Left panel: tabs for Content + Design controls -->
-      <div class="min-w-0">
+      <div class="min-w-0" :class="{ 'max-lg:hidden': pane !== 'edit' }">
         <div
           class="rounded-xl overflow-hidden border transition-colors duration-200"
           style="background-color: var(--bg-card); border-color: var(--border);"
@@ -116,10 +168,10 @@ async function handleSave() {
               </Tab>
             </TabList>
             <TabPanels>
-              <TabPanel value="content" class="p-4">
+              <TabPanel value="content" class="editor-tabpanel">
                 <ContentPanel />
               </TabPanel>
-              <TabPanel value="design" class="p-4">
+              <TabPanel value="design" class="editor-tabpanel">
                 <DesignPanel />
               </TabPanel>
             </TabPanels>
@@ -128,9 +180,9 @@ async function handleSave() {
       </div>
 
       <!-- Right panel: live QR preview + download actions -->
-      <div class="min-w-0 flex justify-center">
+      <div class="min-w-0 flex justify-center" :class="{ 'max-lg:hidden': pane !== 'preview' }">
         <div
-          class="rounded-xl border p-8 w-full flex flex-col items-center gap-6 transition-colors duration-200"
+          class="rounded-xl border p-4 sm:p-8 w-full flex flex-col items-center gap-6 transition-colors duration-200"
           style="background-color: var(--bg-card); border-color: var(--border);"
         >
           <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0 self-start">
@@ -158,3 +210,87 @@ async function handleSave() {
   </div>
 </template>
 
+<style scoped>
+/* Sticky so the switch and Save stay reachable from deep in a long form.
+   The opaque background hides the form scrolling underneath. Sticky offsets
+   are measured inside the scroll area's padding, so a negative top equal to
+   that padding (see .app-main in AppLayout) pins the bar flush to the top. */
+.editor-switcher {
+  position: sticky;
+  top: -1rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block: -0.5rem;
+  padding-block: 0.5rem;
+  background-color: var(--bg-base);
+}
+@media (min-width: 641px) {
+  .editor-switcher { top: -1.25rem; }
+}
+/* Two-column layout shows both panes, so no switch */
+@media (min-width: 1024px) {
+  .editor-switcher { display: none; }
+}
+
+.pane-toggle {
+  flex: 1;
+  display: flex;
+}
+.pane-toggle :deep(.p-togglebutton) {
+  flex: 1;
+  min-height: 44px;
+}
+.pane-toggle :deep(.p-togglebutton-content) {
+  gap: 0.5rem;
+}
+.switcher-save {
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.editor-tabpanel {
+  padding: 1rem;
+}
+
+/* Phones: the page, tab panel and accordion padding stack up and squeeze
+   the fields, so trim each layer. */
+@media (max-width: 640px) {
+  .qr-editor :deep(.p-tabpanels) {
+    padding: 0.75rem;
+  }
+  .editor-tabpanel {
+    padding: 0;
+  }
+  .qr-editor :deep(.p-accordionheader) {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .qr-editor :deep(.p-accordioncontent-content) {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Touch: give the editor's small controls a 44 px hit area */
+@media (pointer: coarse) {
+  .qr-editor :deep(input[type='color']) {
+    min-height: 44px;
+  }
+  .qr-editor :deep(.p-button-sm) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* The slider handle is drawn at 20 px; this widens what a finger can grab
+     without changing how it looks (the theme already uses ::before) */
+  .qr-editor :deep(.p-slider-handle)::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+  }
+  .qr-editor :deep(.p-slider-horizontal) {
+    margin-block: 12px;
+  }
+}
+</style>

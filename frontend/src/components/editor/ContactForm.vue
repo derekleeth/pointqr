@@ -153,23 +153,25 @@ async function handlePhotoSelect(event: { files: File[] }) {
                     :aria-label="`Phone ${i + 1} type`"
                     class="w-32 flex-shrink-0"
                   />
-                  <InputText
-                    v-model="phone.number"
-                    type="tel"
-                    maxlength="32"
-                    placeholder="+1 555 010 0100"
-                    :aria-label="`Phone ${i + 1} number`"
-                    :invalid="!!store.contactErrors.phones[i]"
-                    class="flex-1 min-w-40"
-                  />
-                  <Button
-                    icon="pi pi-times"
-                    severity="secondary"
-                    text
-                    rounded
-                    :aria-label="`Remove phone ${i + 1}`"
-                    @click="store.contact.phones.splice(i, 1)"
-                  />
+                  <div class="flex flex-1 min-w-48 gap-2">
+                    <InputText
+                      v-model="phone.number"
+                      type="tel"
+                      maxlength="32"
+                      placeholder="+1 555 010 0100"
+                      :aria-label="`Phone ${i + 1} number`"
+                      :invalid="!!store.contactErrors.phones[i]"
+                      class="flex-1 min-w-0"
+                    />
+                    <Button
+                      icon="pi pi-times"
+                      severity="secondary"
+                      text
+                      rounded
+                      :aria-label="`Remove phone ${i + 1}`"
+                      @click="store.contact.phones.splice(i, 1)"
+                    />
+                  </div>
                 </div>
                 <p v-if="store.contactErrors.phones[i]" class="text-xs text-red-500">{{ store.contactErrors.phones[i] }}</p>
               </div>
@@ -197,23 +199,25 @@ async function handlePhotoSelect(event: { files: File[] }) {
                     :aria-label="`Email ${i + 1} type`"
                     class="w-32 flex-shrink-0"
                   />
-                  <InputText
-                    v-model="email.address"
-                    type="email"
-                    maxlength="254"
-                    placeholder="name@example.com"
-                    :aria-label="`Email ${i + 1} address`"
-                    :invalid="!!store.contactErrors.emails[i]"
-                    class="flex-1 min-w-40"
-                  />
-                  <Button
-                    icon="pi pi-times"
-                    severity="secondary"
-                    text
-                    rounded
-                    :aria-label="`Remove email ${i + 1}`"
-                    @click="store.contact.emails.splice(i, 1)"
-                  />
+                  <div class="flex flex-1 min-w-48 gap-2">
+                    <InputText
+                      v-model="email.address"
+                      type="email"
+                      maxlength="254"
+                      placeholder="name@example.com"
+                      :aria-label="`Email ${i + 1} address`"
+                      :invalid="!!store.contactErrors.emails[i]"
+                      class="flex-1 min-w-0"
+                    />
+                    <Button
+                      icon="pi pi-times"
+                      severity="secondary"
+                      text
+                      rounded
+                      :aria-label="`Remove email ${i + 1}`"
+                      @click="store.contact.emails.splice(i, 1)"
+                    />
+                  </div>
                 </div>
                 <p v-if="store.contactErrors.emails[i]" class="text-xs text-red-500">{{ store.contactErrors.emails[i] }}</p>
               </div>
@@ -367,22 +371,24 @@ async function handlePhotoSelect(event: { files: File[] }) {
                     :aria-label="`Link ${i + 1} label`"
                     class="w-32 flex-shrink-0"
                   />
-                  <InputText
-                    v-model="link.url"
-                    type="url"
-                    maxlength="2048"
-                    placeholder="https://"
-                    :aria-label="`Link ${i + 1} URL`"
-                    :invalid="!!store.contactErrors.socialLinks[i]"
-                    class="flex-1 min-w-40"
-                  />
-                  <Button
-                    icon="pi pi-times"
-                    severity="secondary"
-                    text
-                    :aria-label="`Remove link ${i + 1}`"
-                    @click="store.contact.social_links.splice(i, 1)"
-                  />
+                  <div class="flex flex-1 min-w-48 gap-2">
+                    <InputText
+                      v-model="link.url"
+                      type="url"
+                      maxlength="2048"
+                      placeholder="https://"
+                      :aria-label="`Link ${i + 1} URL`"
+                      :invalid="!!store.contactErrors.socialLinks[i]"
+                      class="flex-1 min-w-0"
+                    />
+                    <Button
+                      icon="pi pi-times"
+                      severity="secondary"
+                      text
+                      :aria-label="`Remove link ${i + 1}`"
+                      @click="store.contact.social_links.splice(i, 1)"
+                    />
+                  </div>
                 </div>
                 <p v-if="store.contactErrors.socialLinks[i]" class="text-xs text-red-500">{{ store.contactErrors.socialLinks[i] }}</p>
               </div>
