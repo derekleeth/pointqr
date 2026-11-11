@@ -201,7 +201,7 @@ function formatDate(iso: string) {
         </h2>
         <RouterLink
           to="/api-docs"
-          class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-500 hover:text-primary-600 transition-colors"
+          class="touch-target inline-flex items-center gap-1.5 text-xs font-semibold text-primary-500 hover:text-primary-600 transition-colors"
         >
           <span>Full API Docs & Examples</span>
           <i class="pi pi-arrow-right text-[10px]" />
@@ -260,6 +260,7 @@ function formatDate(iso: string) {
       header="Regenerate API Key?"
       :modal="true"
       :style="{ width: '28rem' }"
+      :breakpoints="{ '640px': 'calc(100vw - 2rem)' }"
     >
       <p class="text-sm" style="color: var(--text-secondary)">
         This will invalidate your existing API key immediately. Any integrations using the current
@@ -288,6 +289,7 @@ function formatDate(iso: string) {
       header="Revoke API Key?"
       :modal="true"
       :style="{ width: '28rem' }"
+      :breakpoints="{ '640px': 'calc(100vw - 2rem)' }"
     >
       <p class="text-sm" style="color: var(--text-secondary)">
         This will permanently delete your API key. Any integrations using this key will stop working

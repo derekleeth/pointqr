@@ -179,6 +179,7 @@ onMounted(loadUsers)
         scrollHeight="flex"
         size="small"
         class="users-table"
+        v-scroll-cue
       >
         <Column field="email" header="Email" sortable style="min-width: 220px">
           <template #body="{ data }">
@@ -237,7 +238,7 @@ onMounted(loadUsers)
           </template>
         </Column>
 
-        <Column header="Actions" style="width: 120px">
+        <Column header="Actions" frozen alignFrozen="right" style="width: 120px">
           <template #body="{ data }">
             <div class="action-btns">
               <Button
@@ -247,6 +248,7 @@ onMounted(loadUsers)
                 text
                 rounded
                 :title="data.is_active ? 'Disable user' : 'Enable user'"
+                :aria-label="data.is_active ? 'Disable user' : 'Enable user'"
                 @click="toggleStatus(data)"
               />
               <Button
@@ -256,6 +258,7 @@ onMounted(loadUsers)
                 text
                 rounded
                 title="Delete user"
+                aria-label="Delete user"
                 @click="confirmDelete(data.id)"
               />
             </div>
@@ -277,6 +280,7 @@ onMounted(loadUsers)
       header="Create New User"
       modal
       :style="{ width: '420px' }"
+      :breakpoints="{ '640px': 'calc(100vw - 2rem)' }"
     >
       <div class="dialog-form">
         <div class="form-field">
@@ -316,6 +320,7 @@ onMounted(loadUsers)
       header="Delete User"
       modal
       :style="{ width: '360px' }"
+      :breakpoints="{ '640px': 'calc(100vw - 2rem)' }"
     >
       <p>Are you sure you want to permanently delete this user and all their data?</p>
       <p class="delete-warning">This action cannot be undone.</p>
@@ -468,5 +473,17 @@ onMounted(loadUsers)
   color: #ef4444;
   font-size: 0.875rem;
   margin-top: 0.25rem;
+}
+
+/* Phones and touch: 16 px text in the search box so iOS Safari doesn't zoom on focus */
+@media (max-width: 767.98px), (pointer: coarse) {
+  .search-field :deep(input) { font-size: 1rem; }
+}
+
+/* Phones: the app shell already pads the page, and the search takes a full row */
+@media (max-width: 640px) {
+  .admin-users-view { padding: 0; }
+  .search-field,
+  .search-field :deep(input) { width: 100%; }
 }
 </style>

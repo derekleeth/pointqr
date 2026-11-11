@@ -141,6 +141,80 @@ body {
   color: var(--text-secondary) !important;
 }
 
+/* Frozen (sticky) columns: rows are transparent, so give frozen cells
+   an opaque background or scrolled content shows through them. */
+.p-datatable .p-datatable-tbody > tr > td.p-datatable-frozen-column {
+  background: var(--bg-card) !important;
+}
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) > td.p-datatable-frozen-column,
+.p-datatable .p-datatable-tbody > tr:hover > td.p-datatable-frozen-column {
+  background: linear-gradient(var(--bg-hover), var(--bg-hover)), var(--bg-card) !important;
+}
+
+/* ============================================================
+   Sideways-scroll cue for wide tables (v-scroll-cue)
+   A fade on whichever edge has columns hidden past it.
+   ============================================================ */
+.scroll-cue { position: relative; }
+
+.scroll-cue::before,
+.scroll-cue::after {
+  content: '';
+  position: absolute;
+  top: var(--cue-top, 0);
+  height: var(--cue-height, 100%);
+  width: 28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 2;
+}
+.scroll-cue::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-card), transparent);
+}
+.scroll-cue::after {
+  right: var(--cue-right, 0);
+  background: linear-gradient(to left, var(--bg-card), transparent);
+}
+.scroll-cue[data-more-left]::before,
+.scroll-cue[data-more-right]::after { opacity: 1; }
+
+/* Edge line on a right-frozen column while columns are hidden under it */
+.scroll-cue[data-more-right] .p-datatable-frozen-column:last-child {
+  box-shadow: inset 1px 0 0 var(--border), -6px 0 10px -6px rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue::before,
+  .scroll-cue::after { transition: none; }
+}
+
+/* ============================================================
+   Touch screens: 44 px tap targets for PrimeVue controls.
+   Mouse users keep the compact sizes.
+   ============================================================ */
+@media (pointer: coarse) {
+  .p-button:not(.p-button-link),
+  .p-inputtext,
+  .p-select,
+  .p-multiselect,
+  .p-togglebutton,
+  .p-select-option,
+  .p-multiselect-option {
+    min-height: 44px;
+  }
+  .p-select,
+  .p-multiselect { align-items: center; }
+  /* Opt-in for standalone links and other custom controls */
+  .touch-target { min-height: 44px; }
+  .p-button.p-button-icon-only,
+  .p-toast-close-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 /* ============================================================
    PrimeVue Tabs — dark-mode overrides
    ============================================================ */

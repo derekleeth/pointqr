@@ -8,6 +8,7 @@ import Tooltip from 'primevue/tooltip'
 import 'primeicons/primeicons.css'
 import './assets/main.css'
 
+import { vScrollCue } from './directives/scrollCue'
 import App from './App.vue'
 import router from './router'
 
@@ -29,6 +30,7 @@ app.use(PrimeVue, {
 app.use(ToastService)
 app.use(ConfirmationService)
 app.directive('tooltip', Tooltip)
+app.directive('scroll-cue', vScrollCue)
 
 // Apply theme immediately so .dark class is set before first paint (no FOUC)
 import { useThemeStore } from './stores/theme'

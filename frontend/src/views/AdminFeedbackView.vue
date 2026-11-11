@@ -289,6 +289,7 @@ onMounted(loadItems)
         :rows="20"
         :paginator="filteredItems.length > 20"
         class="feedback-table"
+        v-scroll-cue
       >
         <Column field="type" header="Type" sortable style="width: 140px">
           <template #body="{ data }">
@@ -373,7 +374,7 @@ onMounted(loadItems)
           </template>
         </Column>
 
-        <Column header="Actions" style="width: 100px">
+        <Column header="Actions" frozen alignFrozen="right" style="width: 100px">
           <template #body="{ data }">
             <div class="action-btns">
               <Button
@@ -383,6 +384,7 @@ onMounted(loadItems)
                 text
                 rounded
                 title="View details"
+                aria-label="View details"
                 @click="openDetail(data)"
               />
               <Button
@@ -392,6 +394,7 @@ onMounted(loadItems)
                 text
                 rounded
                 title="Delete"
+                aria-label="Delete"
                 @click="confirmDelete(data.id)"
               />
             </div>
@@ -413,6 +416,7 @@ onMounted(loadItems)
       header="Feedback Details"
       modal
       :style="{ width: '600px' }"
+      :breakpoints="{ '640px': 'calc(100vw - 2rem)' }"
     >
       <div v-if="selectedItem" class="detail-content">
         <!-- Meta row -->
@@ -550,6 +554,7 @@ onMounted(loadItems)
       header="Delete Submission"
       modal
       :style="{ width: '360px' }"
+      :breakpoints="{ '640px': 'calc(100vw - 2rem)' }"
     >
       <p>
         Are you sure you want to permanently delete this feedback submission?
@@ -812,6 +817,19 @@ onMounted(loadItems)
   color: #ef4444;
   font-size: 0.875rem;
   margin-top: 0.25rem;
+}
+
+/* Phones and touch: 16 px text in the search box so iOS Safari doesn't zoom on focus */
+@media (max-width: 767.98px), (pointer: coarse) {
+  .search-field :deep(input) { font-size: 1rem; }
+}
+
+/* Phones: the app shell already pads the page, and the search takes a full row */
+@media (max-width: 640px) {
+  .admin-feedback-view { padding: 0; }
+  .search-field,
+  .search-field :deep(input) { width: 100%; }
+  .filter-select { flex: 1 1 0; min-width: 0; }
 }
 </style>
 

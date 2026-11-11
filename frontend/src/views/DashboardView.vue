@@ -2,11 +2,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUIStore } from '@/stores/ui'
 import { listQRCodes, deleteQRCode, type QRCodeRead, type QRContentType } from '@/api/qrcodes'
 import DownloadModal from '@/components/dashboard/DownloadModal.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const ui = useUIStore()
+
+// Phones get a card list instead of the table (same breakpoint as the app shell's drawer)
+const useCards = computed(() => ui.shellMode === 'mobile')
 
 const qrCodes = ref<QRCodeRead[]>([])
 const total = ref(0)
@@ -33,6 +38,26 @@ const filteredQRCodes = computed(() =>
     ? qrCodes.value
     : qrCodes.value.filter((q) => q.content_type === contentFilter.value),
 )
+
+// Cards can't use the table's sortable headers, so phones get a sort menu instead
+type CardSort = 'newest' | 'oldest' | 'name' | 'scans'
+const cardSortOptions: { label: string; value: CardSort }[] = [
+  { label: 'Newest', value: 'newest' },
+  { label: 'Oldest', value: 'oldest' },
+  { label: 'Name', value: 'name' },
+  { label: 'Most scans', value: 'scans' },
+]
+const cardSort = ref<CardSort>('newest')
+const sortedCards = computed(() => {
+  const list = [...filteredQRCodes.value]
+  switch (cardSort.value) {
+    case 'newest': return list.sort((a, b) => b.created_at.localeCompare(a.created_at))
+    case 'oldest': return list.sort((a, b) => a.created_at.localeCompare(b.created_at))
+    case 'name': return list.sort((a, b) => a.title.localeCompare(b.title))
+    case 'scans': return list.sort((a, b) => b.scan_count - a.scan_count)
+  }
+  return list
+})
 
 onMounted(async () => {
   if (!auth.user) await auth.initialize()
@@ -166,21 +191,135 @@ function formatDate(iso: string) {
       </div>
     </div>
 
-    <!-- Content type filter -->
-    <SelectButton
-      v-if="qrCodes.length"
-      v-model="contentFilter"
-      :options="contentFilterOptions"
-      option-label="label"
-      option-value="value"
-      :allow-empty="false"
-      aria-label="Filter by content type"
-      size="small"
-      class="-mb-4 self-start"
-    />
+    <!-- Content type filter (+ sort on phones) -->
+    <div v-if="qrCodes.length" class="flex items-center justify-between gap-3 flex-wrap -mb-4">
+      <SelectButton
+        v-model="contentFilter"
+        :options="contentFilterOptions"
+        option-label="label"
+        option-value="value"
+        :allow-empty="false"
+        aria-label="Filter by content type"
+        size="small"
+      />
+      <Select
+        v-if="useCards"
+        v-model="cardSort"
+        :options="cardSortOptions"
+        option-label="label"
+        option-value="value"
+        size="small"
+        aria-label="Sort QR codes"
+        class="card-sort"
+      >
+        <template #value="{ value }">
+          <span class="inline-flex items-center gap-2">
+            <i class="pi pi-sort-alt text-xs" style="color: var(--text-secondary)" />
+            {{ cardSortOptions.find((o) => o.value === value)?.label }}
+          </span>
+        </template>
+      </Select>
+    </div>
 
-    <!-- QR code DataTable -->
+    <!-- Phone: card list -->
+    <template v-if="useCards">
+      <div v-if="loading && !qrCodes.length" class="flex flex-col gap-3" aria-busy="true">
+        <div v-for="n in 3" :key="n" class="qr-card">
+          <div class="flex items-center gap-3 p-3.5">
+            <Skeleton shape="circle" size="2.5rem" />
+            <div class="flex-1 flex flex-col gap-2">
+              <Skeleton width="60%" height="1rem" />
+              <Skeleton width="40%" height="0.75rem" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-else-if="!qrCodes.length"
+        class="flex flex-col items-center gap-4 py-12 px-4 text-center rounded-xl border"
+        style="background-color: var(--bg-card); border-color: var(--border);"
+      >
+        <span class="text-5xl">✨</span>
+        <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">No QR codes yet</h2>
+        <p class="text-surface-500 max-w-sm">Create your first QR code to get started.</p>
+        <Button label="Create Your First QR Code" icon="pi pi-plus" @click="router.push('/editor')" />
+      </div>
+
+      <div
+        v-else-if="!sortedCards.length"
+        class="py-12 text-center text-surface-500 rounded-xl border"
+        style="background-color: var(--bg-card); border-color: var(--border);"
+      >
+        No {{ CONTENT_TYPES[contentFilter as QRContentType]?.label }} QR codes yet.
+      </div>
+
+      <ul v-else class="flex flex-col gap-3 list-none m-0 p-0" aria-label="Your QR codes">
+        <li v-for="qr in sortedCards" :key="qr.id" class="qr-card">
+          <button
+            type="button"
+            class="qr-card-main"
+            :aria-label="`Download ${qr.title}`"
+            @click="handleDownload(qr)"
+          >
+            <span class="qr-card-icon" aria-hidden="true">
+              <i :class="`pi ${CONTENT_TYPES[qr.content_type].icon}`" />
+            </span>
+            <span class="flex-1 min-w-0 flex flex-col gap-0.5">
+              <span class="qr-card-title">{{ qr.title }}</span>
+              <span class="qr-card-meta">
+                {{ CONTENT_TYPES[qr.content_type].label }} · {{ formatDate(qr.created_at) }}
+              </span>
+            </span>
+            <Tag
+              :value="qr.type"
+              :severity="qr.type === 'DYNAMIC' ? 'info' : 'secondary'"
+              class="flex-shrink-0"
+            />
+          </button>
+          <div class="qr-card-foot">
+            <span class="qr-card-scans">
+              <i class="pi pi-chart-bar text-xs" aria-hidden="true" />
+              <span class="font-mono">{{ qr.scan_count.toLocaleString() }}</span>
+              {{ qr.scan_count === 1 ? 'scan' : 'scans' }}
+            </span>
+            <div class="flex">
+              <Button
+                icon="pi pi-download"
+                severity="secondary"
+                text
+                rounded
+                class="qr-card-action"
+                :aria-label="`Download ${qr.title}`"
+                @click="handleDownload(qr)"
+              />
+              <Button
+                icon="pi pi-pencil"
+                severity="secondary"
+                text
+                rounded
+                class="qr-card-action"
+                :aria-label="`Edit ${qr.title}`"
+                @click="handleEdit(qr)"
+              />
+              <Button
+                icon="pi pi-trash"
+                severity="danger"
+                text
+                rounded
+                class="qr-card-action"
+                :aria-label="`Delete ${qr.title}`"
+                @click="handleDelete(qr)"
+              />
+            </div>
+          </div>
+        </li>
+      </ul>
+    </template>
+
+    <!-- Tablet and up: table -->
     <div
+      v-else
       class="rounded-xl overflow-hidden border transition-colors duration-200"
       style="background-color: var(--bg-card); border-color: var(--border);"
     >
@@ -190,6 +329,8 @@ function formatDate(iso: string) {
         striped-rows
         row-hover
         responsive-layout="scroll"
+        scrollable
+        v-scroll-cue
         @row-click="handleDownload($event.data)"
         :pt="{
           root: { style: 'background: transparent' },
@@ -253,7 +394,7 @@ function formatDate(iso: string) {
           </template>
         </Column>
 
-        <Column header="Actions" style="width: 140px">
+        <Column header="Actions" frozen align-frozen="right" style="width: 140px">
           <template #body="{ data }">
             <div class="flex gap-1" @click.stop>
               <Button
@@ -300,3 +441,84 @@ function formatDate(iso: string) {
   </div>
 </template>
 
+<style scoped>
+.card-sort { min-width: 9rem; }
+
+.qr-card {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background-color: var(--bg-card);
+  overflow: hidden;
+}
+
+/* The top of the card opens the download modal, like a table row does */
+.qr-card-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 64px;
+  padding: 0.875rem 0.875rem 0.5rem;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.qr-card-main:active { background-color: var(--bg-hover); }
+.qr-card-main:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.qr-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.625rem;
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.qr-card-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qr-card-meta {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qr-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.375rem 0.25rem 0.875rem;
+}
+
+.qr-card-scans {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.qr-card-action {
+  width: 44px !important;
+  height: 44px !important;
+}
+</style>

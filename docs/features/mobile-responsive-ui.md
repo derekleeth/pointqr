@@ -1,7 +1,7 @@
 # Feature Plan: Mobile & Responsive UI
 
 > Added: 2026-11-01
-> Status: **In progress** (Phases 1 and 2 done 2026-11-06)
+> Status: **In progress** (Phases 1 and 2 done 2026-11-06, Phases 3 and 4 done 2026-11-10; real-device QA left)
 > Owner: Derek Leeth
 
 ## Overview
@@ -113,14 +113,26 @@ The prerequisite for everything else.
 
 ### Phase 3: Tables
 
-- [ ] Dashboard: choose a phone layout (see open question 4) and keep edit and delete reachable (#2)
-- [ ] Apply the same approach to admin users, feedback and monitor, if admin is in scope (see open question 1)
+- [x] Dashboard: choose a phone layout (see open question 4) and keep edit and delete reachable (#2). Below 768 px (the same breakpoint as the drawer) the table becomes a list of cards. Each card shows the content-type icon, title, content type and date, the Static/Dynamic tag, the scan count, and 44 px Download, Edit and Delete buttons. Tapping the top of a card opens the download modal, like tapping a table row. Cards can't use sortable headers, so phones get a sort menu (Newest, Oldest, Name, Most scans) next to the content filter. From 768 px up the table stays, with its Actions column pinned to the right
+- [x] Apply the same approach to admin users, feedback and monitor, if admin is in scope (see open question 1). Admin tables keep sideways scrolling, with a visible cue: a new `v-scroll-cue` directive fades whichever edge has hidden columns. Admin users and feedback pin their Actions column to the right, so the actions are always on screen and the fade sits just left of them. Monitor has no actions and gets the fade only. On phones the admin pages drop their extra page padding (the app shell already pads), the search box takes a full row, and admin dialogs fit the screen (also the API keys dialogs)
+
+**Phase 3 check (2026-11-10, emulated, mocked API):**
+
+- **#2 resolved.** Dashboard shows cards at 360/390/430 px, and the table at 768 px and up with Actions on screen. Sort, Edit (opens `/editor/:id`) and tapping a card (opens the download modal) all work. Admin users (799 px table) and admin feedback (856 px) keep Actions visible in a 326 px container, the right fade shows until you scroll to the end, and then the left fade shows instead.
 
 ### Phase 4: Polish
 
-- [ ] Fix the landing page header at 360-430 px (#7)
-- [ ] Use 16 px text in the admin search fields (#9)
-- [ ] Recheck tap targets across the remaining pages
+- [x] Fix the landing page header at 360-430 px (#7). Header buttons no longer wrap. Below 640 px the version badge and the GitHub icon are hidden (GitHub is still in the footer) and spacing is tighter, so the brand, theme toggle, Log in and Get Started fit on one line at 360 px. The same header on the Developers page gets the same fix
+- [x] Use 16 px text in the admin search fields (#9). Applies on phones and touch devices, so iPads are covered too
+- [x] Recheck tap targets across the remaining pages. On touch devices (`pointer: coarse`), PrimeVue buttons, inputs, selects, select options, toggle buttons and toast close buttons get a 44 px minimum, and icon-only buttons get 44x44. Landing and Developers page buttons, tabs and footer links get the same. A `touch-target` class covers one-off links (used on the API keys page's docs link). Mouse users keep the compact sizes
+
+**Phase 4 check (2026-11-10, emulated, mocked API, 360/390/430/768 px touch and 1024/1440 px mouse):**
+
+- **#7 resolved.** Header is one line at 360/390/430 px with 44 px buttons, and nothing reaches the screen edge.
+- **#9 resolved.** No input under 16 px on any page at phone width.
+- **Tap targets:** all buttons and inputs are at least 44 px on touch. What's still smaller is inline text links inside paragraphs, a link inside admin table cells and the inner label of PrimeVue selects (the select itself is 44 px).
+- **Desktop unchanged:** screenshots at 1024 and 1440 px are pixel-identical before and after on the landing, Developers, settings and monitor pages. The dashboard and admin table pages show no visible difference; the byte-level difference comes from the pinned Actions column.
+- No page scrolls sideways at the document level at any width checked.
 
 ### Phase 5: QA
 
@@ -135,10 +147,10 @@ The prerequisite for everything else.
 
 ## Open Questions
 
-1. Should admin pages get the full mobile treatment, or is "reachable and not broken" enough? Recommendation: the latter, since admins will mostly use a desktop.
+1. ~~Should admin pages get the full mobile treatment, or is "reachable and not broken" enough?~~ **Decided 2026-11-10:** reachable and not broken, as recommended: sideways scrolling with a fade cue and a pinned Actions column.
 2. ~~Between 768 and 1024 px, should the sidebar use the drawer or default to the 64 px rail?~~ **Decided 2026-11-06:** the rail, since tablets have room for it.
 3. ~~How should the phone editor show the preview: a sticky mini preview, a Form/Preview toggle, or a floating button that opens it?~~ **Decided 2026-11-06:** a Form/Preview toggle, as recommended, in a sticky bar with Save.
-4. Should dashboard tables become cards on phones, or hide columns? Recommendation: cards for the dashboard, since it's the main screen, and sideways scrolling with a visible cue for admin tables.
+4. ~~Should dashboard tables become cards on phones, or hide columns?~~ **Decided 2026-11-10:** cards for the dashboard below 768 px, and sideways scrolling with a visible cue for admin tables.
 
 ## Progress Log
 
@@ -147,3 +159,4 @@ The prerequisite for everything else.
 | 2026-11-01 | Plan created from an emulated-device audit of all routes. No fixes made yet. |
 | 2026-11-06 | Phase 1 done. Drawer below 768 px, rail with overlay at 768-1024 px, desktop unchanged. Checked with Playwright (headless Edge, mocked API) at 360, 390, 768, 1024 and 1440 px: drawer open/close, Escape, tap outside, close on navigation, focus trap and focus return, 44 px targets, saved preference untouched on phone/tablet. Not yet tried on a real phone. |
 | 2026-11-06 | Phase 2 done, except the on-screen keyboard check, which needs a real phone. Edit/Preview switch below 1024 px, preview scales to fit, phone padding trimmed, 44 px touch targets in the editor. Checked with Playwright (headless Edge, mocked API) at 360, 390, 430, 768, 1024 and 1440 px. |
+| 2026-11-10 | Phases 3 and 4 done. Dashboard cards on phones; admin tables scroll sideways with a fade cue and pinned Actions; landing header fixed; 16 px admin search; 44 px touch targets app-wide. Checked with Playwright (headless Edge, mocked API) at 360, 390, 430, 768, 1024 and 1440 px, including a before/after screenshot comparison at desktop widths. Not yet tried on a real phone. |

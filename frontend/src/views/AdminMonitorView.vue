@@ -310,6 +310,7 @@ onUnmounted(() => {
         size="small"
         stripedRows
         class="queues-table"
+        v-scroll-cue
       >
         <Column field="name" header="Queue" style="min-width: 160px" />
         <Column field="ready" header="Ready" style="width: 120px">
@@ -538,5 +539,9 @@ onUnmounted(() => {
 .empty-icon {
   font-size: 1.75rem;
   opacity: 0.4;
+}
+
+@media (max-width: 640px) {
+  .monitor-view { padding: 0; }
 }
 </style>
