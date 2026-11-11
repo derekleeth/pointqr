@@ -60,7 +60,9 @@ export default defineConfig(({ mode }) => {
       allowedHosts,
       // Proxy API requests to FastAPI when running Vite outside Docker
       proxy: {
-        '/api': {
+        // Regex key (leading ^) so only /api/... is proxied. A plain '/api' prefix
+        // also caught the /api-keys and /api-docs app routes on a direct load.
+        '^/api/': {
           target: 'http://localhost:8000',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
@@ -100,6 +102,14 @@ export default defineConfig(({ mode }) => {
         'primevue/tab',
         'primevue/tabpanels',
         'primevue/tabpanel',
+        // Missing entries here caused a mid-navigation reload the first time a page
+        // used them, which could throw "Cannot read properties of null (reading 'ce')"
+        'primevue/divider',
+        'primevue/iconfield',
+        'primevue/inputicon',
+        'primevue/message',
+        'primevue/skeleton',
+        'primevue/textarea',
       ],
     },
   }
